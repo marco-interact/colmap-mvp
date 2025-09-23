@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "name": "colmap-3d-platform",
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
+    },
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot))",
+      "dest": "/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "REACT_APP_API_URL": "https://your-backend-api.vercel.app/api/v1"
+  },
+  "build": {
+    "env": {
+      "REACT_APP_API_URL": "https://your-backend-api.vercel.app/api/v1",
+      "REACT_APP_ENVIRONMENT": "production"
+    }
+  },
+  "functions": {
+    "frontend/src/**": {
+      "includeFiles": "frontend/build/**"
+    }
+  }
+}
