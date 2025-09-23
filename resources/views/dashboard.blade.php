@@ -5,12 +5,12 @@
     <h1 class="page-title">Mis Proyectos</h1>
     <div class="header-actions">
         <div class="search-input">
-            <input type="text" placeholder="Search Project" id="project-search">
+            <input type="text" placeholder="Buscar Proyecto" id="project-search">
             <i data-lucide="search" class="search-icon"></i>
         </div>
         <button type="button" class="btn-primary" onclick="openCreateProjectModal()">
             <i data-lucide="plus" class="icon"></i>
-            NEW PROJECT
+            NUEVO PROYECTO
         </button>
     </div>
 </div>
@@ -19,7 +19,17 @@
     @forelse($projects as $project)
         <div class="project-card" onclick="viewProject({{ $project->id }})">
             <div class="project-thumbnail">
-                @if($project->thumbnail)
+                @if($project->name === 'ITECSA Nave Industrial')
+                    <div class="sample-3d-preview">
+                        <!-- CSS-generated 3D industrial building preview -->
+                        <div class="building-complex">
+                            <div class="main-building"></div>
+                            <div class="side-building"></div>
+                            <div class="warehouse"></div>
+                            <div class="ground-plane"></div>
+                        </div>
+                    </div>
+                @elseif($project->thumbnail)
                     <img src="{{ asset('storage/' . $project->thumbnail) }}" alt="{{ $project->name }}">
                 @else
                     <div class="no-image">
