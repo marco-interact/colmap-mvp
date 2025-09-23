@@ -1,43 +1,16 @@
 {
-  "functions": {
-    "api/index.php": {
-      "runtime": "vercel-php@0.7.3"
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.php",
+      "use": "vercel-php@0.7.3"
     }
-  },
+  ],
   "routes": [
-      {
-        "src": "/assets/(.*)",
-        "dest": "/public/build/assets/$1",
-        "headers": {
-          "cache-control": "public, max-age=31536000, immutable"
-        }
-      },
-      {
-        "src": "/build/(.*)",
-        "dest": "/public/build/$1",
-        "headers": {
-          "cache-control": "public, max-age=31536000, immutable"
-        }
-      },
-      {
-        "src": "/(.*\\.(css|js|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|map))",
-        "dest": "/public/$1",
-        "headers": {
-          "cache-control": "public, max-age=31536000, immutable"
-        }
-      },
-      {
-        "src": "/favicon.ico",
-        "dest": "/public/favicon.ico"
-      },
-      {
-        "src": "/robots.txt", 
-        "dest": "/public/robots.txt"
-      },
-      {
-        "src": "/(.*)",
-        "dest": "/api/index.php"
-      }
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.php"
+    }
   ],
   "env": {
     "APP_NAME": "COLMAP App",
