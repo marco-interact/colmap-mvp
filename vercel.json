@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "name": "domapping-colmap-app",
-  "description": "DoMapping - 3D Visualization Platform with COLMAP Integration - Root Deployment",
   "builds": [
     {
       "src": "api/index.php",
