@@ -1,7 +1,7 @@
 <?php
 
 /**
- * DoMapping - Laravel Serverless Entry Point for Vercel
+ * COLMAP App - Laravel Serverless Entry Point for Vercel
  * Optimized for Vercel serverless deployment
  */
 

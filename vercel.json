@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/index.php": {
-      "runtime": "php-8.2"
+      "runtime": "vercel-php@0.7.3"
     }
   },
   "routes": [
@@ -40,7 +40,7 @@
       }
   ],
   "env": {
-    "APP_NAME": "DoMapping",
+    "APP_NAME": "COLMAP App",
     "APP_ENV": "production",
     "APP_DEBUG": "false",
     "SESSION_DRIVER": "cookie",
