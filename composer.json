@@ -55,11 +55,6 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
-        ],
-        "vercel-build": [
-            "@php artisan config:clear",
-            "@php artisan route:clear",
-            "@php artisan view:clear"
         ]
     },
     "extra": {
