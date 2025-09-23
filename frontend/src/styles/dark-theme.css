@@ -1,0 +1,381 @@
+/* DoMapping Dark Theme Color System */
+:root {
+  /* Primary Colors */
+  --dm-primary: #4ade80;
+  --dm-primary-hover: #22c55e;
+  --dm-primary-dark: #16a34a;
+  
+  /* Background Colors */
+  --dm-background: #0f0f0f;
+  --dm-surface: #1a1a1a;
+  --dm-surface-elevated: #2a2a2a;
+  --dm-surface-container: #333333;
+  --dm-surface-container-high: #404040;
+  
+  /* Text Colors */
+  --dm-text-primary: #ffffff;
+  --dm-text-secondary: #a3a3a3;
+  --dm-text-tertiary: #737373;
+  --dm-text-disabled: #525252;
+  
+  /* Border Colors */
+  --dm-border: #404040;
+  --dm-border-light: #525252;
+  --dm-border-focus: var(--dm-primary);
+  
+  /* Status Colors */
+  --dm-success: #22c55e;
+  --dm-warning: #f59e0b;
+  --dm-error: #ef4444;
+  --dm-info: #3b82f6;
+  
+  /* Shadows */
+  --dm-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --dm-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --dm-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.2);
+  --dm-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.4), 0 10px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Global Dark Theme Styles */
+body {
+  background-color: var(--dm-background);
+  color: var(--dm-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+/* DoMapping Card System */
+.dm-card {
+  background-color: var(--dm-surface-container);
+  border: 1px solid var(--dm-border);
+  border-radius: 12px;
+  box-shadow: var(--dm-shadow-md);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.dm-card:hover {
+  box-shadow: var(--dm-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.dm-card-elevated {
+  background-color: var(--dm-surface-elevated);
+  box-shadow: var(--dm-shadow-lg);
+}
+
+/* DoMapping Button System */
+.dm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 8px;
+}
+
+.dm-btn-primary {
+  background-color: var(--dm-primary);
+  color: #000000;
+}
+
+.dm-btn-primary:hover {
+  background-color: var(--dm-primary-hover);
+  transform: translateY(-1px);
+}
+
+.dm-btn-secondary {
+  background-color: transparent;
+  color: var(--dm-text-secondary);
+  border: 1px solid var(--dm-border);
+}
+
+.dm-btn-secondary:hover {
+  background-color: var(--dm-surface-elevated);
+  color: var(--dm-text-primary);
+}
+
+.dm-btn-danger {
+  background-color: var(--dm-error);
+  color: white;
+}
+
+.dm-btn-danger:hover {
+  background-color: #dc2626;
+}
+
+/* DoMapping Input System */
+.dm-input {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: var(--dm-surface-elevated);
+  border: 1px solid var(--dm-border);
+  border-radius: 8px;
+  color: var(--dm-text-primary);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.dm-input:focus {
+  outline: none;
+  border-color: var(--dm-primary);
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.2);
+}
+
+.dm-input::placeholder {
+  color: var(--dm-text-tertiary);
+}
+
+/* DoMapping Modal System */
+.dm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dm-modal {
+  background-color: var(--dm-surface);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--dm-shadow-xl);
+}
+
+.dm-modal-header {
+  margin-bottom: 24px;
+}
+
+.dm-modal-title {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--dm-text-primary);
+  margin: 0;
+}
+
+/* DoMapping Form System */
+.dm-form-group {
+  margin-bottom: 20px;
+}
+
+.dm-form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dm-text-primary);
+  margin-bottom: 8px;
+}
+
+.dm-form-label .dm-required {
+  color: var(--dm-error);
+  margin-left: 4px;
+}
+
+.dm-form-help {
+  font-size: 12px;
+  color: var(--dm-text-tertiary);
+  margin-top: 4px;
+}
+
+/* DoMapping Navigation */
+.dm-sidebar {
+  background-color: var(--dm-surface);
+  border-right: 1px solid var(--dm-border);
+  width: 280px;
+  height: 100vh;
+  padding: 24px 16px;
+}
+
+.dm-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: var(--dm-text-secondary);
+  text-decoration: none;
+  margin-bottom: 4px;
+  transition: all 0.2s ease;
+  gap: 12px;
+}
+
+.dm-nav-item:hover {
+  background-color: var(--dm-surface-elevated);
+  color: var(--dm-text-primary);
+}
+
+.dm-nav-item.active {
+  background-color: var(--dm-primary);
+  color: #000000;
+}
+
+/* DoMapping Header */
+.dm-header {
+  background-color: var(--dm-surface);
+  border-bottom: 1px solid var(--dm-border);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dm-logo {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--dm-primary);
+}
+
+/* DoMapping Project Grid */
+.dm-project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  padding: 24px;
+}
+
+.dm-project-card {
+  background-color: var(--dm-surface-container);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--dm-shadow-md);
+  transition: all 0.2s ease;
+}
+
+.dm-project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--dm-shadow-lg);
+}
+
+.dm-project-thumbnail {
+  width: 100%;
+  height: 200px;
+  background-color: var(--dm-surface-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dm-text-tertiary);
+}
+
+.dm-project-content {
+  padding: 20px;
+}
+
+.dm-project-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--dm-text-primary);
+  margin: 0 0 8px 0;
+}
+
+.dm-project-description {
+  font-size: 14px;
+  color: var(--dm-text-secondary);
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.dm-project-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--dm-text-tertiary);
+}
+
+/* DoMapping Status Badge */
+.dm-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  gap: 4px;
+}
+
+.dm-status-badge.processing {
+  background-color: rgba(251, 146, 60, 0.2);
+  color: #fb923c;
+}
+
+.dm-status-badge.completed {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.dm-status-badge.failed {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.dm-status-badge.pending {
+  background-color: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+}
+
+/* DoMapping Utilities */
+.dm-text-center {
+  text-align: center;
+}
+
+.dm-mb-4 {
+  margin-bottom: 16px;
+}
+
+.dm-mb-6 {
+  margin-bottom: 24px;
+}
+
+.dm-py-12 {
+  padding-top: 48px;
+  padding-bottom: 48px;
+}
+
+.dm-flex {
+  display: flex;
+}
+
+.dm-items-center {
+  align-items: center;
+}
+
+.dm-justify-center {
+  justify-content: center;
+}
+
+.dm-justify-between {
+  justify-content: space-between;
+}
+
+.dm-gap-4 {
+  gap: 16px;
+}
+
+.dm-w-16 {
+  width: 64px;
+}
+
+.dm-h-16 {
+  height: 64px;
+}
+
+.dm-mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+

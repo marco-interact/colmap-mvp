@@ -1,0 +1,156 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: 3d_platform_postgres
+    environment:
+      POSTGRES_DB: 3d_platform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - 3d_platform_network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: 3d_platform_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - 3d_platform_network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend/Dockerfile
+    container_name: 3d_platform_backend
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=3d_platform
+      - REDIS_URL=redis://redis:6379/0
+      - UPLOAD_DIR=/app/uploads
+      - OUTPUT_DIR=/app/output
+      - TEMP_DIR=/app/temp
+      - COLMAP_WORKSPACE_DIR=/app/colmap_workspace
+    volumes:
+      - ./backend:/app
+      - uploads_data:/app/uploads
+      - output_data:/app/output
+      - temp_data:/app/temp
+      - colmap_workspace_data:/app/colmap_workspace
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - 3d_platform_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery Worker
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend/Dockerfile
+    container_name: 3d_platform_celery_worker
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=3d_platform
+      - REDIS_URL=redis://redis:6379/0
+      - UPLOAD_DIR=/app/uploads
+      - OUTPUT_DIR=/app/output
+      - TEMP_DIR=/app/temp
+      - COLMAP_WORKSPACE_DIR=/app/colmap_workspace
+    volumes:
+      - ./backend:/app
+      - uploads_data:/app/uploads
+      - output_data:/app/output
+      - temp_data:/app/temp
+      - colmap_workspace_data:/app/colmap_workspace
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - 3d_platform_network
+    command: celery -A app.celery_app worker --loglevel=info
+
+  # Celery Beat (Scheduler)
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend/Dockerfile
+    container_name: 3d_platform_celery_beat
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=3d_platform
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - 3d_platform_network
+    command: celery -A app.celery_app beat --loglevel=info
+
+  # Flower (Celery Monitoring)
+  flower:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend/Dockerfile
+    container_name: 3d_platform_flower
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    networks:
+      - 3d_platform_network
+    command: celery -A app.celery_app flower --port=5555
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend/Dockerfile
+    container_name: 3d_platform_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - 3d_platform_network
+    command: npm start
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads_data:
+  output_data:
+  temp_data:
+  colmap_workspace_data:
+
+networks:
+  3d_platform_network:
+    driver: bridge
+
+
+
