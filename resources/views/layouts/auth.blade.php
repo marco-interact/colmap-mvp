@@ -16,7 +16,12 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
     <!-- Styles -->
-    @vite(['resources/less/app.less', 'resources/js/app.js'])
+    @if (app()->environment('production'))
+        <link href="{{ asset('build/assets/app-DjjJYP4c.css') }}" rel="stylesheet">
+        <script src="{{ asset('build/assets/app-Bj43h_rG.js') }}" defer></script>
+    @else
+        @vite(['resources/less/app.less', 'resources/js/app.js'])
+    @endif
 </head>
 <body>
     <div class="auth-container">
