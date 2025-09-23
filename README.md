@@ -1,379 +1,229 @@
-# 🏗️ 3D Visualization and Modeling Platform
+# 🚀 DoMapping - 3D Visualization Platform
 
-[![CI/CD Pipeline](https://github.com/marco-interact/colmap-app/workflows/CI/CD%20Pipeline/badge.svg)](https://github.com/marco-interact/colmap-app/actions)
-[![Release](https://github.com/marco-interact/colmap-app/workflows/Release/badge.svg)](https://github.com/marco-interact/colmap-app/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+> **Laravel + COLMAP Integration** - Production-ready for Vercel deployment
 
-> A comprehensive 3D reconstruction platform that enables users to capture, process, and convert physical spaces into detailed 3D models using photogrammetry and COLMAP.
+## 🌟 Live Demo
 
-## ✨ Live Demo
+**Deploy to Vercel**: [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/marco-interact/colmap-app)
 
-🌟 **[Try the Live Demo](https://your-staging-url.com)** (Coming Soon)
+## ✨ Features
 
-**Demo Credentials:**
-- Username: `demo` | Password: `demo123`
-- Username: `admin` | Password: `admin123`
+### 🎨 DoMapping UI
+- **Dark theme** with teal accent colors matching design mockups
+- **Responsive sidebar** navigation with user info
+- **"Mis Proyectos"** dashboard with search and project cards
+- **Modal forms** for creating new projects
+- **Authentication** system with login/register
 
-## 🎯 Overview
+### 🛠️ COLMAP Integration
+- **Video upload** support up to 1GB with progress tracking
+- **Frame extraction** from uploaded videos
+- **3D reconstruction** with multiple quality settings (low, medium, high, extreme)
+- **Real-time job monitoring** with status updates
+- **File download** for processed 3D models (.ply, .obj files)
 
-This platform streamlines the workflow from initial documentation through final model delivery, reducing processing time by 60% and improving accuracy for professionals in architecture, real estate, and manufacturing.
+### ⚡ Technical Stack
+- **Frontend**: Laravel 12 + Blade templates + LESS CSS
+- **Backend**: PHP 8.2 with Eloquent ORM
+- **3D Processing**: Python FastAPI + COLMAP (separate microservice)
+- **Database**: SQLite (serverless) or external database
+- **Deployment**: Vercel serverless functions
 
-### 🚀 Key Features
+## 🚀 Quick Deploy
 
-- **🎥 Video Processing**: Support for 360° video capture and frame extraction (up to 1GB files)
-- **🔬 COLMAP Pipeline**: Automated 3D reconstruction using Structure from Motion (SfM)
-- **🌐 Interactive 3D Viewer**: Web-based visualization with Three.js and WebGL
-- **📏 Measurement Tools**: Precise distance measurements within 3D models
-- **👥 Collaborative Tools**: Project management and sharing capabilities
-- **📦 Multi-format Export**: Support for PLY, OBJ, glTF formats
-- **⚡ Real-time Processing**: Distributed processing with Celery workers
-- **📊 Progress Tracking**: Real-time job monitoring and status updates
+### One-Click Vercel Deployment
 
-## 🏗️ Architecture
+1. **Deploy Main App**:
+   - Repository: `marco-interact/colmap-app`
+   - Framework: Other
+   - Root Directory: `/` (project root)
 
-```mermaid
-graph TB
-    subgraph "Frontend"
-        A[React 18 + TypeScript]
-        B[Three.js + WebGL]
-        C[Material-UI Components]
-    end
-    
-    subgraph "Backend"
-        D[FastAPI + Python 3.9]
-        E[COLMAP Pipeline]
-        F[Celery Workers]
-    end
-    
-    subgraph "Storage"
-        G[PostgreSQL]
-        H[Redis Cache]
-        I[File Storage]
-    end
-    
-    subgraph "Processing"
-        J[Video Upload 1GB]
-        K[Frame Extraction]
-        L[3D Reconstruction]
-        M[Mesh Generation]
-    end
-    
-    A --> D
-    D --> E
-    E --> F
-    D --> G
-    F --> H
-    J --> K
-    K --> L
-    L --> M
-```
-
-## 🚀 Quick Start
-
-### Option 1: Docker (Recommended)
-
-```bash
-# Clone the repository
-git clone https://github.com/marco-interact/colmap-app.git
-cd colmap-app
-
-# Start the application
-docker-compose up -d
-
-# Access the application
-open http://localhost:3000
-```
-
-### Option 2: Local Development
-
-```bash
-# Clone and setup
-git clone https://github.com/marco-interact/colmap-app.git
-cd colmap-app
-
-# Backend setup
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-
-# Frontend setup (new terminal)
-cd frontend
-npm install
-npm start
-```
-
-### Option 3: Staging Environment
-
-For production-like testing:
-
-```bash
-# Deploy staging environment
-./scripts/staging-deploy.sh
-
-# Access staging
-open http://localhost:8080
-```
-
-## 📋 System Requirements
-
-### Minimum Requirements
-- **OS**: Linux, macOS, or Windows with Docker
-- **RAM**: 4GB (8GB+ recommended)
-- **Storage**: 10GB free space
-- **Docker**: 20.10.0+
-- **Docker Compose**: 2.0.0+
-
-### For COLMAP Processing
-- **RAM**: 8GB+ recommended
-- **CPU**: Multi-core processor
-- **GPU**: NVIDIA GPU with CUDA (optional, for acceleration)
-
-## 🎮 User Flow
-
-### 1. Authentication
-- Login with demo credentials or create account
-- JWT-based authentication with secure sessions
-
-### 2. Project Management
-- **Dashboard**: Overview of all projects with search and filtering
-- **Create Project**: Set up new 3D reconstruction projects
-- **Project Details**: Manage scans, files, and processing
-
-### 3. 3D Reconstruction Workflow
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Frontend
-    participant Backend
-    participant COLMAP
-    participant Storage
-    
-    User->>Frontend: Upload Video (up to 1GB)
-    Frontend->>Backend: Process Upload
-    Backend->>Storage: Save Video File
-    Backend->>COLMAP: Extract Frames
-    COLMAP->>COLMAP: Feature Detection
-    COLMAP->>COLMAP: Feature Matching
-    COLMAP->>COLMAP: Sparse Reconstruction
-    COLMAP->>COLMAP: Dense Reconstruction
-    COLMAP->>Storage: Save 3D Model
-    Backend->>Frontend: Processing Complete
-    Frontend->>User: 3D Model Ready
-```
-
-### 4. 3D Visualization & Measurements
-- **Interactive Viewer**: Rotate, zoom, pan 3D models
-- **Measurement Tools**: Click-to-measure distances
-- **Export Options**: Download models in various formats
-
-## 🔧 Configuration
+2. **Deploy COLMAP Service** (separate deployment):
+   - Repository: `marco-interact/colmap-app`
+   - Framework: Python
+   - Root Directory: `python-colmap-service`
 
 ### Environment Variables
 
-Copy `env.example` to `.env` and configure:
+Set in Vercel dashboard:
 
 ```bash
-# Database
-POSTGRES_SERVER=localhost
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password
-POSTGRES_DB=3d_platform
+# Required
+APP_KEY=base64:your-laravel-app-key-here
+APP_URL=https://your-domain.vercel.app
+COLMAP_SERVICE_URL=https://your-colmap-service.vercel.app
 
-# Redis
-REDIS_URL=redis://localhost:6379/0
-
-# COLMAP Settings
-COLMAP_QUALITY=medium  # low, medium, high, extreme
-MAX_CONCURRENT_JOBS=4
-MAX_FILE_SIZE=1073741824  # 1GB
-
-# Frontend
-REACT_APP_API_URL=http://localhost:8000/api/v1
+# Optional
+APP_DEBUG=false
+LOG_LEVEL=info
+MAX_FILE_SIZE=1048576
+COLMAP_DEFAULT_QUALITY=medium
 ```
 
-### COLMAP Quality Settings
+Generate APP_KEY:
+```bash
+php artisan key:generate --show
+```
 
-| Quality | Max Image Size | Max Features | Processing Time | Output Quality |
-|---------|---------------|--------------|-----------------|----------------|
-| Low     | 800px         | 4,000        | ~30 min         | Basic          |
-| Medium  | 1,200px       | 8,000        | ~60 min         | Good           |
-| High    | 1,600px       | 12,000       | ~120 min        | High           |
-| Extreme | 2,400px       | 20,000       | ~240 min        | Professional   |
+## 🏗️ Architecture
 
-## 📚 API Documentation
+```
+colmap-app/
+├── api/index.php              # Vercel serverless entry point
+├── app/                       # Laravel application logic
+├── resources/                 # Views, LESS CSS, assets
+├── public/                    # Public assets
+├── config/                    # Laravel configuration
+├── database/                  # Migrations, models
+├── python-colmap-service/     # Separate Python microservice
+├── vercel.json               # Vercel deployment config
+└── deploy-vercel.sh          # Deployment script
+```
 
-### Authentication Endpoints
-- `POST /auth/login` - User authentication
-- `POST /auth/register` - User registration
-- `GET /auth/me` - Get current user
+## 🎨 DoMapping UI Implementation
+
+### User Flow
+1. **Login/Register** → Laravel authentication
+2. **Dashboard** → "Mis Proyectos" with project grid
+3. **Create Project** → Modal form with project details
+4. **Upload Video** → Drag & drop interface, up to 1GB
+5. **Process Video** → COLMAP 3D reconstruction
+6. **Monitor Progress** → Real-time status updates
+7. **Download Results** → 3D models and point clouds
+
+### Design System
+- **Colors**: Dark theme (`#1a1a1a`) with teal accent (`#4ade80`)
+- **Typography**: Inter font family
+- **Layout**: Sidebar navigation with main content area
+- **Components**: Cards, modals, forms, buttons with consistent styling
+
+## 🛠️ Local Development
+
+```bash
+# Install dependencies
+composer install
+npm install
+
+# Set up environment
+cp .env.example .env
+php artisan key:generate
+
+# Build assets
+npm run build
+
+# Start Laravel server
+php artisan serve
+
+# Start Python COLMAP service (separate terminal)
+cd python-colmap-service
+python main.py
+```
+
+## 📦 Vercel Deployment
+
+### Automatic Deployment Script
+
+```bash
+# Run deployment preparation
+./deploy-vercel.sh
+
+# Deploy to Vercel
+vercel --prod
+```
+
+### Manual Steps
+
+1. **Prepare Laravel**:
+   ```bash
+   composer install --optimize-autoloader --no-dev
+   npm run build
+   php artisan optimize:clear
+   ```
+
+2. **Deploy to Vercel**:
+   ```bash
+   vercel --prod
+   ```
+
+3. **Configure Environment Variables** in Vercel dashboard
+
+4. **Deploy Python Service** separately:
+   ```bash
+   cd python-colmap-service
+   vercel --prod
+   ```
+
+## 🔧 Configuration Files
+
+### `vercel.json` - Main Laravel App
+Configures PHP 8.2 runtime, routes, and environment variables for serverless deployment.
+
+### `api/index.php` - Serverless Entry Point
+Bootstraps Laravel application for Vercel's serverless environment.
+
+### `python-colmap-service/vercel.json` - COLMAP Service
+Separate Python service configuration for 3D processing.
+
+## 🎯 User Experience
+
+### Dashboard Features
+- **Project Cards**: Visual grid with thumbnails and status
+- **Search**: Real-time project filtering
+- **Create Button**: Modal form for new projects
+- **User Profile**: Avatar and account info in sidebar
 
 ### Project Management
-- `GET /projects` - List all projects
-- `POST /projects` - Create new project
-- `GET /projects/{id}` - Get project details
-- `PUT /projects/{id}` - Update project
+- **Status Tracking**: Created, Processing, Completed, Failed states
+- **Progress Monitoring**: Real-time updates during COLMAP processing
+- **File Management**: Upload videos, download results
+- **Settings**: Quality preferences, processing options
 
-### File Operations
-- `POST /projects/{id}/upload-video` - Upload video (up to 1GB)
-- `POST /files/extract-frames` - Extract frames from video
-- `GET /files/download/{project_id}/{type}` - Download files
+## 🔒 Security & Performance
 
-### Processing
-- `POST /projects/{id}/start-processing` - Start COLMAP reconstruction
-- `GET /jobs` - List processing jobs
-- `GET /jobs/{id}` - Get job status
+### Security
+- **Laravel Authentication**: Built-in user management
+- **CSRF Protection**: All forms protected
+- **Input Validation**: Server-side validation for all inputs
+- **File Upload Security**: Type and size validation
 
-**Full API Documentation**: Available at `/docs` when running the server
+### Performance
+- **Asset Optimization**: Vite bundling and minification
+- **Serverless Scaling**: Automatic with Vercel
+- **CDN Distribution**: Global edge network
+- **Database Optimization**: Efficient queries and caching
 
-## 🧪 Testing
+## 📊 Database Schema
 
-### Running Tests
+### Projects Table
+- `id`, `name`, `description`, `status`, `user_id`
+- `settings` (JSON), `thumbnail`, `created_at`, `updated_at`
 
-```bash
-# Backend tests
-cd backend
-pytest tests/ -v --coverage
+### Scans Table
+- `id`, `name`, `project_id`, `video_filename`, `video_path`
+- `status`, `processing_results` (JSON), `model_path`
 
-# Frontend tests
-cd frontend
-npm test -- --coverage
-
-# Integration tests
-./scripts/staging-deploy.sh
-# Run your integration tests here
-./scripts/staging-stop.sh
-```
-
-### Test Coverage
-
-- **Backend**: FastAPI endpoints, COLMAP integration, file handling
-- **Frontend**: React components, API integration, 3D viewer
-- **Integration**: Complete user workflow, file upload, processing
-
-## 🚀 Deployment
-
-### Staging Environment
-
-```bash
-# Deploy to staging
-./scripts/staging-deploy.sh
-
-# Check status
-./scripts/staging-status.sh
-
-# View logs
-./scripts/staging-logs.sh
-
-# Stop staging
-./scripts/staging-stop.sh
-```
-
-**Staging Access Points:**
-- **Main App**: http://localhost:8080
-- **API**: http://localhost:8001
-- **Monitoring**: http://localhost:5556
-
-### Production Deployment
-
-For production deployment, see [DEPLOYMENT.md](docs/DEPLOYMENT.md)
-
-## 📊 Performance Benchmarks
-
-| Video Length | Frames | Quality | Processing Time | Output Size |
-|-------------|--------|---------|-----------------|-------------|
-| 30 seconds  | 30     | Medium  | ~15 minutes     | 50MB        |
-| 2 minutes   | 120    | High    | ~45 minutes     | 200MB       |
-| 5 minutes   | 300    | High    | ~90 minutes     | 500MB       |
-
-### Optimization Tips
-
-- **Video Quality**: Use good lighting and stable camera movement
-- **File Size**: Shorter videos = faster processing
-- **Hardware**: SSD storage and multi-core CPU recommended
-- **Settings**: Choose appropriate quality level for your needs
+### Processing Jobs Table
+- `id`, `job_id`, `scan_id`, `type`, `status`, `progress`
+- `message`, `started_at`, `completed_at`
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Setup
-
-1. **Fork** the repository
-2. **Clone** your fork
-3. **Create** a feature branch
-4. **Make** your changes
-5. **Test** thoroughly
-6. **Submit** a Pull Request
-
-### Code Standards
-
-- **Python**: Follow PEP 8, use Black formatter
-- **TypeScript**: Use ESLint, Prettier
-- **Tests**: Write tests for new features
-- **Documentation**: Update docs as needed
-
-## 📋 Roadmap
-
-### Version 1.1 (Q2 2024)
-- [ ] **Real-time Collaboration**: Multiple users per project
-- [ ] **Advanced Measurements**: Area and volume calculations
-- [ ] **Model Comparison**: Side-by-side 3D model comparison
-- [ ] **Export Enhancements**: More formats (FBX, IFC)
-
-### Version 1.2 (Q3 2024)
-- [ ] **Mobile App**: iOS and Android companion apps
-- [ ] **Cloud Processing**: GPU-accelerated cloud COLMAP
-- [ ] **AI Enhancement**: ML-based model improvement
-- [ ] **VR Support**: Virtual Reality model viewing
-
-### Version 2.0 (Q4 2024)
-- [ ] **Multi-tenant**: SaaS platform with user management
-- [ ] **Advanced Analytics**: Processing insights and metrics
-- [ ] **API Platform**: Public API for third-party integrations
-- [ ] **Enterprise Features**: SSO, advanced security
-
-## 🐛 Issue Reporting
-
-Found a bug? Have a feature request?
-
-1. **Search** existing issues first
-2. **Create** a detailed issue with:
-   - Steps to reproduce
-   - Expected vs actual behavior
-   - Screenshots/videos if applicable
-   - System information
-
-[**Report an Issue →**](https://github.com/marco-interact/colmap-app/issues)
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 🆘 Support
 
-- **[COLMAP](https://colmap.github.io/)** - 3D reconstruction engine
-- **[Three.js](https://threejs.org/)** - 3D graphics library
-- **[FastAPI](https://fastapi.tiangolo.com/)** - Web framework
-- **[React](https://reactjs.org/)** - Frontend library
-
-## 📞 Support & Community
-
-- **📧 Email**: support@your-domain.com
-- **💬 Discussions**: [GitHub Discussions](https://github.com/marco-interact/colmap-app/discussions)
-- **🐛 Issues**: [GitHub Issues](https://github.com/marco-interact/colmap-app/issues)
-- **📖 Wiki**: [Project Wiki](https://github.com/marco-interact/colmap-app/wiki)
+- **Issues**: [GitHub Issues](https://github.com/marco-interact/colmap-app/issues)
+- **Documentation**: [README-VERCEL.md](README-VERCEL.md)
+- **Deployment Guide**: [DEPLOYMENT-READY.md](DEPLOYMENT-READY.md)
 
 ---
 
-<div align="center">
-
-**⭐ Star this repository if you found it helpful!**
-
-[Demo](https://your-demo-url.com) • [Documentation](docs/) • [API Docs](http://localhost:8000/docs) • [Contributing](CONTRIBUTING.md)
-
-Made with ❤️ by [@marco-interact](https://github.com/marco-interact)
-
-</div>
+**🎉 Ready for production deployment on Vercel!**
