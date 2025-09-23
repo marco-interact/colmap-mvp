@@ -1,12 +1,10 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.php",
-      "use": "@vercel/php@0.6.0"
+  "functions": {
+    "api/index.php": {
+      "runtime": "php-8.2"
     }
-  ],
-    "routes": [
+  },
+  "routes": [
       {
         "src": "/assets/(.*)",
         "dest": "/public/build/assets/$1",
