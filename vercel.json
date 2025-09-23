@@ -16,7 +16,7 @@
     "APP_NAME": "COLMAP App",
     "APP_ENV": "production",
     "APP_DEBUG": "true",
-    "APP_KEY": "base64:SGVsbG8gV29ybGQgVGhpcyBJcyBBIEZha2UgS2V5Zm9yVGVzdGluZw==",
+    "APP_KEY": "base64:LYozMD8jzCS+7704frjWxMSdhzluDhlcjWAo7+mGpds=",
     "SESSION_DRIVER": "cookie",
     "CACHE_DRIVER": "array", 
     "QUEUE_CONNECTION": "sync",
