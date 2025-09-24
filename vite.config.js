@@ -18,6 +18,9 @@ export default defineConfig({
                 relativeUrls: true,
                 javascriptEnabled: true,
             },
+            scss: {
+                additionalData: `@import "resources/scss/variables.scss";`
+            }
         },
     },
     server: {
@@ -33,5 +36,8 @@ export default defineConfig({
                 entryFileNames: 'assets/[name]-[hash].js',
             },
         },
+    },
+    esbuild: {
+        target: 'es2015'
     },
 });
