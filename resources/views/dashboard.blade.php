@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app', ['active' => 'projects'])
 
 @section('content')
 <div class="page-header">

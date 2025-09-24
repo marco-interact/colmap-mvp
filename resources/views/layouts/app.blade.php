@@ -32,54 +32,7 @@
         </button>
 
         <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="logo">
-                DoMapping
-            </div>
-
-            <div class="user-info">
-                <div class="avatar">
-                    {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 2)) }}
-                </div>
-                <div class="user-details">
-                    <div class="name">{{ Auth::user()->name ?? 'Usuario' }}</div>
-                    <div class="role">Profesional</div>
-                </div>
-            </div>
-
-            <nav class="nav-menu">
-                <ul>
-                    <li class="nav-item">
-                        <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                            <i data-lucide="folder" class="icon"></i>
-                            Mis Proyectos
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('projects.recent') }}" class="nav-link {{ request()->routeIs('projects.recent') ? 'active' : '' }}">
-                            <i data-lucide="clock" class="icon"></i>
-                            Recientes
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('settings') }}" class="nav-link {{ request()->routeIs('settings') ? 'active' : '' }}">
-                            <i data-lucide="settings" class="icon"></i>
-                            Configuración
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('help') }}" class="nav-link {{ request()->routeIs('help') ? 'active' : '' }}">
-                            <i data-lucide="help-circle" class="icon"></i>
-                            Ayuda
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-
-            <div class="version-info">
-                Demo Version
-            </div>
-        </aside>
+        <x-sidebar :active="$active ?? 'projects'" />
 
         <!-- Main Content -->
         <main class="main-content">
