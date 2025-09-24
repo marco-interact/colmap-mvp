@@ -212,6 +212,7 @@ class MockDatabase {
         dense_cloud: '/storage/workspace-1/user-1/project-1/scan-1/dense/fused.ply',
         mesh: '/storage/workspace-1/user-1/project-1/scan-1/dense/meshed-poisson.ply',
         thumbnails: [
+          '/api/assets/sample-scan-thumbnail.jpg',
           '/storage/workspace-1/user-1/project-1/scan-1/thumbnails/sparse.jpg',
           '/storage/workspace-1/user-1/project-1/scan-1/thumbnails/dense.jpg',
           '/storage/workspace-1/user-1/project-1/scan-1/thumbnails/mesh.jpg'
