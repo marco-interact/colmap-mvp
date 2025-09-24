@@ -12,41 +12,60 @@ interface ViewerPageProps {
 export default function ViewerPage({ params }: ViewerPageProps) {
   // Get scan data to determine the correct model URL
   const scan = mockDB.getScanById(params.scanId)
-  let modelUrl = '/models/sample.ply' // Fallback
+  let modelUrl = '/models/sample.ply' // Default fallback
   let isOptimized = false
   
   if (scan && scan.status === 'completed') {
-    // Priority order: Open3D optimized > COLMAP dense > COLMAP mesh > COLMAP sparse
-    const colmapWorkerUrl = process.env.COLMAP_WORKER_URL || 'http://localhost:8001'
+    // For newly created scans, always use the sample model for immediate viewing
+    // In production, this would check if actual COLMAP models exist
+    const isNewScan = Date.now() - new Date(scan.created_at).getTime() < 5 * 60 * 1000 // Created within last 5 minutes
     
-    // Try Open3D optimized models first
-    const optimizedPointCloudUrl = `${colmapWorkerUrl}/optimized/${params.id}/pointcloud`
-    const optimizedMeshUrl = `${colmapWorkerUrl}/optimized/${params.id}/mesh`
-    
-    // For demo purposes, we'll use the sample model but in production this would check
-    // if optimized models exist and are available
-    if (scan.models.dense_cloud) {
-      modelUrl = getViewerModelUrl(scan.workspace_id, scan.user_id, params.id, params.scanId, 'dense')
-      isOptimized = false // Will be optimized by Open3D in background
-    } else if (scan.models.mesh) {
-      modelUrl = getViewerModelUrl(scan.workspace_id, scan.user_id, params.id, params.scanId, 'mesh')
+    if (isNewScan) {
+      // Use sample model for immediate viewing of new scans
+      modelUrl = '/models/sample.ply'
       isOptimized = false
-    } else if (scan.models.sparse_cloud) {
-      modelUrl = getViewerModelUrl(scan.workspace_id, scan.user_id, params.id, params.scanId, 'sparse')
-      isOptimized = false
+    } else {
+      // For older scans, try to use actual COLMAP models
+      const colmapWorkerUrl = process.env.COLMAP_WORKER_URL || 'http://localhost:8001'
+      
+      // Try Open3D optimized models first
+      const optimizedPointCloudUrl = `${colmapWorkerUrl}/optimized/${params.id}/pointcloud`
+      const optimizedMeshUrl = `${colmapWorkerUrl}/optimized/${params.id}/mesh`
+      
+      // Check if actual COLMAP models exist
+      if (scan.models.dense_cloud) {
+        modelUrl = getViewerModelUrl(scan.workspace_id, scan.user_id, params.id, params.scanId, 'dense')
+        isOptimized = false // Will be optimized by Open3D in background
+      } else if (scan.models.mesh) {
+        modelUrl = getViewerModelUrl(scan.workspace_id, scan.user_id, params.id, params.scanId, 'mesh')
+        isOptimized = false
+      } else if (scan.models.sparse_cloud) {
+        modelUrl = getViewerModelUrl(scan.workspace_id, scan.user_id, params.id, params.scanId, 'sparse')
+        isOptimized = false
+      }
     }
   }
 
   return (
     <div className="w-full h-screen relative">
-      {/* Open3D Optimization Status Banner */}
+      {/* Processing Status Banner */}
       {!isOptimized && (
         <div className="absolute top-4 left-4 right-4 z-10 bg-blue-600/90 backdrop-blur-sm text-white px-4 py-3 rounded-lg shadow-lg">
           <div className="flex items-center gap-3">
             <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
             <div>
-              <div className="font-medium">Open3D Optimization in Progress</div>
-              <div className="text-sm opacity-90">Processing your 3D model for optimal web viewing...</div>
+              <div className="font-medium">
+                {scan && Date.now() - new Date(scan.created_at).getTime() < 5 * 60 * 1000 
+                  ? 'COLMAP Processing in Progress' 
+                  : 'Open3D Optimization in Progress'
+                }
+              </div>
+              <div className="text-sm opacity-90">
+                {scan && Date.now() - new Date(scan.created_at).getTime() < 5 * 60 * 1000
+                  ? 'Generating 3D model from your video...'
+                  : 'Processing your 3D model for optimal web viewing...'
+                }
+              </div>
             </div>
           </div>
         </div>

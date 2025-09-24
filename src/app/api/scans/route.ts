@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
             dense_cloud: `/storage/${workspace.id}/${user.id}/${projectId}/${scanId}/dense/fused.ply`,
             mesh: `/storage/${workspace.id}/${user.id}/${projectId}/${scanId}/mesh/meshed-poisson.ply`,
             thumbnails: [
-              `/storage/${workspace.id}/${user.id}/${projectId}/${scanId}/thumbnails/dense.jpg`
+              `/api/assets/sample-scan-thumbnail.jpg`
             ]
           },
           frame_count: Math.floor(30 * frameRate), // Approximate based on 30s video
