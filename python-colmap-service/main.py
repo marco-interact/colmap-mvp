@@ -83,20 +83,21 @@ async def root():
         "service": "COLMAP 3D Reconstruction Service",
         "status": "running",
         "version": "1.0.0",
-        "colmap_available": shutil.which("colmap") is not None
+        "colmap_available": False,  # COLMAP not available on Vercel
+        "note": "Service running on Vercel serverless environment"
     }
 
 @app.get("/health")
 async def health_check():
     """Detailed health check"""
-    colmap_path = shutil.which("colmap")
     return {
         "status": "healthy",
-        "colmap_installed": colmap_path is not None,
-        "colmap_path": colmap_path,
+        "colmap_installed": False,  # COLMAP not available on Vercel
+        "colmap_path": None,
         "upload_dir": str(UPLOAD_DIR.absolute()),
         "output_dir": str(OUTPUT_DIR.absolute()),
-        "active_jobs": len([j for j in jobs.values() if j.status == "processing"])
+        "active_jobs": len([j for j in jobs.values() if j.status == "processing"]),
+        "note": "COLMAP processing not available on Vercel serverless environment"
     }
 
 @app.post("/upload-video")
