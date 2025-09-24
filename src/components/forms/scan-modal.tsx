@@ -124,6 +124,7 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
         setTimeout(() => {
           onClose()
           // Navigate to 3D viewer with scan data
+          console.log('Navigating to viewer:', `/projects/${projectId}/scans/${data.data.id}/viewer`)
           router.push(`/projects/${projectId}/scans/${data.data.id}/viewer`)
         }, 1000)
         
