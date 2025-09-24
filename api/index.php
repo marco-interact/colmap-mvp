@@ -94,9 +94,24 @@ function initializeDatabase($app) {
                     ip_address TEXT,
                     user_agent TEXT,
                     payload TEXT NOT NULL,
-                    last_activity INTEGER NOT NULL,
-                    INDEX(user_id),
-                    INDEX(last_activity)
+                    last_activity INTEGER NOT NULL
+                );
+                
+                CREATE INDEX IF NOT EXISTS sessions_user_id_index ON sessions(user_id);
+                CREATE INDEX IF NOT EXISTS sessions_last_activity_index ON sessions(last_activity);
+                
+                CREATE TABLE IF NOT EXISTS cache (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    expiration INTEGER NOT NULL
+                );
+                
+                CREATE INDEX IF NOT EXISTS cache_expiration_index ON cache(expiration);
+                
+                CREATE TABLE IF NOT EXISTS cache_locks (
+                    key TEXT PRIMARY KEY,
+                    owner TEXT NOT NULL,
+                    expiration INTEGER NOT NULL
                 );
             ');
             
@@ -166,6 +181,11 @@ try {
     $_ENV['VIEW_COMPILED_PATH'] = '/tmp/views';
     $_ENV['CACHE_DRIVER'] = 'array';
     $_ENV['SESSION_DRIVER'] = 'cookie';
+    $_ENV['CACHE_STORE'] = 'array';
+    
+    // Force cache driver to array in all config contexts
+    putenv('CACHE_DRIVER=array');
+    putenv('CACHE_STORE=array');
 
     // Check if autoload exists
     $autoloadPath = $basePath . '/vendor/autoload.php';
