@@ -276,7 +276,19 @@ p {
   .header-actions {
     display: flex;
     align-items: center;
-    gap: @spacing-md;
+    gap: @spacing-lg;
+    
+    .search-input {
+      flex: 1;
+      max-width: 320px;
+    }
+    
+    .btn-primary {
+      white-space: nowrap;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 12px 20px;
+    }
   }
 }
 
@@ -340,8 +352,9 @@ p {
 // Project Cards
 .projects-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: @spacing-xl;
+  margin-top: @spacing-xl;
 }
 
 .project-card {
