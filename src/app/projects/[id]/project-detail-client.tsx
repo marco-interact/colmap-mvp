@@ -9,6 +9,7 @@ import { ProcessingStatus } from '@/components/ui/processing-status'
 import { ModelViewer } from '@/components/3d/model-viewer'
 import { User } from '@/lib/auth'
 import { toast } from '@/components/ui/toaster'
+import { useRouter } from 'next/navigation'
 
 interface Project {
   id: string
@@ -53,6 +54,7 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
   const [scans, setScans] = useState<Scan[]>([])
   const [isScanModalOpen, setIsScanModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     fetchProject()
@@ -311,14 +313,22 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
               marginTop: 'var(--spacing-xl)'
             }}>
               {scans.map((scan) => (
-                <div key={scan.id} style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-primary)',
-                  borderRadius: 'var(--radius-xl)',
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }} className="project-card animate-fade-in">
+                <div 
+                  key={scan.id} 
+                  onClick={() => {
+                    // Navigate to 3D viewer for the scan
+                    router.push(`/projects/${projectId}/scans/${scan.id}/viewer`)
+                  }}
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-primary)',
+                    borderRadius: 'var(--radius-xl)',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }} 
+                  className="scan-card animate-fade-in"
+                >
                   <div style={{
                     width: '100%',
                     height: '180px',
@@ -396,12 +406,61 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 'var(--spacing-xs)',
-                      color: 'var(--text-secondary)',
-                      fontSize: '0.875rem'
+                      justifyContent: 'space-between',
+                      marginBottom: 'var(--spacing-sm)'
                     }}>
-                      <MapPin size={14} />
-                      {project.location}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--spacing-xs)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.875rem'
+                      }}>
+                        <MapPin size={14} />
+                        {project.location}
+                      </div>
+                    </div>
+
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingTop: 'var(--spacing-sm)',
+                      borderTop: '1px solid var(--border-primary)'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--spacing-xs)'
+                      }}>
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: scan.status === 'completed' ? '#10B981' : 
+                                     scan.status === 'processing' ? '#F59E0B' : 
+                                     scan.status === 'failed' ? '#EF4444' : '#6B7280'
+                        }} />
+                        <span style={{ 
+                          fontSize: '0.75rem', 
+                          color: 'var(--text-muted)',
+                          textTransform: 'capitalize'
+                        }}>
+                          {scan.status}
+                        </span>
+                      </div>
+                      {scan.status === 'completed' && (
+                        <span 
+                          className="scan-hover-text"
+                          style={{ 
+                            fontSize: '0.75rem', 
+                            color: 'var(--brand-primary)',
+                            fontWeight: '500'
+                          }}
+                        >
+                          Click to view 3D →
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

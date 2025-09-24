@@ -4,12 +4,47 @@ import { NextRequest, NextResponse } from 'next/server'
 let scans: any[] = [
   {
     id: '1',
-    name: 'Scan 1',
+    name: 'Industrial Facility Scan',
     project_id: '1',
     status: 'completed',
     thumbnail: null,
+    model_url: '/models/sample.ply',
+    processing_options: {
+      quality: 'high',
+      meshing: true,
+      dense_reconstruction: true
+    },
     created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: '2', 
+    name: 'Exterior Walkthrough',
+    project_id: '1',
+    status: 'processing',
+    thumbnail: null,
+    processing_options: {
+      quality: 'medium',
+      meshing: false,
+      dense_reconstruction: true
+    },
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: '3',
+    name: 'Interior Details',
+    project_id: '1', 
+    status: 'completed',
+    thumbnail: null,
+    model_url: '/models/sample.ply',
+    processing_options: {
+      quality: 'extreme',
+      meshing: true,
+      dense_reconstruction: true
+    },
+    created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
   }
 ]
 
