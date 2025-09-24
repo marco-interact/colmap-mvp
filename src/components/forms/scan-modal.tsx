@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { X, Upload, FileVideo } from 'lucide-react'
 import { toast } from '@/components/ui/toaster'
 import { useRouter } from 'next/navigation'
+import { scanProcessingMapper, ScanProcessingConfig } from '@/utils/scanProcessingMapper'
 
 interface ScanModalProps {
   isOpen: boolean
@@ -36,6 +37,20 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+
+  // Initialize processing mapper when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Register callback for COLMAP processing
+      scanProcessingMapper.registerCallback('colmap-processing', (config: ScanProcessingConfig) => {
+        console.log('🎯 COLMAP processing triggered:', config)
+        // The actual processing is handled by the form submission
+      })
+      
+      // Initialize mapper
+      scanProcessingMapper.initialize()
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -91,6 +106,20 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
       toast.error(`File size (${Math.round(fileSizeMB)}MB) exceeds the 100MB limit. Please use a smaller video file.`)
       return
     }
+
+    // Create processing configuration
+    const processingConfig: ScanProcessingConfig = {
+      projectId,
+      scanName: formData.name,
+      videoFile: formData.video,
+      quality: formData.quality,
+      denseReconstruction: formData.denseReconstruction,
+      meshing: formData.meshing,
+      frameRate: formData.frameRate
+    }
+
+    // Trigger processing mapper
+    scanProcessingMapper.triggerProcessing(processingConfig)
 
     setIsLoading(true)
     setProcessingState({ stage: 'uploading', progress: 0, message: 'Preparing upload...' })
@@ -229,8 +258,18 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
   }
 
   return (
-    <div className="modal-overlay" onClick={handleOverlayClick}>
-      <div className="modal animate-slide-up" style={{ maxWidth: '600px', borderRadius: '20px' }}>
+    <div 
+      id="scan-modal-overlay"
+      className="modal-overlay" 
+      onClick={handleOverlayClick}
+      data-modal="scan-creation"
+    >
+      <div 
+        id="scan-modal-content"
+        className="modal animate-slide-up" 
+        style={{ maxWidth: '600px', borderRadius: '20px' }}
+        data-modal-content="scan-creation"
+      >
         <div className="modal-header" style={{ position: 'relative', borderBottom: 'none', paddingBottom: 0 }}>
           <h2 className="modal-title" style={{ 
             fontSize: '1.75rem', 
@@ -242,7 +281,14 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
           </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-form" style={{ gap: 'var(--spacing-xl)' }}>
+        <form 
+          id="scan-creation-form"
+          data-action="create-scan"
+          data-project-id={projectId}
+          onSubmit={handleSubmit} 
+          className="modal-form" 
+          style={{ gap: 'var(--spacing-xl)' }}
+        >
           <div className="modal-form-group">
             <div style={{ 
               display: 'flex', 
@@ -326,12 +372,14 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
               onClick={() => fileInputRef.current?.click()}
             >
               <input
+                id="video-file-input"
                 ref={fileInputRef}
                 type="file"
                 accept="video/*"
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
                 disabled={isLoading}
+                data-input="video-upload"
               />
               
               {formData.video ? (
@@ -403,6 +451,7 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
 
           <div style={{ marginTop: 'var(--spacing-2xl)' }}>
             <button
+              id="generate-scan-button"
               type="submit"
               className="btn btn-primary"
               disabled={isLoading || !formData.video}
@@ -438,14 +487,17 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
               )}
               
               {/* Button content */}
-              <div style={{ 
-                position: 'relative', 
-                zIndex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 'var(--spacing-sm)'
-              }}>
+              <div 
+                data-button-content="generate-scan"
+                style={{ 
+                  position: 'relative', 
+                  zIndex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 'var(--spacing-sm)'
+                }}
+              >
                 {isLoading ? (
                   <>
                     <div style={{
@@ -456,8 +508,12 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
                       borderRadius: '50%',
                       animation: 'spin 1s linear infinite'
                     }} />
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <span>{processingState.message}</span>
+                    <div 
+                      data-processing-state={processingState.stage}
+                      data-processing-progress={processingState.progress}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                    >
+                      <span data-processing-message>{processingState.message}</span>
                       <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
                         {Math.round(processingState.progress)}%
                       </span>
