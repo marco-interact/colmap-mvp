@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // DoMapping Brand Colors (migrated from LESS)
+        // Colmap App Brand Colors (migrated from LESS)
         brand: {
           primary: '#4ECDC4',   // Turquoise accent
           secondary: '#1a1a1a', // Dark background

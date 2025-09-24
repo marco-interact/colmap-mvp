@@ -61,7 +61,7 @@ export function Sidebar({ user }: SidebarProps) {
       {/* Brand Header */}
       <div className="sidebar-header">
         <Link href="/dashboard" className="sidebar-brand">
-          DoMapping
+          Colmap App
         </Link>
       </div>
 

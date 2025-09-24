@@ -1,4 +1,4 @@
-# DoMapping - 3D Reconstruction Platform
+# Colmap App - 3D Reconstruction Platform
 
 A modern Next.js 14 application for 3D reconstruction using COLMAP, built with TypeScript and TailwindCSS.
 
@@ -6,7 +6,7 @@ A modern Next.js 14 application for 3D reconstruction using COLMAP, built with T
 
 - **Modern Tech Stack**: Next.js 14, TypeScript, TailwindCSS
 - **3D Reconstruction**: COLMAP 3.12.6 integration for professional photogrammetry
-- **Responsive Design**: Mobile-first design matching DoMapping brand
+- **Responsive Design**: Mobile-first design matching Colmap App brand
 - **Real-time Processing**: Background job processing with status updates
 - **Interactive 3D Viewer**: WebGL-based viewer with measurement tools
 - **Project Management**: Comprehensive project and scan management
@@ -239,4 +239,4 @@ For support and questions:
 
 ---
 
-Built with ❤️ by the DoMapping team using modern web technologies and COLMAP 3D reconstruction.
+Built with ❤️ by the Colmap App team using modern web technologies and COLMAP 3D reconstruction.

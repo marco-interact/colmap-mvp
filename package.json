@@ -2,7 +2,7 @@
   "name": "colmap-app",
   "version": "2.0.0",
   "private": true,
-  "description": "DoMapping - 3D Reconstruction Platform with COLMAP",
+  "description": "Colmap App - 3D Reconstruction Platform with COLMAP",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

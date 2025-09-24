@@ -228,7 +228,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
                           objectFit: 'cover'
                         }} />
                       ) : (
-                        // 3D Building Mockup matching DoMapping design
+                        // 3D Building Mockup matching Colmap App design
                         <div style={{
                           background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)',
                           width: '100%',

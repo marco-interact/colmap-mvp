@@ -52,7 +52,7 @@ export default function LoginPage() {
     <div className="auth-container">
       <div className="auth-card animate-fade-in">
         <div className="auth-header">
-          <h1 className="auth-logo">DoMapping</h1>
+          <h1 className="auth-logo">Colmap App</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">

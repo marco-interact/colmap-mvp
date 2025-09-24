@@ -199,7 +199,7 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
               </span>
             </div>
             
-            {/* File Upload Area - DoMapping Style */}
+            {/* File Upload Area - Colmap App Style */}
             <div
               style={{
                 border: '2px dotted var(--border-primary)',

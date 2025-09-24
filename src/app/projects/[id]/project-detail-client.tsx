@@ -303,7 +303,7 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
               </button>
             </div>
           ) : (
-            // Scans grid - DoMapping style
+            // Scans grid - Colmap App style
             <div style={{ 
               display: 'grid', 
               gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
@@ -340,7 +340,7 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
                         objectFit: 'cover'
                       }} />
                     ) : (
-                      // Checkerboard placeholder matching DoMapping design
+                      // Checkerboard placeholder matching Colmap App design
                       <div style={{
                         background: '#f0f0f0',
                         width: '100%',

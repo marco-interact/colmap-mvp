@@ -15,7 +15,7 @@ export default function HomePage() {
           </div>
           
           <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-text-primary via-brand-primary to-text-primary bg-clip-text text-transparent">
-            DoMapping
+            Colmap App
           </h1>
           
           <p className="text-xl text-text-secondary mb-8 leading-relaxed">
@@ -79,7 +79,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-16 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Start Creating?</h2>
           <p className="text-text-secondary mb-8 max-w-2xl mx-auto">
-            Join thousands of professionals using DoMapping for architectural 
+            Join thousands of professionals using Colmap App for architectural 
             documentation, site surveys, and 3D model creation.
           </p>
           <Button asChild size="lg">
