@@ -1,41 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
-// Mock database - replace with Prisma/Supabase
+// Mock database - simplified to one functional project
 let projects: any[] = [
   {
     id: '1',
-    name: 'ITECSA Nave Industrial',
-    description: 'Render de sitio de obra para Desarrollo Industrial',
-    location: 'Playa del Carmen',
+    name: 'Demo Project',
+    description: 'Sample project for testing COLMAP 3D reconstruction',
+    location: 'San Francisco, CA',
     user_id: '1',
-    status: 'completed',
+    status: 'active',
     settings: {
       space_type: 'industrial',
       project_type: 'reconstruction',
-      quality: 'medium'
+      quality: 'high'
     },
     thumbnail: '/api/assets/sample-industrial.jpg',
     total_scans: 1,
     created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     last_processed_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: '2', 
-    name: 'Casa Residencial Moderna',
-    description: 'Escaneo 3D completo para documentación arquitectónica',
-    location: 'Cancún, Quintana Roo',
-    user_id: '1',
-    status: 'processing',
-    settings: {
-      space_type: 'residential',
-      project_type: 'documentation',
-      quality: 'high'
-    },
-    total_scans: 0,
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   }
 ]
 

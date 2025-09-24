@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { addScan, getNextScanId } from '@/lib/mockData'
 
 // Mock scans data (shared with projects/[id]/scans)
 let scans: any[] = [
@@ -50,13 +51,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create new scan
+    // Create new scan - for demo, make it immediately completed
     const newScan: any = {
-      id: (scans.length + 1).toString(),
+      id: getNextScanId(),
       name,
       project_id: projectId,
-      status: 'processing',
+      status: 'completed', // Immediately completed for demo
       thumbnail: null,
+      model_url: '/models/sample.ply', // Use sample PLY file
       video_filename: video.name,
       video_size: video.size,
       processing_options: {
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     }
 
-    scans.push(newScan)
+    addScan(newScan)
 
     // Start COLMAP processing pipeline
     try {
