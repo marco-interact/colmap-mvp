@@ -58,7 +58,9 @@
         <!-- Main Content -->
         <main class="main-content">
             @yield('topbar')
-            @yield('content')
+            <div class="content-wrapper">
+                @yield('content')
+            </div>
         </main>
     </div>
 
@@ -181,6 +183,32 @@
 
         // Update on resize
         window.addEventListener('resize', updateResponsiveClasses);
+        
+        // Global modal functions
+        window.openModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+        };
+        
+        window.closeModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        };
+        
+        // Close modal when clicking overlay
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                const modal = event.target;
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
     </script>
     
     @stack('scripts')

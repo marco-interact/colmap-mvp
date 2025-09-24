@@ -91,7 +91,7 @@
             <button type="button" class="btn-secondary" onclick="closeModal('create-project-modal')">
                 Cancelar
             </button>
-            <button type="button" class="btn-primary btn-full-width" id="submit-project" onclick="submitCreateProject()">
+            <button type="button" class="btn-primary btn-full-width" id="submit-project" onclick="submitCreateProject()" disabled>
                 CREAR PROYECTO
             </button>
         </div>

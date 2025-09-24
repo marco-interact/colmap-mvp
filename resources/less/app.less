@@ -325,9 +325,20 @@ a {
     flex: 1;
     margin-left: 280px;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     
     @media (max-width: @mobile) {
         margin-left: 0;
+    }
+}
+
+.content-wrapper {
+    flex: 1;
+    padding: @spacing-2xl;
+    
+    @media (max-width: @mobile) {
+        padding: @spacing-lg;
     }
 }
 

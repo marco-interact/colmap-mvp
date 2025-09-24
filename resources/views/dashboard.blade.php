@@ -28,6 +28,36 @@
 
 @push('scripts')
 <script>
+// Form validation
+function validateProjectForm() {
+    const form = document.getElementById('create-project-form');
+    const requiredFields = form.querySelectorAll('[required]');
+    const submitBtn = document.getElementById('submit-project');
+    
+    let allValid = true;
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            allValid = false;
+        }
+    });
+    
+    submitBtn.disabled = !allValid;
+}
+
+// Add event listeners for form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('create-project-form');
+    if (form) {
+        const inputs = form.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+            input.addEventListener('input', validateProjectForm);
+            input.addEventListener('change', validateProjectForm);
+        });
+        
+        // Initial validation
+        validateProjectForm();
+    }
+});
 
 function submitCreateProject() {
     const form = document.getElementById('create-project-form');
