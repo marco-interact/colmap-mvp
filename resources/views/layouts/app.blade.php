@@ -18,6 +18,27 @@
     <!-- Styles -->
     @vite(['resources/less/app.less', 'resources/js/app.js'])
     
+    <!-- Force dark theme styles -->
+    <style>
+        body {
+            background: #111 !important;
+            color: #fff !important;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+        .app-container {
+            background: #111 !important;
+            min-height: 100vh !important;
+        }
+        .sidebar {
+            background: #111 !important;
+            color: #fff !important;
+        }
+        .main-content {
+            background: #111 !important;
+            color: #fff !important;
+        }
+    </style>
+    
     @stack('styles')
 </head>
 <body>

@@ -922,6 +922,48 @@ a {
 }
 
 // ===========================================
+// AUTH LAYOUT STYLES
+// ===========================================
+
+.auth-container {
+    min-height: 100vh;
+    background: @bg-primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: @spacing-lg;
+}
+
+.auth-card {
+    background: @bg-secondary;
+    border: 1px solid @border-primary;
+    border-radius: @radius-2xl;
+    padding: @spacing-3xl;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: @shadow-xl;
+}
+
+.auth-logo {
+    text-align: center;
+    margin-bottom: @spacing-2xl;
+    
+    h1 {
+        font-size: @font-size-3xl;
+        font-weight: @font-weight-bold;
+        color: @brand-primary;
+        margin: 0 0 @spacing-sm 0;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    p {
+        color: @text-secondary;
+        margin: 0;
+        font-size: @font-size-sm;
+    }
+}
+
+// ===========================================
 // UTILITY CLASSES
 // ===========================================
 
