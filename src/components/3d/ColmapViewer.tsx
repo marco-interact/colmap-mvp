@@ -3,7 +3,9 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, Stats } from '@react-three/drei'
+import { OrbitControls, Stats, Html, useProgress } from '@react-three/drei'
+import { Perf } from 'r3f-perf'
+import { useControls } from 'leva'
 import { 
   Play, 
   Pause, 
@@ -29,23 +31,67 @@ interface ColmapViewerProps {
   className?: string
 }
 
-// Point cloud component
+// Enhanced Point Cloud Loader with better progress tracking
+function Loader() {
+  const { progress } = useProgress()
+  return (
+    <Html center>
+      <div style={{ 
+        color: 'white', 
+        fontSize: '14px',
+        background: 'rgba(0,0,0,0.8)',
+        padding: '20px',
+        borderRadius: '10px',
+        textAlign: 'center'
+      }}>
+        Loading COLMAP Point Cloud... {progress.toFixed(1)}%
+        <div style={{
+          width: '200px',
+          height: '4px',
+          background: '#333',
+          borderRadius: '2px',
+          marginTop: '10px',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            width: `${progress}%`,
+            height: '100%',
+            background: 'var(--brand-primary)',
+            borderRadius: '2px',
+            transition: 'width 0.3s ease'
+          }} />
+        </div>
+      </div>
+    </Html>
+  )
+}
+
+// Enhanced Point cloud component with better rendering
 function PointCloudRenderer({ url, visible = true }: { url: string; visible?: boolean }) {
   const meshRef = useRef<THREE.Points>(null)
-  const { setPointCloud, setLoadingProgress, setError } = useViewerStore()
+  const { setPointCloud, setLoadingProgress, setError, settings } = useViewerStore()
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Use Leva controls for point cloud settings
+  const pointCloudControls = useControls('Point Cloud', {
+    size: { value: settings.pointSize, min: 0.1, max: 10, step: 0.1 },
+    density: { value: settings.pointDensity, min: 0.1, max: 2, step: 0.1 },
+    visible: visible
+  })
 
   useEffect(() => {
     if (!url || !visible) return
 
     let cancelled = false
+    setIsLoading(true)
 
     const loadPointCloud = async () => {
       try {
         const pointCloud = await PointCloudLoader.load(
           url,
           {
-            pointSize: 2.0,
-            maxPoints: 1000000, // Limit for performance
+            pointSize: pointCloudControls.size,
+            maxPoints: Math.floor(1000000 * pointCloudControls.density),
             useVertexColors: true
           },
           (progress) => {
@@ -59,10 +105,12 @@ function PointCloudRenderer({ url, visible = true }: { url: string; visible?: bo
           meshRef.current.geometry = pointCloud.geometry
           meshRef.current.material = pointCloud.material
           setPointCloud(pointCloud)
+          setIsLoading(false)
         }
       } catch (error) {
         if (!cancelled) {
           setError(error instanceof Error ? error.message : 'Failed to load point cloud')
+          setIsLoading(false)
         }
       }
     }
@@ -72,14 +120,29 @@ function PointCloudRenderer({ url, visible = true }: { url: string; visible?: bo
     return () => {
       cancelled = true
     }
-  }, [url, visible, setPointCloud, setLoadingProgress, setError])
+  }, [url, visible, pointCloudControls.size, pointCloudControls.density])
 
-  if (!visible) return null
+  // Update point size when controls change
+  useEffect(() => {
+    if (meshRef.current && meshRef.current.material instanceof THREE.PointsMaterial) {
+      meshRef.current.material.size = pointCloudControls.size
+      meshRef.current.material.needsUpdate = true
+    }
+  }, [pointCloudControls.size])
+
+  if (!pointCloudControls.visible || !visible) return null
+  if (isLoading) return <Loader />
 
   return (
     <points ref={meshRef}>
       <bufferGeometry />
-      <pointsMaterial size={2} sizeAttenuation vertexColors />
+      <pointsMaterial 
+        size={pointCloudControls.size} 
+        sizeAttenuation 
+        vertexColors 
+        transparent
+        opacity={0.8}
+      />
     </points>
   )
 }

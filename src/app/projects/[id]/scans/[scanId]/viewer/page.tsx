@@ -1,4 +1,4 @@
-import { ColmapViewer } from '@/components/3d/ColmapViewer'
+import { ProductionViewer } from '@/components/viewer/ProductionViewer'
 
 interface ViewerPageProps {
   params: {
@@ -10,12 +10,14 @@ interface ViewerPageProps {
 export default function ViewerPage({ params }: ViewerPageProps) {
   return (
     <div className="w-full h-screen">
-      <ColmapViewer 
+      <ProductionViewer 
         projectId={params.id} 
         scanId={params.scanId}
         onClose={() => {
           window.history.back()
         }}
+        enableAllFeatures={true}
+        autoLoad={true}
       />
     </div>
   )
