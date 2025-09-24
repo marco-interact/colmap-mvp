@@ -154,7 +154,7 @@ function AdvancedPointCloudRenderer({
         }
       } catch (error) {
         console.error('Failed to load point cloud:', error)
-        toast.error(\`Failed to load point cloud: \${error}\`)
+        toast.error(`Failed to load point cloud: ${error}`)
       }
     }
 
@@ -246,7 +246,7 @@ function AdvancedMeshRenderer({
         }
       } catch (error) {
         console.error('Failed to load mesh:', error)
-        toast.error(\`Failed to load mesh: \${error}\`)
+        toast.error(`Failed to load mesh: ${error}`)
       }
     }
 
@@ -502,18 +502,18 @@ function AdvancedControlsPanel({
 
   const handleExport = useCallback(async (format: string) => {
     try {
-      toast.info(\`Exporting as \${format.toUpperCase()}...\`)
+      toast.info(`Exporting as ${format.toUpperCase()}...`)
       // Implementation would use our PointCloudExporter
       const exporter = new PointCloudExporter()
       // Export logic here
-      toast.success(\`Successfully exported as \${format.toUpperCase()}\`)
+      toast.success(`Successfully exported as ${format.toUpperCase()}`)
     } catch (error) {
-      toast.error(\`Export failed: \${error}\`)
+      toast.error(`Export failed: ${error}`)
     }
   }, [])
 
   return (
-    <div className={`advanced-controls \${isMinimized ? 'minimized' : ''}\`}>
+    <div className={`advanced-controls ${isMinimized ? 'minimized' : ''}`}>
       {/* Header */}
       <div className="controls-header">
         <h3>Production 3D Viewer</h3>
@@ -543,7 +543,7 @@ function AdvancedControlsPanel({
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
-                className={`tab \${activeTab === id ? 'active' : ''}\`}
+                className={`tab ${activeTab === id ? 'active' : ''}`}
                 onClick={() => setActiveTab(id as any)}
               >
                 <Icon size={14} />
@@ -596,7 +596,7 @@ function AdvancedControlsPanel({
                       </div>
                       <div className="asset-controls">
                         <button
-                          className={`btn-icon \${asset.visible ? 'active' : ''}\`}
+                          className={`btn-icon ${asset.visible ? 'active' : ''}`}
                           onClick={() => {
                             const updatedAssets = viewerState.assets.map(a =>
                               a.id === asset.id ? { ...a, visible: !a.visible } : a
@@ -618,21 +618,21 @@ function AdvancedControlsPanel({
                 <h4>Measurement Tools</h4>
                 <div className="measurement-tools">
                   <button
-                    className={`btn-tool \${measurementMode === 'distance' ? 'active' : ''}\`}
+                    className={`btn-tool ${measurementMode === 'distance' ? 'active' : ''}`}
                     onClick={() => setMeasurementMode(measurementMode === 'distance' ? 'none' : 'distance')}
                   >
                     <Ruler size={16} />
                     Distance
                   </button>
                   <button
-                    className={`btn-tool \${measurementMode === 'area' ? 'active' : ''}\`}
+                    className={`btn-tool ${measurementMode === 'area' ? 'active' : ''}`}
                     onClick={() => setMeasurementMode(measurementMode === 'area' ? 'none' : 'area')}
                   >
                     <Square size={16} />
                     Area
                   </button>
                   <button
-                    className={`btn-tool \${measurementMode === 'none' ? 'active' : ''}\`}
+                    className={`btn-tool ${measurementMode === 'none' ? 'active' : ''}`}
                     onClick={() => setMeasurementMode('none')}
                   >
                     <MousePointer2 size={16} />
@@ -976,7 +976,7 @@ export function ProductionViewer({
 
   if (viewerState.isLoading) {
     return (
-      <div className={`production-viewer loading \${className}\`}>
+      <div className={`production-viewer loading ${className}`}>
         <div className="loading-screen">
           <div className="loading-spinner" />
           <h3>Loading Production 3D Viewer</h3>
@@ -984,7 +984,7 @@ export function ProductionViewer({
           <div className="progress-bar">
             <div 
               className="progress-fill" 
-              style={{ width: \`\${viewerState.loadingProgress}%\` }} 
+              style={{ width: `${viewerState.loadingProgress}%` }} 
             />
           </div>
         </div>
@@ -993,7 +993,7 @@ export function ProductionViewer({
   }
 
   return (
-    <div className={`production-viewer \${className}\`}>
+    <div className={`production-viewer ${className}`}>
       <Canvas
         camera={{ position: [5, 5, 5], fov: 75 }}
         style={{ height: '100vh' }}

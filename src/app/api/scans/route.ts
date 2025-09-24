@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       
       const sfmProcessor = new OpenCVReconstruction()
       newScan.processing_jobs.push({
-        job_id: \`sfm_\${Date.now()}\`,
+        job_id: `sfm_${Date.now()}`,
         type: 'structure_from_motion',
         status: 'running',
         description: 'SIFT feature extraction and camera pose estimation'
@@ -141,14 +141,14 @@ export async function POST(request: NextRequest) {
       uploadFormData.append('is_360', is360Video.toString())
       uploadFormData.append('processing_options', JSON.stringify(newScan.processing_options))
       
-      const uploadResponse = await fetch(\`\${colmapWorkerUrl}/upload-video\`, {
+      const uploadResponse = await fetch(`${colmapWorkerUrl}/upload-video`, {
         method: 'POST',
         body: uploadFormData
       })
       
       if (uploadResponse.ok) {
         // Start enhanced frame extraction
-        const extractResponse = await fetch(\`\${colmapWorkerUrl}/extract-frames\`, {
+        const extractResponse = await fetch(`${colmapWorkerUrl}/extract-frames`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
           
           // Add Potree conversion job
           newScan.processing_jobs.push({
-            job_id: \`potree_\${Date.now()}\`,
+            job_id: `potree_${Date.now()}`,
             type: 'potree_conversion',
             status: 'pending',
             description: 'Converting point cloud to Potree octree format'
