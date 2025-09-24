@@ -20,68 +20,25 @@
                 <i data-lucide="folder" style="width: 48px; height: 48px;"></i>
             </div>
         @endif
-        
-        <div class="project-status">
-            <span class="status-badge status-{{ $project->status }}">
-                @switch($project->status)
-                    @case('completed')
-                        <i data-lucide="check-circle"></i>
-                        Completado
-                        @break
-                    @case('processing')
-                        <i data-lucide="loader" class="spin"></i>
-                        Procesando
-                        @break
-                    @case('pending')
-                        <i data-lucide="clock"></i>
-                        Pendiente
-                        @break
-                    @default
-                        <i data-lucide="circle"></i>
-                        {{ ucfirst($project->status) }}
-                @endswitch
-            </span>
-        </div>
     </div>
-
+    
     <div class="project-info">
-        <div class="project-header">
-            <h3 class="project-name">{{ $project->name }}</h3>
-            @if($project->location)
-                <div class="project-location">
-                    <i data-lucide="map-pin"></i>
-                    {{ $project->location }}
-                </div>
-            @endif
+        <div class="project-meta">
+            Actualizado: {{ $project->updated_at->format('d-m-Y') }}
         </div>
-
+        
+        <div class="project-title">{{ $project->name }}</div>
+        
         @if($project->description)
-            <p class="project-description">{{ Str::limit($project->description, 100) }}</p>
+            <div class="project-description">{{ $project->description }}</div>
         @endif
-
-        <div class="project-stats">
-            <div class="stat">
-                <i data-lucide="scan"></i>
-                <span>{{ $project->total_scans }} {{ Str::plural('scan', $project->total_scans) }}</span>
+        
+        @if($project->location)
+            <div class="project-location">
+                <i data-lucide="map-pin" class="icon"></i>
+                {{ $project->location }}
             </div>
-            @if($project->last_processed_at)
-                <div class="stat">
-                    <i data-lucide="calendar"></i>
-                    <span>{{ $project->last_processed_at->diffForHumans() }}</span>
-                </div>
-            @endif
-        </div>
-
-        <div class="project-actions">
-            <button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation(); editProject({{ $project->id }})">
-                <i data-lucide="edit-3"></i>
-                Editar
-            </button>
-            <button type="button" class="btn-primary btn-sm" onclick="event.stopPropagation(); viewProject({{ $project->id }})">
-                <i data-lucide="eye"></i>
-                Ver Detalles
-            </button>
-        </div>
+        @endif
     </div>
 </div>
 

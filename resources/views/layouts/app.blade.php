@@ -36,6 +36,7 @@
 
         <!-- Main Content -->
         <main class="main-content">
+            @yield('topbar')
             @yield('content')
         </main>
     </div>
