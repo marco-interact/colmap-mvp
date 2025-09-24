@@ -738,6 +738,172 @@ body {
 }
 
 /* ============================================
+   3D VIEWER & PROCESSING COMPONENTS
+============================================ */
+
+.scan-viewer-preview {
+  height: 200px !important;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.scan-viewer-preview .viewer-controls {
+  display: none;
+}
+
+.scan-viewer-preview .viewer-info {
+  display: none;
+}
+
+/* Processing Status Enhancements */
+.processing-status {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.processing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.processing-header h4 {
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.processing-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.progress-bar {
+  width: 80px;
+  height: 6px;
+  background: var(--bg-primary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--brand-primary);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 30px;
+}
+
+.processing-jobs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.processing-job {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm);
+  background: var(--bg-primary);
+  border-radius: var(--radius-sm);
+}
+
+.job-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.job-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.job-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.job-progress {
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.processing-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-primary);
+}
+
+.btn-sm {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 0.875rem;
+}
+
+/* Enhanced Project Cards for 3D Content */
+.project-card-image {
+  position: relative;
+  overflow: hidden;
+}
+
+.project-card-image .model-viewer {
+  border-radius: 0;
+}
+
+/* Processing Options Display */
+.processing-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+}
+
+.processing-option-tag {
+  background: var(--bg-primary);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-primary);
+}
+
+/* Status Badge Enhancements */
+.status-badge.processing {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--info);
+  position: relative;
+}
+
+.status-badge.processing::after {
+  content: '';
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--info);
+  animation: pulse-slow 2s infinite;
+}
+
+/* ============================================
    UTILITY CLASSES
 ============================================ */
 

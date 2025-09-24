@@ -21,6 +21,10 @@ export async function POST(request: NextRequest) {
     const name = formData.get('name') as string
     const projectId = formData.get('projectId') as string
     const video = formData.get('video') as File
+    const quality = formData.get('quality') as string || 'medium'
+    const denseReconstruction = formData.get('denseReconstruction') === 'true'
+    const meshing = formData.get('meshing') === 'true'
+    const frameRate = parseInt(formData.get('frameRate') as string) || 1
 
     if (!name || !projectId || !video) {
       return NextResponse.json(
@@ -51,20 +55,65 @@ export async function POST(request: NextRequest) {
       id: (scans.length + 1).toString(),
       name,
       project_id: projectId,
-      status: 'uploaded',
+      status: 'processing',
       thumbnail: null,
       video_filename: video.name,
       video_size: video.size,
+      processing_options: {
+        quality,
+        dense_reconstruction: denseReconstruction,
+        meshing,
+        frame_rate: frameRate
+      },
+      processing_jobs: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
 
     scans.push(newScan)
 
-    // In a real app, you would:
-    // 1. Save the video file to storage (S3, etc.)
-    // 2. Queue a job for COLMAP processing
-    // 3. Update scan status to 'processing'
+    // Start COLMAP processing pipeline
+    try {
+      // First, upload video to COLMAP worker
+      const colmapWorkerUrl = process.env.COLMAP_WORKER_URL || 'http://localhost:8001'
+      
+      const uploadFormData = new FormData()
+      uploadFormData.append('file', video)
+      uploadFormData.append('project_id', projectId)
+      
+      const uploadResponse = await fetch(`${colmapWorkerUrl}/upload-video`, {
+        method: 'POST',
+        body: uploadFormData
+      })
+      
+      if (uploadResponse.ok) {
+        // Start frame extraction
+        const extractResponse = await fetch(`${colmapWorkerUrl}/extract-frames`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: projectId,
+            quality,
+            dense_reconstruction: denseReconstruction,
+            meshing,
+            texturing: false,
+            frame_extraction_rate: frameRate
+          })
+        })
+        
+        if (extractResponse.ok) {
+          const extractData = await extractResponse.json()
+          newScan.processing_jobs.push({
+            job_id: extractData.job_id,
+            type: 'frame_extraction',
+            status: 'running'
+          })
+        }
+      }
+    } catch (error) {
+      console.error('COLMAP processing initiation failed:', error)
+      newScan.status = 'failed'
+    }
     
     return NextResponse.json({
       success: true,

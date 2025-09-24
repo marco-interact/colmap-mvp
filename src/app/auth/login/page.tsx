@@ -7,7 +7,7 @@ import { toast } from '@/components/ui/toaster'
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
-    email: 'test@domapping.com',
+    email: 'test@colmap.app',
     password: 'password'
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -151,7 +151,7 @@ export default function LoginPage() {
               <strong>Demo Credentials:</strong>
             </p>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-              Email: test@domapping.com<br />
+              Email: test@colmap.app<br />
               Password: password
             </p>
           </div>

@@ -14,7 +14,11 @@ interface ScanModalProps {
 export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalProps) {
   const [formData, setFormData] = useState({
     name: 'Scan 2',
-    video: null as File | null
+    video: null as File | null,
+    quality: 'medium' as 'low' | 'medium' | 'high' | 'extreme',
+    denseReconstruction: true,
+    meshing: true,
+    frameRate: 1
   })
   const [isLoading, setIsLoading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
@@ -37,6 +41,10 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
       uploadFormData.append('name', formData.name)
       uploadFormData.append('projectId', projectId)
       uploadFormData.append('video', formData.video)
+      uploadFormData.append('quality', formData.quality)
+      uploadFormData.append('denseReconstruction', formData.denseReconstruction.toString())
+      uploadFormData.append('meshing', formData.meshing.toString())
+      uploadFormData.append('frameRate', formData.frameRate.toString())
 
       const response = await fetch('/api/scans', {
         method: 'POST',
@@ -52,7 +60,11 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
         // Reset form
         setFormData({
           name: 'Scan 2',
-          video: null
+          video: null,
+          quality: 'medium' as 'low' | 'medium' | 'high' | 'extreme',
+          denseReconstruction: true,
+          meshing: true,
+          frameRate: 1
         })
       } else {
         toast.error(data.message || 'Error al crear el scan')
@@ -225,6 +237,87 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
             <p className="modal-form-hint">
               ¿Qué tipos de archivos puedo utilizar?
             </p>
+          </div>
+
+          {/* Processing Options */}
+          <div className="modal-form-group">
+            <label className="modal-form-label">
+              Calidad de Procesamiento
+            </label>
+            <select
+              value={formData.quality}
+              onChange={(e) => setFormData(prev => ({ ...prev, quality: e.target.value as any }))}
+              className="modal-form-select"
+              disabled={isLoading}
+            >
+              <option value="low">Baja (Rápido - 800px)</option>
+              <option value="medium">Media (Equilibrado - 1200px)</option>
+              <option value="high">Alta (Detallado - 1600px)</option>
+              <option value="extreme">Extrema (Máximo detalle - 2400px)</option>
+            </select>
+          </div>
+
+          <div className="modal-form-group">
+            <label className="modal-form-label">
+              Tasa de Extracción de Frames
+            </label>
+            <select
+              value={formData.frameRate}
+              onChange={(e) => setFormData(prev => ({ ...prev, frameRate: parseInt(e.target.value) }))}
+              className="modal-form-select"
+              disabled={isLoading}
+            >
+              <option value={1}>1 frame por segundo (Recomendado)</option>
+              <option value={2}>1 frame cada 2 segundos</option>
+              <option value={5}>1 frame cada 5 segundos</option>
+              <option value={10}>1 frame cada 10 segundos</option>
+            </select>
+          </div>
+
+          <div className="modal-form-group">
+            <label className="modal-form-label">
+              Opciones de Reconstrucción
+            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 'var(--spacing-sm)',
+                color: 'var(--text-secondary)',
+                fontSize: '0.875rem',
+                cursor: 'pointer'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={formData.denseReconstruction}
+                  onChange={(e) => setFormData(prev => ({ ...prev, denseReconstruction: e.target.checked }))}
+                  disabled={isLoading}
+                  style={{
+                    accentColor: 'var(--brand-primary)'
+                  }}
+                />
+                Reconstrucción densa (Más detalle, más tiempo)
+              </label>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 'var(--spacing-sm)',
+                color: 'var(--text-secondary)',
+                fontSize: '0.875rem',
+                cursor: 'pointer'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={formData.meshing}
+                  onChange={(e) => setFormData(prev => ({ ...prev, meshing: e.target.checked }))}
+                  disabled={isLoading}
+                  style={{
+                    accentColor: 'var(--brand-primary)'
+                  }}
+                />
+                Generar malla 3D (Para visualización)
+              </label>
+            </div>
           </div>
 
           <div className="modal-actions">

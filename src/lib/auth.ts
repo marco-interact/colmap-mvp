@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server'
 // Mock user database - replace with real database in production
 const TEST_USER = {
   id: '1',
-  email: 'test@domapping.com',
+  email: 'test@colmap.app',
   password: 'password', // In production, this should be hashed
   name: 'Carlos Martinez',
   role: 'admin' as const,

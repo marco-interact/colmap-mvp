@@ -5,6 +5,8 @@ import { ArrowLeft, Trash2, Plus, MapPin } from 'lucide-react'
 import Link from 'next/link'
 import { Sidebar } from '@/components/layout/sidebar'
 import { ScanModal } from '@/components/forms/scan-modal'
+import { ProcessingStatus } from '@/components/ui/processing-status'
+import { ModelViewer } from '@/components/3d/model-viewer'
 import { User } from '@/lib/auth'
 import { toast } from '@/components/ui/toaster'
 
@@ -25,6 +27,20 @@ interface Scan {
   status: 'uploaded' | 'processing' | 'completed' | 'failed'
   thumbnail?: string
   updated_at: string
+  processing_jobs?: Array<{
+    job_id: string
+    type: string
+    status: string
+    progress?: number
+    message?: string
+  }>
+  processing_options?: {
+    quality: string
+    dense_reconstruction: boolean
+    meshing: boolean
+    frame_rate: number
+  }
+  model_url?: string
 }
 
 interface ProjectDetailClientProps {
@@ -250,7 +266,14 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
               {scans.map((scan) => (
                 <div key={scan.id} className="project-card animate-fade-in">
                   <div className="project-card-image">
-                    {scan.thumbnail ? (
+                    {scan.status === 'completed' && scan.model_url ? (
+                      // Show 3D viewer for completed scans
+                      <ModelViewer
+                        modelUrl={scan.model_url}
+                        modelType={scan.processing_options?.meshing ? 'mesh' : 'pointcloud'}
+                        className="scan-viewer-preview"
+                      />
+                    ) : scan.thumbnail ? (
                       <img src={scan.thumbnail} alt={scan.name} />
                     ) : (
                       // Placeholder for scan thumbnail
@@ -280,8 +303,38 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
                         <span className={`status-badge ${scan.status}`}>
                           {scan.status}
                         </span>
+                        {scan.processing_options && (
+                          <div style={{ 
+                            fontSize: '0.75rem', 
+                            color: 'var(--text-muted)',
+                            marginTop: 'var(--spacing-xs)'
+                          }}>
+                            {scan.processing_options.quality} • 
+                            {scan.processing_options.dense_reconstruction ? ' Dense' : ' Sparse'} • 
+                            {scan.processing_options.meshing ? ' Mesh' : ' Points'}
+                          </div>
+                        )}
                       </div>
                     </div>
+                    
+                    {/* Processing Status */}
+                    {scan.processing_jobs && scan.processing_jobs.length > 0 && (
+                      <ProcessingStatus
+                        scanId={scan.id}
+                        projectId={projectId}
+                        jobs={scan.processing_jobs}
+                        onStatusUpdate={(status, jobs) => {
+                          // Update scan status in local state
+                          setScans(prevScans => 
+                            prevScans.map(s => 
+                              s.id === scan.id 
+                                ? { ...s, status, processing_jobs: jobs }
+                                : s
+                            )
+                          )
+                        }}
+                      />
+                    )}
                     
                     <div className="project-card-meta">
                       <div className="project-card-date">
