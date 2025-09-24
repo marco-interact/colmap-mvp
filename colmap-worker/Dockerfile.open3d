@@ -58,8 +58,9 @@ RUN wget https://github.com/colmap/colmap/archive/refs/tags/3.12.6.tar.gz \
 # Upgrade pip and install Python packages
 RUN python3 -m pip install --upgrade pip setuptools wheel
 
-# Install Open3D and dependencies
+# Install PyCOLMAP, Open3D and dependencies
 RUN python3 -m pip install \
+    pycolmap==0.6.0 \
     open3d==0.19.0 \
     numpy>=1.20.0 \
     opencv-python-headless>=4.5.0 \

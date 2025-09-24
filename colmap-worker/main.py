@@ -23,6 +23,15 @@ import cv2
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Import PyCOLMAP pipeline
+try:
+    from pycolmap_pipeline import PyCOLMAPPipeline
+    PYCOLMAP_AVAILABLE = True
+    logger.info("PyCOLMAP pipeline available")
+except ImportError as e:
+    logger.warning(f"PyCOLMAP pipeline not available: {e}")
+    PYCOLMAP_AVAILABLE = False
+
 # Import Open3D processor
 try:
     from process_with_open3d import Open3DProcessor
@@ -615,67 +624,59 @@ async def extract_frames_task(job_id: str, request: ProcessingRequest):
         jobs[job_id]["updated_at"] = datetime.now()
 
 async def reconstruction_task(job_id: str, request: ProcessingRequest):
-    """Background task for COLMAP reconstruction"""
+    """Background task for COLMAP reconstruction using PyCOLMAP"""
     try:
         jobs[job_id]["status"] = "running"
         jobs[job_id]["updated_at"] = datetime.now()
         
-        output_dir = OUTPUT_DIR / request.project_id
-        images_dir = output_dir / "images"
-        database_path = output_dir / "database.db"
+        if not PYCOLMAP_AVAILABLE:
+            raise Exception("PyCOLMAP is not available. Please install: pip install pycolmap")
         
-        # Check if images exist
-        if not images_dir.exists() or not list(images_dir.glob("*.jpg")):
-            raise Exception("No images found. Please extract frames first.")
+        # Initialize PyCOLMAP pipeline
+        pipeline = PyCOLMAPPipeline(str(OUTPUT_DIR))
         
-        # Feature extraction
-        await colmap_pipeline.feature_extraction(
-            database_path=database_path,
-            images_path=images_dir,
+        # Find the video file for this project
+        project_dir = OUTPUT_DIR / request.project_id
+        video_files = list(project_dir.glob("*.mp4")) + list(project_dir.glob("*.mov")) + list(project_dir.glob("*.avi"))
+        
+        if not video_files:
+            raise Exception("No video file found for this project")
+        
+        video_path = str(video_files[0])
+        logger.info(f"Starting PyCOLMAP reconstruction for video: {video_path}")
+        
+        # Run complete PyCOLMAP pipeline
+        results = await pipeline.run_complete_pipeline(
+            video_path=video_path,
+            project_id=request.project_id,
             quality=request.quality,
+            dense_reconstruction=request.dense_reconstruction,
+            meshing=request.meshing,
+            frame_rate=1.0,  # Default frame rate
             job_id=job_id
         )
         
-        # Feature matching
-        await colmap_pipeline.feature_matching(
-            database_path=database_path,
-            quality=request.quality,
-            job_id=job_id
-        )
-        
-        # Sparse reconstruction
-        await colmap_pipeline.sparse_reconstruction(
-            database_path=database_path,
-            images_path=images_dir,
-            output_path=output_dir,
-            job_id=job_id
-        )
-        
-        results = {"sparse_reconstruction": True}
-        
-        # Dense reconstruction (if requested)
-        if request.dense_reconstruction:
-            await colmap_pipeline.dense_reconstruction(
-                images_path=images_dir,
-                output_path=output_dir,
-                quality=request.quality,
-                job_id=job_id
-            )
-            results["dense_reconstruction"] = True
-        
-        # Meshing (if requested)
-        if request.meshing:
-            await colmap_pipeline.create_mesh(
-                output_path=output_dir,
-                job_id=job_id
-            )
-            results["meshing"] = True
-        
-        jobs[job_id]["status"] = "completed"
-        jobs[job_id]["progress"] = 100
-        jobs[job_id]["message"] = "COLMAP reconstruction completed successfully!"
-        jobs[job_id]["results"] = results
-        jobs[job_id]["updated_at"] = datetime.now()
+        if results['success']:
+            jobs[job_id]["status"] = "completed"
+            jobs[job_id]["progress"] = 100
+            jobs[job_id]["message"] = "PyCOLMAP reconstruction completed successfully!"
+            jobs[job_id]["results"] = results
+            jobs[job_id]["updated_at"] = datetime.now()
+            
+            # Trigger Open3D optimization if available
+            if OPEN3D_AVAILABLE:
+                try:
+                    processor = Open3DProcessor()
+                    optimization_results = processor.process_reconstruction(
+                        str(project_dir),
+                        str(project_dir),
+                        request.project_id
+                    )
+                    logger.info(f"Open3D optimization completed: {optimization_results['status']}")
+                except Exception as e:
+                    logger.warning(f"Open3D optimization failed: {e}")
+        else:
+            raise Exception(f"PyCOLMAP reconstruction failed: {results.get('error', 'Unknown error')}")
         
     except Exception as e:
         logger.error(f"COLMAP reconstruction failed: {e}")
