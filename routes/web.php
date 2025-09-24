@@ -24,6 +24,16 @@ Route::get('/home', function () {
     return redirect('/dashboard');
 });
 
+// 3D Viewer routes
+Route::middleware('auth')->group(function () {
+    Route::get('/viewer/{asset}', function (App\Models\Asset3D $asset) {
+        if (!auth()->user()->canAccessProject($asset->project)) {
+            abort(403, 'Unauthorized');
+        }
+        return view('viewer.index', compact('asset'));
+    })->name('viewer.show');
+});
+
 // Authentication Routes
 Auth::routes();
 

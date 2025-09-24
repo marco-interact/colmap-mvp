@@ -45,6 +45,32 @@ class Project extends Model
     }
 
     /**
+     * Get the 3D assets for the project.
+     */
+    public function assets3D(): HasMany
+    {
+        return $this->hasMany(Asset3D::class);
+    }
+
+    /**
+     * Get the collaborations for the project.
+     */
+    public function collaborations(): HasMany
+    {
+        return $this->hasMany(Collaboration::class);
+    }
+
+    /**
+     * Get the collaborators for the project.
+     */
+    public function collaborators()
+    {
+        return $this->belongsToMany(User::class, 'collaborations')
+            ->withPivot(['role', 'permissions', 'invited_at', 'joined_at', 'invited_by'])
+            ->withTimestamps();
+    }
+
+    /**
      * Get completed scans count
      */
     public function getCompletedScansCountAttribute(): int
