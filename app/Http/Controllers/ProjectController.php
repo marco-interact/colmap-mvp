@@ -60,9 +60,9 @@ class ProjectController extends Controller
         $project = Project::create([
             'name' => $request->name,
             'description' => $request->description,
+            'location' => $request->location,
             'user_id' => Auth::id(),
             'settings' => [
-                'location' => $request->location,
                 'space_type' => $request->space_type,
                 'project_type' => $request->project_type,
                 'quality' => 'medium', // Default quality

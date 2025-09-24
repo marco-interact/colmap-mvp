@@ -54,4 +54,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Project::class);
     }
+
+    /**
+     * Get the scans for the user through projects.
+     */
+    public function scans()
+    {
+        return $this->hasManyThrough(Scan::class, Project::class);
+    }
 }
