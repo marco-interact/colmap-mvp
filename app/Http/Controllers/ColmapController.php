@@ -10,7 +10,12 @@ use Illuminate\Support\Facades\Storage;
 
 class ColmapController extends Controller
 {
-    protected $colmapServiceUrl = 'http://localhost:8001';
+    protected $colmapServiceUrl;
+
+    public function __construct()
+    {
+        $this->colmapServiceUrl = env('COLMAP_SERVICE_URL', 'http://localhost:8001');
+    }
 
     /**
      * Upload video to COLMAP service

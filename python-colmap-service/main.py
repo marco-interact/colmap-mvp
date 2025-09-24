@@ -315,10 +315,7 @@ async def process_colmap_reconstruction(job_id: str, request: ProcessingRequest)
             raise Exception("No images found. Please extract frames first.")
         
         # Initialize COLMAP pipeline
-        pipeline = COLMAPPipeline(
-            images_path=str(images_dir),
-            output_path=str(output_dir)
-        )
+        pipeline = COLMAPPipeline()
         
         # Configure quality settings
         quality_settings = {
@@ -332,51 +329,16 @@ async def process_colmap_reconstruction(job_id: str, request: ProcessingRequest)
         pipeline.max_image_size = request.max_image_size or settings["max_image_size"]
         pipeline.max_num_features = request.max_num_features or settings["max_num_features"]
         
-        # Step 1: Feature extraction
+        # Run the complete COLMAP pipeline
         jobs[job_id].progress = 10
-        jobs[job_id].message = "Extracting features..."
-        pipeline.extract_features()
+        jobs[job_id].message = "Starting COLMAP pipeline..."
         
-        # Step 2: Feature matching
-        jobs[job_id].progress = 30
-        jobs[job_id].message = "Matching features..."
-        pipeline.match_features()
-        
-        # Step 3: Sparse reconstruction
-        jobs[job_id].progress = 50
-        jobs[job_id].message = "Creating sparse reconstruction..."
-        pipeline.sparse_reconstruction()
-        
-        results = {
-            "sparse_model": str(output_dir / "sparse_reconstruction.ply"),
-            "feature_extraction": "completed",
-            "feature_matching": "completed",
-            "sparse_reconstruction": "completed"
-        }
-        
-        # Step 4: Dense reconstruction (optional)
-        if request.dense_reconstruction:
-            jobs[job_id].progress = 70
-            jobs[job_id].message = "Creating dense reconstruction..."
-            pipeline.dense_reconstruction()
-            results["dense_reconstruction"] = "completed"
-            results["dense_model"] = str(output_dir / "dense_reconstruction.ply")
-        
-        # Step 5: Meshing (optional)
-        if request.meshing:
-            jobs[job_id].progress = 85
-            jobs[job_id].message = "Generating mesh..."
-            pipeline.create_mesh()
-            results["meshing"] = "completed"
-            results["mesh_model"] = str(output_dir / "mesh.ply")
-        
-        # Step 6: Texturing (optional)
-        if request.texturing:
-            jobs[job_id].progress = 95
-            jobs[job_id].message = "Applying textures..."
-            pipeline.texture_mesh()
-            results["texturing"] = "completed"
-            results["textured_model"] = str(output_dir / "textured_mesh.obj")
+        # Run the full pipeline asynchronously
+        results = await pipeline.run_full_pipeline(
+            project_id=int(request.project_id),
+            frames_path=images_dir,
+            output_dir=output_dir
+        )
         
         jobs[job_id].status = "completed"
         jobs[job_id].progress = 100

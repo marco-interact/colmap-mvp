@@ -13,10 +13,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create default user
-        User::factory()->create([
+        // Create default user directly
+        User::create([
             'name' => 'Carlos Martinez',
             'email' => 'carlos@domapping.com',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            'email_verified_at' => now(),
         ]);
 
         // Seed projects

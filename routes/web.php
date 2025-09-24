@@ -56,6 +56,7 @@ Route::middleware(['auth'])->group(function () {
     
     // COLMAP Integration Routes
     Route::prefix('colmap')->name('colmap.')->controller(ColmapController::class)->group(function () {
+        Route::get('/health', 'healthCheck')->name('health');
         Route::post('/upload-video', 'uploadVideo')->name('upload-video');
         Route::post('/extract-frames', 'extractFrames')->name('extract-frames');
         Route::post('/start-reconstruction', 'startReconstruction')->name('start-reconstruction');
@@ -84,3 +85,6 @@ Route::get('/health', function () {
         ]
     ]);
 });
+
+// Public COLMAP Health Check
+Route::get('/colmap/health', [ColmapController::class, 'healthCheck']);

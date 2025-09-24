@@ -11,9 +11,6 @@ import logging
 import json
 import shutil
 
-from app.core.config import settings
-from app.models.job import JobType, JobStatus
-
 logger = logging.getLogger(__name__)
 
 
@@ -21,10 +18,11 @@ class COLMAPPipeline:
     """Service for managing COLMAP 3D reconstruction pipeline."""
     
     def __init__(self):
-        self.colmap_binary = settings.COLMAP_BINARY_PATH
-        self.workspace_dir = Path(settings.COLMAP_WORKSPACE_DIR)
-        self.max_image_size = settings.COLMAP_MAX_IMAGE_SIZE
-        self.quality = settings.COLMAP_QUALITY
+        # Use locally installed COLMAP 3.12.6
+        self.colmap_binary = "colmap"  # COLMAP is now in PATH
+        self.workspace_dir = Path("/tmp/colmap_workspace")
+        self.max_image_size = 1600
+        self.quality = "medium"
         
         # COLMAP parameters based on quality setting
         self.quality_params = {
