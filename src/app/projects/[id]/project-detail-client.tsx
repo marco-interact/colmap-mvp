@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ArrowLeft, Trash2, Plus, MapPin } from 'lucide-react'
 import Link from 'next/link'
 import { Sidebar } from '@/components/layout/sidebar'
@@ -29,8 +29,8 @@ interface Scan {
   updated_at: string
   processing_jobs?: Array<{
     job_id: string
-    type: string
-    status: string
+    type: 'frame_extraction' | 'reconstruction'
+    status: 'pending' | 'running' | 'completed' | 'failed'
     progress?: number
     message?: string
   }>
@@ -328,7 +328,7 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
                           setScans(prevScans => 
                             prevScans.map(s => 
                               s.id === scan.id 
-                                ? { ...s, status, processing_jobs: jobs }
+                                ? { ...s, status: status as any, processing_jobs: jobs as any }
                                 : s
                             )
                           )

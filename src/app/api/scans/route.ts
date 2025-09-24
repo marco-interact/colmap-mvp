@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new scan
-    const newScan = {
+    const newScan: any = {
       id: (scans.length + 1).toString(),
       name,
       project_id: projectId,
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         meshing,
         frame_rate: frameRate
       },
-      processing_jobs: [],
+      processing_jobs: [] as any[],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }

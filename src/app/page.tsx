@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, Cube, Upload, Eye, Zap } from 'lucide-react'
+import { ArrowRight, Box, Upload, Eye, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export default function HomePage() {
@@ -10,7 +10,7 @@ export default function HomePage() {
         <div className="text-center max-w-4xl mx-auto">
           <div className="flex justify-center mb-8">
             <div className="p-4 bg-brand-primary/10 rounded-full">
-              <Cube className="w-16 h-16 text-brand-primary" />
+              <Box className="w-16 h-16 text-brand-primary" />
             </div>
           </div>
           

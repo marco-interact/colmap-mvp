@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Search, Plus, MapPin } from 'lucide-react'
 import Link from 'next/link'
 import { Sidebar } from '@/components/layout/sidebar'
@@ -111,7 +111,6 @@ export function DashboardClient({ user }: DashboardClientProps) {
               <p style={{ color: 'var(--text-muted)' }}>Cargando proyectos...</p>
             </div>
           ) : filteredProjects.length === 0 && searchTerm === '' ? (
-            // Empty state
             <div style={{ 
               textAlign: 'center', 
               padding: 'var(--spacing-2xl)',
@@ -149,7 +148,6 @@ export function DashboardClient({ user }: DashboardClientProps) {
               </button>
             </div>
           ) : filteredProjects.length === 0 ? (
-            // No search results
             <div style={{ 
               textAlign: 'center', 
               padding: 'var(--spacing-2xl)',
@@ -158,89 +156,86 @@ export function DashboardClient({ user }: DashboardClientProps) {
               <p>No se encontraron proyectos que coincidan con "{searchTerm}"</p>
             </div>
           ) : (
-            // Project grid
             <div className="projects-grid">
               {filteredProjects.map((project) => (
                 <Link href={`/projects/${project.id}`} key={project.id}>
                   <div className="project-card animate-fade-in">
-                  <div className="project-card-image">
-                    {project.thumbnail ? (
-                      <img src={project.thumbnail} alt={project.name} />
-                    ) : (
-                      // Sample 3D industrial building preview (CSS-generated)
-                      <div style={{
-                        background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        position: 'relative',
-                        overflow: 'hidden'
-                      }}>
+                    <div className="project-card-image">
+                      {project.thumbnail ? (
+                        <img src={project.thumbnail} alt={project.name} />
+                      ) : (
                         <div style={{
-                          width: '80%',
-                          height: '60%',
-                          background: 'linear-gradient(45deg, #4a4a4a, #6a6a6a, #8a8a8a)',
-                          borderRadius: '4px',
+                          background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                           position: 'relative',
-                          transform: 'perspective(100px) rotateX(15deg) rotateY(-10deg)',
-                          boxShadow: '0 10px 20px rgba(0,0,0,0.3)'
+                          overflow: 'hidden'
                         }}>
-                          {/* Industrial building structure */}
                           <div style={{
-                            position: 'absolute',
-                            top: '10%',
-                            left: '20%',
-                            right: '20%',
-                            bottom: '30%',
-                            background: 'linear-gradient(to bottom, #8a7a5a, #6a5a4a)',
-                            borderRadius: '2px'
-                          }} />
-                          <div style={{
-                            position: 'absolute',
-                            top: '15%',
-                            left: '10%',
-                            width: '15%',
-                            height: '40%',
-                            background: '#5a4a3a',
-                            borderRadius: '1px'
-                          }} />
-                          <div style={{
-                            position: 'absolute',
-                            top: '15%',
-                            right: '10%',
-                            width: '15%',
-                            height: '40%',
-                            background: '#5a4a3a',
-                            borderRadius: '1px'
-                          }} />
-                          {/* Green vegetation elements */}
-                          <div style={{
-                            position: 'absolute',
-                            bottom: '0',
-                            left: '0',
-                            right: '0',
-                            height: '20%',
-                            background: 'linear-gradient(to top, #2d5a2d, #3d6a3d)',
-                            borderRadius: '0 0 4px 4px'
-                          }} />
+                            width: '80%',
+                            height: '60%',
+                            background: 'linear-gradient(45deg, #4a4a4a, #6a6a6a, #8a8a8a)',
+                            borderRadius: '4px',
+                            position: 'relative',
+                            transform: 'perspective(100px) rotateX(15deg) rotateY(-10deg)',
+                            boxShadow: '0 10px 20px rgba(0,0,0,0.3)'
+                          }}>
+                            <div style={{
+                              position: 'absolute',
+                              top: '10%',
+                              left: '20%',
+                              right: '20%',
+                              bottom: '30%',
+                              background: 'linear-gradient(to bottom, #8a7a5a, #6a5a4a)',
+                              borderRadius: '2px'
+                            }} />
+                            <div style={{
+                              position: 'absolute',
+                              top: '15%',
+                              left: '10%',
+                              width: '15%',
+                              height: '40%',
+                              background: '#5a4a3a',
+                              borderRadius: '1px'
+                            }} />
+                            <div style={{
+                              position: 'absolute',
+                              top: '15%',
+                              right: '10%',
+                              width: '15%',
+                              height: '40%',
+                              background: '#5a4a3a',
+                              borderRadius: '1px'
+                            }} />
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '0',
+                              left: '0',
+                              right: '0',
+                              height: '20%',
+                              background: 'linear-gradient(to top, #2d5a2d, #3d6a3d)',
+                              borderRadius: '0 0 4px 4px'
+                            }} />
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="project-card-content">
-                    <div className="project-card-header">
-                      <h3 className="project-card-title">{project.name}</h3>
-                      <p className="project-card-description">{project.description}</p>
+                      )}
                     </div>
                     
-                    <div className="project-card-meta">
-                      <div className="project-card-date">
-                        Actualizado: {formatDate(project.updated_at)}
+                    <div className="project-card-content">
+                      <div className="project-card-header">
+                        <h3 className="project-card-title">{project.name}</h3>
+                        <p className="project-card-description">{project.description}</p>
                       </div>
-                      <div className="project-card-location">
-                        <MapPin />
-                        {project.location}
+                      
+                      <div className="project-card-meta">
+                        <div className="project-card-date">
+                          Actualizado: {formatDate(project.updated_at)}
+                        </div>
+                        <div className="project-card-location">
+                          <MapPin />
+                          {project.location}
+                        </div>
                       </div>
                     </div>
                   </div>

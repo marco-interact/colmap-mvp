@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
 import { OrbitControls, PerspectiveCamera, Environment, Grid } from '@react-three/drei'
-import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader'
+import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
 import { Mesh, BufferGeometry, PointsMaterial, Points, Color } from 'three'
 import { 
   RotateCcw, 

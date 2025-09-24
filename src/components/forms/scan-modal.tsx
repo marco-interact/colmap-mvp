@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { X, Upload, FileVideo } from 'lucide-react'
 import { toast } from '@/components/ui/toaster'
 
