@@ -3,6 +3,14 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "installCommand": "npm install",
+  "functions": {
+    "src/app/api/scans/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/upload/route.ts": {
+      "maxDuration": 300
+    }
+  },
   "env": {
     "NODE_ENV": "production",
     "COLMAP_WORKER_URL": "https://colmap-worker.railway.app"

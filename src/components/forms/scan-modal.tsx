@@ -85,10 +85,36 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
       return
     }
 
+    // Check file size first
+    const fileSizeMB = formData.video.size / 1024 / 1024
+    if (fileSizeMB > 50) {
+      toast.error(`File size (${Math.round(fileSizeMB)}MB) exceeds the 50MB limit. Please use a smaller video file.`)
+      return
+    }
+
     setIsLoading(true)
-    setProcessingState({ stage: 'uploading', progress: 0, message: 'Preparando...' })
+    setProcessingState({ stage: 'uploading', progress: 0, message: 'Preparing upload...' })
 
     try {
+      // Check if file can be uploaded
+      const checkResponse = await fetch('/api/upload/presigned-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: formData.video.name,
+          fileSize: formData.video.size,
+          contentType: formData.video.type
+        })
+      })
+
+      const checkData = await checkResponse.json()
+      
+      if (!checkData.success) {
+        toast.error(checkData.message)
+        setIsLoading(false)
+        return
+      }
+
       // Stage 1: Upload simulation
       await simulateProgress('uploading', 2000, 30)
       
@@ -105,6 +131,21 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
         method: 'POST',
         body: uploadFormData,
       })
+
+      // Handle different HTTP status codes
+      if (response.status === 413) {
+        toast.error('File too large for upload. Please use a file smaller than 50MB.')
+        setIsLoading(false)
+        return
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Scan creation failed:', response.status, errorText)
+        toast.error(`Upload failed: ${response.status} ${response.statusText}`)
+        setIsLoading(false)
+        return
+      }
 
       const data = await response.json()
 
@@ -297,12 +338,16 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-md)' }}>
                   <FileVideo size={48} style={{ color: 'var(--success)' }} />
                   <div>
-                    <p style={{ color: 'var(--text-primary)', fontWeight: '500', marginBottom: 'var(--spacing-xs)' }}>
-                      {formData.video.name}
-                    </p>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                      {formatFileSize(formData.video.size)}
-                    </p>
+                        <p style={{ color: 'var(--text-primary)', fontWeight: '500', marginBottom: 'var(--spacing-xs)' }}>
+                          {formData.video.name}
+                        </p>
+                        <p style={{ 
+                          color: formData.video.size > 50 * 1024 * 1024 ? 'var(--error)' : 'var(--text-muted)', 
+                          fontSize: '0.875rem' 
+                        }}>
+                          {formatFileSize(formData.video.size)}
+                          {formData.video.size > 50 * 1024 * 1024 && ' (⚠️ Too large)'}
+                        </p>
                   </div>
                   <button
                     type="button"
@@ -351,8 +396,8 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
               )}
             </div>
             
-            <p className="modal-form-hint" style={{ marginTop: 'var(--spacing-sm)', fontSize: '0.875rem' }}>
-              What file types can I use?
+                <p className="modal-form-hint" style={{ marginTop: 'var(--spacing-sm)', fontSize: '0.875rem' }}>
+              Supported formats: MP4, MOV, AVI (max 50MB for optimal processing)
             </p>
           </div>
 
