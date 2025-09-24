@@ -23,25 +23,25 @@ export function Sidebar({ user }: SidebarProps) {
   const navItems = [
     {
       href: '/dashboard',
-      label: 'Mis Proyectos',
+      label: 'My Projects',
       icon: FolderOpen,
       active: pathname === '/dashboard'
     },
     {
       href: '/dashboard/recent',
-      label: 'Recientes',
+      label: 'Recent',
       icon: Clock,
       active: pathname === '/dashboard/recent'
     },
     {
       href: '/dashboard/settings',
-      label: 'Configuracion',
+      label: 'Settings',
       icon: Settings,
       active: pathname === '/dashboard/settings'
     },
     {
       href: '/help',
-      label: 'Ayuda',
+      label: 'Help',
       icon: HelpCircle,
       active: pathname === '/help'
     }
@@ -107,7 +107,7 @@ export function Sidebar({ user }: SidebarProps) {
           }}
         >
           <LogOut />
-          Cerrar Sesión
+          Sign Out
         </button>
       </nav>
 

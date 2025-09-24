@@ -67,11 +67,11 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
       if (data.success) {
         setProject(data.data)
       } else {
-        toast.error('Proyecto no encontrado')
+        toast.error('Project not found')
       }
     } catch (error) {
       console.error('Error fetching project:', error)
-      toast.error('Error al cargar el proyecto')
+      toast.error('Error loading project')
     }
   }
 
@@ -91,7 +91,7 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
   }
 
   const handleDeleteProject = async () => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este proyecto?')) {
+    if (!confirm('Are you sure you want to delete this project?')) {
       return
     }
 
@@ -103,14 +103,14 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
       const data = await response.json()
       
       if (data.success) {
-        toast.success('Proyecto eliminado exitosamente')
+        toast.success('Project deleted successfully')
         window.location.href = '/dashboard'
       } else {
-        toast.error(data.message || 'Error al eliminar el proyecto')
+        toast.error(data.message || 'Error deleting project')
       }
     } catch (error) {
       console.error('Error deleting project:', error)
-      toast.error('Error de conexión')
+      toast.error('Connection error')
     }
   }
 
@@ -137,7 +137,7 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
               gap: 'var(--spacing-md)'
             }}>
               <div className="loading-spinner" style={{ width: '40px', height: '40px' }} />
-              <p style={{ color: 'var(--text-muted)' }}>Cargando proyecto...</p>
+              <p style={{ color: 'var(--text-muted)' }}>Loading project...</p>
             </div>
           </div>
         </div>
@@ -190,7 +190,7 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
               }}
             >
               <Trash2 size={18} />
-              ELIMINAR PROYECTO
+              DELETE PROJECT
             </button>
             <button
               onClick={() => setIsScanModalOpen(true)}
@@ -263,7 +263,7 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
               gap: 'var(--spacing-md)'
             }}>
               <div className="loading-spinner" style={{ width: '40px', height: '40px' }} />
-              <p style={{ color: 'var(--text-muted)' }}>Cargando scans...</p>
+              <p style={{ color: 'var(--text-muted)' }}>Loading scans...</p>
             </div>
           ) : scans.length === 0 ? (
             // Empty state
@@ -285,21 +285,21 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
                 marginBottom: 'var(--spacing-md)',
                 color: 'var(--text-primary)'
               }}>
-                Aún no tienes scans
+                You don't have scans yet
               </h2>
               <p style={{ 
                 color: 'var(--text-secondary)',
                 marginBottom: 'var(--spacing-xl)',
                 lineHeight: 1.6
               }}>
-                Sube un video para generar tu primer scan 3D con COLMAP.
+                Upload a video to generate your first 3D scan with COLMAP.
               </p>
               <button
                 onClick={() => setIsScanModalOpen(true)}
                 className="btn btn-primary btn-large"
               >
                 <Plus size={20} />
-                Crear Primer Scan
+                Create First Scan
               </button>
             </div>
           ) : (
@@ -381,7 +381,7 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
                         fontSize: '0.875rem',
                         marginBottom: 'var(--spacing-sm)'
                       }}>
-                        Actualizado: {formatDate(scan.updated_at)}
+                        Updated: {formatDate(scan.updated_at)}
                       </div>
                       <h3 style={{
                         fontSize: '1rem',

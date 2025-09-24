@@ -3,12 +3,19 @@
 import React, { useState, useRef } from 'react'
 import { X, Upload, FileVideo } from 'lucide-react'
 import { toast } from '@/components/ui/toaster'
+import { useRouter } from 'next/navigation'
 
 interface ScanModalProps {
   isOpen: boolean
   onClose: () => void
   projectId: string
   onSuccess?: () => void
+}
+
+interface ScanProcessingState {
+  stage: 'uploading' | 'processing' | 'generating' | 'completed'
+  progress: number
+  message: string
 }
 
 export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalProps) {
@@ -22,21 +29,69 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
   })
   const [isLoading, setIsLoading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+  const [processingState, setProcessingState] = useState<ScanProcessingState>({
+    stage: 'uploading',
+    progress: 0,
+    message: 'Preparando...'
+  })
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
 
   if (!isOpen) return null
+
+  const simulateProgress = (stage: ScanProcessingState['stage'], duration: number, endProgress: number) => {
+    return new Promise<void>((resolve) => {
+      const startTime = Date.now()
+      const startProgress = processingState.progress
+      
+      const updateProgress = () => {
+        const elapsed = Date.now() - startTime
+        const progress = Math.min(startProgress + (endProgress - startProgress) * (elapsed / duration), endProgress)
+        
+        let message = ''
+        switch (stage) {
+            case 'uploading':
+            message = 'Uploading video...'
+            break
+          case 'processing':
+            message = 'Extracting frames...'
+            break
+          case 'generating':
+            message = 'Generating 3D model...'
+            break
+          case 'completed':
+            message = 'Processing completed'
+            break
+        }
+        
+        setProcessingState({ stage, progress, message })
+        
+        if (elapsed < duration) {
+          requestAnimationFrame(updateProgress)
+        } else {
+          resolve()
+        }
+      }
+      
+      updateProgress()
+    })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!formData.video) {
-      toast.error('Por favor selecciona un archivo de video')
+      toast.error('Please select a video file')
       return
     }
 
     setIsLoading(true)
+    setProcessingState({ stage: 'uploading', progress: 0, message: 'Preparando...' })
 
     try {
+      // Stage 1: Upload simulation
+      await simulateProgress('uploading', 2000, 30)
+      
       const uploadFormData = new FormData()
       uploadFormData.append('name', formData.name)
       uploadFormData.append('projectId', projectId)
@@ -54,25 +109,32 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
       const data = await response.json()
 
       if (data.success) {
-        toast.success('Scan creado exitosamente')
-        onClose()
+        // Stage 2: Processing simulation
+        await simulateProgress('processing', 3000, 70)
+        
+        // Stage 3: Generating 3D model simulation
+        await simulateProgress('generating', 2000, 100)
+        
+        // Stage 4: Complete
+        setProcessingState({ stage: 'completed', progress: 100, message: 'Redirecting to 3D viewer...' })
+        
+        toast.success('Scan processed successfully')
+        
+        // Wait a moment before navigating
+        setTimeout(() => {
+          onClose()
+          // Navigate to 3D viewer with scan data
+          router.push(`/projects/${projectId}/scans/${data.data.id}/viewer`)
+        }, 1000)
+        
         onSuccess?.()
-        // Reset form
-        setFormData({
-          name: 'Scan 2',
-          video: null,
-          quality: 'medium' as 'low' | 'medium' | 'high' | 'extreme',
-          denseReconstruction: true,
-          meshing: true,
-          frameRate: 1
-        })
       } else {
-        toast.error(data.message || 'Error al crear el scan')
+        toast.error(data.message || 'Error creating scan')
+        setIsLoading(false)
       }
     } catch (error) {
-      toast.error('Error de conexión')
+      toast.error('Connection error')
       console.error('Scan creation error:', error)
-    } finally {
       setIsLoading(false)
     }
   }
@@ -98,7 +160,7 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
       if (file.type.startsWith('video/')) {
         setFormData(prev => ({ ...prev, video: file }))
       } else {
-        toast.error('Por favor selecciona un archivo de video válido')
+        toast.error('Please select a valid video file')
       }
     }
   }
@@ -134,7 +196,7 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
             color: 'var(--text-primary)',
             marginBottom: 'var(--spacing-xl)'
           }}>
-            Nuevo Proyecto
+            New Scan
           </h2>
         </div>
 
@@ -147,7 +209,7 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
               marginBottom: 'var(--spacing-sm)'
             }}>
               <label htmlFor="name" className="modal-form-label" style={{ fontSize: '1rem', fontWeight: '400', margin: 0 }}>
-                Nombre del Scan
+                Scan Name
               </label>
               <span className="mandatory" style={{ 
                 fontSize: '0.875rem', 
@@ -256,7 +318,7 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
                       textDecoration: 'underline'
                     }}
                   >
-                    Cambiar archivo
+                    Change file
                   </button>
                 </div>
               ) : (
@@ -281,7 +343,7 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
                       marginBottom: 0,
                       fontWeight: '400'
                     }}>
-                      Agregar o seleccionar archivo aquí
+                      Add or select file here
                     </p>
                   </div>
                 </div>
@@ -289,7 +351,7 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
             </div>
             
             <p className="modal-form-hint" style={{ marginTop: 'var(--spacing-sm)', fontSize: '0.875rem' }}>
-              ¿Qué tipos de archivos puedo utilizar?
+              What file types can I use?
             </p>
           </div>
 
@@ -304,20 +366,61 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
                 fontSize: '1rem',
                 fontWeight: '500',
                 borderRadius: '50px',
-                background: 'var(--brand-primary)',
+                background: isLoading ? '#3B9B94' : 'var(--brand-primary)', // Darker turquoise when loading
                 border: 'none',
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px'
+                letterSpacing: '0.5px',
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'all 0.3s ease'
               }}
             >
-              {isLoading ? (
-                <>
-                  <div className="loading-spinner" />
-                  Subiendo...
-                </>
-              ) : (
-                'GENERAR SCAN'
+              {/* Progress fill animation */}
+              {isLoading && (
+                <div 
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, var(--brand-primary), #3B9B94)',
+                    width: `${processingState.progress}%`,
+                    transition: 'width 0.3s ease',
+                    zIndex: 0
+                  }}
+                />
               )}
+              
+              {/* Button content */}
+              <div style={{ 
+                position: 'relative', 
+                zIndex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 'var(--spacing-sm)'
+              }}>
+                {isLoading ? (
+                  <>
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      border: '2px solid rgba(255,255,255,0.3)',
+                      borderTop: '2px solid white',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <span>{processingState.message}</span>
+                      <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                        {Math.round(processingState.progress)}%
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  'GENERATE SCAN'
+                )}
+              </div>
             </button>
           </div>
         </form>

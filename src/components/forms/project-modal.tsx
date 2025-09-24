@@ -81,7 +81,7 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
             color: 'var(--text-primary)',
             marginBottom: 'var(--spacing-xl)'
           }}>
-            Nuevo Proyecto
+            New Project
           </h2>
         </div>
 
@@ -94,7 +94,7 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
               marginBottom: 'var(--spacing-sm)'
             }}>
               <label htmlFor="name" className="modal-form-label" style={{ fontSize: '1rem', fontWeight: '400', margin: 0 }}>
-                Nombre
+                Name
               </label>
               <span className="mandatory" style={{ 
                 fontSize: '0.875rem', 
@@ -110,7 +110,7 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
               type="text"
               value={formData.name}
               onChange={handleInputChange}
-              placeholder="Nombre del Proyecto"
+              placeholder="Project Name"
               className="modal-form-input"
               required
               disabled={isLoading}
@@ -138,7 +138,7 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
               marginBottom: 'var(--spacing-sm)'
             }}>
               <label htmlFor="description" className="modal-form-label" style={{ fontSize: '1rem', fontWeight: '400', margin: 0 }}>
-                Descripción
+                Description
               </label>
               <span className="mandatory" style={{ 
                 fontSize: '0.875rem', 
@@ -153,7 +153,7 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              placeholder="Descripción del Proyecto"
+              placeholder="Project Description"
               className="modal-form-textarea"
               required
               disabled={isLoading}
@@ -183,7 +183,7 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
               marginBottom: 'var(--spacing-sm)'
             }}>
               <label htmlFor="location" className="modal-form-label" style={{ fontSize: '1rem', fontWeight: '400', margin: 0 }}>
-                Ubicación
+                Location
               </label>
               <span className="mandatory" style={{ 
                 fontSize: '0.875rem', 
@@ -199,7 +199,7 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
               type="text"
               value={formData.location}
               onChange={handleInputChange}
-              placeholder="Buscar Ubicación"
+              placeholder="Search Location"
               className="modal-form-input"
               required
               disabled={isLoading}
@@ -215,7 +215,7 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
               }}
             />
             <p className="modal-form-hint" style={{ marginTop: 'var(--spacing-xs)', fontSize: '0.875rem' }}>
-              ¿No encuentras la ubicación?
+              Can't find the location?
             </p>
           </div>
 
@@ -227,7 +227,7 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
               marginBottom: 'var(--spacing-sm)'
             }}>
               <label htmlFor="space_type" className="modal-form-label" style={{ fontSize: '1rem', fontWeight: '400', margin: 0 }}>
-                Tipo de Espacio
+                Space Type
               </label>
               <span className="mandatory" style={{ 
                 fontSize: '0.875rem', 
@@ -261,12 +261,12 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
                   color: formData.space_type ? 'var(--text-primary)' : 'var(--text-muted)'
                 }}
               >
-                <option value="">Selecciona el tipo de espacio a escanear</option>
+                <option value="">Select the type of space to scan</option>
                 <option value="interior">Interior</option>
                 <option value="exterior">Exterior</option>
                 <option value="industrial">Industrial</option>
-                <option value="residential">Residencial</option>
-                <option value="commercial">Comercial</option>
+                <option value="residential">Residential</option>
+                <option value="commercial">Commercial</option>
               </select>
               <div style={{
                 position: 'absolute',
@@ -289,7 +289,7 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
               marginBottom: 'var(--spacing-sm)'
             }}>
               <label htmlFor="project_type" className="modal-form-label" style={{ fontSize: '1rem', fontWeight: '400', margin: 0 }}>
-                Tipo de Proyecto
+                Project Type
               </label>
               <span className="mandatory" style={{ 
                 fontSize: '0.875rem', 
@@ -323,12 +323,12 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
                   color: formData.project_type ? 'var(--text-primary)' : 'var(--text-muted)'
                 }}
               >
-                <option value="">Selecciona el tipo de proyecto</option>
-                <option value="reconstruction">Reconstrucción 3D</option>
-                <option value="measurement">Medición</option>
-                <option value="inspection">Inspección</option>
-                <option value="modeling">Modelado</option>
-                <option value="documentation">Documentación</option>
+                <option value="">Select the type of project</option>
+                <option value="reconstruction">3D Reconstruction</option>
+                <option value="measurement">Measurement</option>
+                <option value="inspection">Inspection</option>
+                <option value="modeling">Modeling</option>
+                <option value="documentation">Documentation</option>
               </select>
               <div style={{
                 position: 'absolute',
@@ -363,10 +363,10 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
               {isLoading ? (
                 <>
                   <div className="loading-spinner" />
-                  Creando...
+                  Creating...
                 </>
               ) : (
-                'CREAR PROYECTO'
+                'CREATE PROJECT'
               )}
             </button>
           </div>

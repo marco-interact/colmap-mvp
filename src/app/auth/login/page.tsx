@@ -30,13 +30,13 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (data.success) {
-        toast.success('Inicio de sesión exitoso')
+        toast.success('Login successful')
         router.push('/dashboard')
       } else {
-        toast.error(data.message || 'Error en el inicio de sesión')
+        toast.error(data.message || 'Login error')
       }
     } catch (error) {
-      toast.error('Error de conexión')
+      toast.error('Connection error')
       console.error('Login error:', error)
     } finally {
       setIsLoading(false)
@@ -67,7 +67,7 @@ export default function LoginPage() {
               type="email"
               value={formData.email}
               onChange={handleInputChange}
-              placeholder="hola@correo.com"
+              placeholder="hello@email.com"
               className="auth-form-input"
               required
               disabled={isLoading}
@@ -86,7 +86,7 @@ export default function LoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={handleInputChange}
-                placeholder="Contraseña"
+                placeholder="Password"
                 className="auth-form-input"
                 required
                 disabled={isLoading}
@@ -104,7 +104,7 @@ export default function LoginPage() {
                   fontSize: '0.875rem'
                 }}
               >
-                {showPassword ? '🙈 Ocultar' : '👁️ Mostrar'} contraseña
+                {showPassword ? '🙈 Hide' : '👁️ Show'} password
               </button>
             </div>
           </div>
@@ -117,16 +117,16 @@ export default function LoginPage() {
             {isLoading ? (
               <>
                 <div className="loading-spinner" />
-                Iniciando sesión...
+                Signing in...
               </>
             ) : (
-              'CONTINUAR'
+              'CONTINUE'
             )}
           </button>
 
           <div style={{ textAlign: 'center', marginTop: 'var(--spacing-lg)' }}>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-              ¿No tienes cuenta?{' '}
+              Don't have an account?{' '}
               <Link 
                 href="/auth/register" 
                 style={{ 
@@ -134,7 +134,7 @@ export default function LoginPage() {
                   textDecoration: 'none' 
                 }}
               >
-                Crear cuenta
+                Create account
               </Link>
             </p>
           </div>

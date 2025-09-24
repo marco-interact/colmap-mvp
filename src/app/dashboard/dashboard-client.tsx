@@ -81,7 +81,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
             color: 'var(--text-primary)',
             margin: 0
           }}>
-            Mis Proyectos
+            My Projects
           </h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
             <div style={{ position: 'relative' }}>
@@ -148,7 +148,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
               gap: 'var(--spacing-md)'
             }}>
               <div className="loading-spinner" style={{ width: '40px', height: '40px' }} />
-              <p style={{ color: 'var(--text-muted)' }}>Cargando proyectos...</p>
+              <p style={{ color: 'var(--text-muted)' }}>Loading projects...</p>
             </div>
           ) : filteredProjects.length === 0 && searchTerm === '' ? (
             <div style={{ 
@@ -169,22 +169,22 @@ export function DashboardClient({ user }: DashboardClientProps) {
                 marginBottom: 'var(--spacing-md)',
                 color: 'var(--text-primary)'
               }}>
-                Aún no tienes proyectos
+                You don't have projects yet
               </h2>
               <p style={{ 
                 color: 'var(--text-secondary)',
                 marginBottom: 'var(--spacing-xl)',
                 lineHeight: 1.6
               }}>
-                Comienza creando tu primer proyecto de reconstrucción 3D.
-                Sube un video y deja que COLMAP genere un modelo 3D detallado.
+                Start by creating your first 3D reconstruction project.
+                Upload a video and let COLMAP generate a detailed 3D model.
               </p>
               <button
                 onClick={() => setIsProjectModalOpen(true)}
                 className="btn btn-primary btn-large"
               >
                 <Plus size={20} />
-                Crear Primer Proyecto
+                Create First Project
               </button>
             </div>
           ) : filteredProjects.length === 0 ? (
@@ -193,7 +193,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
               padding: 'var(--spacing-2xl)',
               color: 'var(--text-muted)'
             }}>
-              <p>No se encontraron proyectos que coincidan con "{searchTerm}"</p>
+              <p>No projects found matching "{searchTerm}"</p>
             </div>
           ) : (
             <div style={{ 
@@ -323,7 +323,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
                           fontSize: '0.875rem',
                           marginBottom: 'var(--spacing-xs)'
                         }}>
-                          Actualizado: {formatDate(project.updated_at)}
+                          Updated: {formatDate(project.updated_at)}
                         </div>
                         <h3 style={{
                           fontSize: '1.125rem',
