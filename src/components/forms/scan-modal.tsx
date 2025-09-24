@@ -87,8 +87,8 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
 
     // Check file size first
     const fileSizeMB = formData.video.size / 1024 / 1024
-    if (fileSizeMB > 50) {
-      toast.error(`File size (${Math.round(fileSizeMB)}MB) exceeds the 50MB limit. Please use a smaller video file.`)
+    if (fileSizeMB > 100) {
+      toast.error(`File size (${Math.round(fileSizeMB)}MB) exceeds the 100MB limit. Please use a smaller video file.`)
       return
     }
 
@@ -134,7 +134,7 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
 
       // Handle different HTTP status codes
       if (response.status === 413) {
-        toast.error('File too large for upload. Please use a file smaller than 50MB.')
+        toast.error('File too large for upload. Please use a file smaller than 100MB.')
         setIsLoading(false)
         return
       }
@@ -342,11 +342,11 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
                           {formData.video.name}
                         </p>
                         <p style={{ 
-                          color: formData.video.size > 50 * 1024 * 1024 ? 'var(--error)' : 'var(--text-muted)', 
+                          color: formData.video.size > 100 * 1024 * 1024 ? 'var(--error)' : 'var(--text-muted)', 
                           fontSize: '0.875rem' 
                         }}>
                           {formatFileSize(formData.video.size)}
-                          {formData.video.size > 50 * 1024 * 1024 && ' (⚠️ Too large)'}
+                          {formData.video.size > 100 * 1024 * 1024 && ' (⚠️ Too large)'}
                         </p>
                   </div>
                   <button
@@ -397,7 +397,7 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
             </div>
             
                 <p className="modal-form-hint" style={{ marginTop: 'var(--spacing-sm)', fontSize: '0.875rem' }}>
-              Supported formats: MP4, MOV, AVI (max 50MB for optimal processing)
+              Supported formats: MP4, MOV, AVI (max 100MB for optimal processing)
             </p>
           </div>
 

@@ -14,12 +14,12 @@ export async function POST(request: NextRequest) {
     // For demo purposes, we'll return a mock response that indicates
     // the file should be uploaded differently due to size constraints
     
-    if (fileSize > 50 * 1024 * 1024) { // 50MB limit
+    if (fileSize > 100 * 1024 * 1024) { // 100MB limit
       return NextResponse.json({
         success: false,
         error: 'file_too_large',
-        message: 'File size exceeds the current limit. For files larger than 50MB, please use a smaller video or contact support for enterprise upload options.',
-        maxSize: '50MB',
+        message: 'File size exceeds the current limit. For files larger than 100MB, please use a smaller video or contact support for enterprise upload options.',
+        maxSize: '100MB',
         currentSize: `${Math.round(fileSize / 1024 / 1024)}MB`
       }, { status: 413 })
     }
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'File size is acceptable for processing',
       uploadMethod: 'direct',
-      maxSize: '50MB'
+      maxSize: '100MB'
     })
     
   } catch (error) {

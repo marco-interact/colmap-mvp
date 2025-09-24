@@ -17,7 +17,7 @@ export default function HelpPage() {
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
             <h2 className="text-xl font-medium text-white mb-4">Supported Formats</h2>
             <div className="text-white/80">
-              <p><strong>Video:</strong> MP4, MOV, AVI (up to 1GB)</p>
+              <p><strong>Video:</strong> MP4, MOV, AVI (up to 100MB)</p>
               <p><strong>Output:</strong> PLY, OBJ, GLTF point clouds and meshes</p>
             </div>
           </div>
