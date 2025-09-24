@@ -389,7 +389,7 @@ export const Video360Utils = {
       confidence,
       metadata: {
         aspectRatio,
-        resolution: \`\${video.videoWidth}x\${video.videoHeight}\`,
+        resolution: `${video.videoWidth}x${video.videoHeight}`,
         hasMetadata
       }
     }

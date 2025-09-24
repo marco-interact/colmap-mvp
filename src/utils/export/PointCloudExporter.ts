@@ -555,7 +555,7 @@ DATA ascii\`
     const errors: string[] = []
     
     if (!['ply', 'pcd', 'xyz', 'csv', 'obj', 'las'].includes(options.format)) {
-      errors.push(\`Unsupported format: \${options.format}\`)
+      errors.push(`Unsupported format: ${options.format}`)
     }
     
     if (options.precision < 1 || options.precision > 15) {
