@@ -23,6 +23,15 @@ import cv2
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Import Open3D processor
+try:
+    from process_with_open3d import Open3DProcessor
+    OPEN3D_AVAILABLE = True
+    logger.info("Open3D processor available")
+except ImportError as e:
+    logger.warning(f"Open3D processor not available: {e}")
+    OPEN3D_AVAILABLE = False
+
 app = FastAPI(
     title="COLMAP Worker Service",
     description="3D Reconstruction Service powered by COLMAP 3.12.6",
@@ -673,6 +682,149 @@ async def reconstruction_task(job_id: str, request: ProcessingRequest):
         jobs[job_id]["status"] = "failed"
         jobs[job_id]["message"] = f"COLMAP reconstruction failed: {str(e)}"
         jobs[job_id]["updated_at"] = datetime.now()
+
+@app.post("/process-open3d/{project_id}")
+async def process_with_open3d(
+    project_id: str,
+    background_tasks: BackgroundTasks,
+    config: Optional[Dict] = None
+):
+    """
+    Post-process COLMAP reconstruction with Open3D optimization.
+    Creates web-optimized point clouds and meshes.
+    """
+    if not OPEN3D_AVAILABLE:
+        raise HTTPException(
+            status_code=503, 
+            detail="Open3D processor not available"
+        )
+    
+    try:
+        workspace_dir = workspace / project_id
+        if not workspace_dir.exists():
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        # Create job entry
+        job_id = f"open3d_{project_id}_{uuid.uuid4().hex[:8]}"
+        job_entry = {
+            'job_id': job_id,
+            'project_id': project_id,
+            'type': 'open3d_processing',
+            'status': 'running',
+            'progress': 0,
+            'started_at': datetime.now().isoformat(),
+            'current_stage': 'initializing'
+        }
+        jobs[job_id] = job_entry
+        
+        # Run Open3D processing in background
+        background_tasks.add_task(
+            run_open3d_processing,
+            project_id,
+            job_id,
+            config
+        )
+        
+        return {
+            'success': True,
+            'job_id': job_id,
+            'message': 'Open3D processing started'
+        }
+        
+    except Exception as e:
+        logger.error(f"Open3D processing initiation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/optimized/{project_id}/{file_type}")
+async def download_optimized_result(project_id: str, file_type: str):
+    """Download Open3D optimized 3D model files."""
+    try:
+        # Map file types to optimized file paths
+        file_map = {
+            'pointcloud': f'{project_id}_pointcloud_optimized.ply',
+            'mesh': f'{project_id}_mesh_optimized.ply',
+            'mesh_obj': f'{project_id}_mesh_optimized.obj',
+            'metadata': f'{project_id}_metadata.json'
+        }
+        
+        if file_type not in file_map:
+            raise HTTPException(status_code=400, detail="Invalid file type")
+        
+        # Check optimized files first
+        workspace_dir = workspace / project_id
+        processed_dir = workspace_dir / 'processed'
+        optimized_file = processed_dir / file_map[file_type]
+        
+        if optimized_file.exists():
+            media_type = 'application/json' if file_type == 'metadata' else 'application/octet-stream'
+            return FileResponse(
+                path=str(optimized_file),
+                filename=file_map[file_type],
+                media_type=media_type
+            )
+        
+        # Fallback to original COLMAP output
+        original_file_map = {
+            'pointcloud': 'dense/fused.ply',
+            'mesh': 'dense/meshed-poisson.ply',
+            'mesh_obj': 'dense/meshed-textured.obj'
+        }
+        
+        if file_type in original_file_map:
+            original_file = workspace_dir / original_file_map[file_type]
+            if original_file.exists():
+                return FileResponse(
+                    path=str(original_file),
+                    filename=f"{project_id}_{file_type}_original.{original_file.suffix[1:]}",
+                    media_type='application/octet-stream'
+                )
+        
+        raise HTTPException(status_code=404, detail="File not found")
+        
+    except Exception as e:
+        logger.error(f"Optimized download failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def run_open3d_processing(project_id: str, job_id: str, config: Optional[Dict] = None):
+    """Background task for Open3D post-processing."""
+    try:
+        # Update job status
+        jobs[job_id]['current_stage'] = 'open3d_processing'
+        jobs[job_id]['progress'] = 10
+        
+        workspace_dir = workspace / project_id
+        processor = Open3DProcessor(config)
+        
+        # Update progress
+        jobs[job_id]['current_stage'] = 'loading_colmap_outputs'
+        jobs[job_id]['progress'] = 20
+        
+        # Process with Open3D
+        results = processor.process_reconstruction(
+            str(workspace_dir),
+            str(workspace_dir),
+            project_id
+        )
+        
+        # Update job with results
+        jobs[job_id]['progress'] = 90
+        jobs[job_id]['current_stage'] = 'finalizing'
+        
+        if results['status'] == 'completed':
+            jobs[job_id]['status'] = 'completed'
+            jobs[job_id]['progress'] = 100
+            jobs[job_id]['results'] = results
+            jobs[job_id]['completed_at'] = datetime.now().isoformat()
+            logger.info(f"Open3D processing completed for project {project_id}")
+        else:
+            jobs[job_id]['status'] = 'failed'
+            jobs[job_id]['error'] = results.get('errors', ['Unknown error'])
+            logger.error(f"Open3D processing failed for project {project_id}")
+            
+    except Exception as e:
+        logger.error(f"Open3D background processing failed: {str(e)}")
+        jobs[job_id]['status'] = 'failed'
+        jobs[job_id]['error'] = str(e)
 
 if __name__ == "__main__":
     import uvicorn

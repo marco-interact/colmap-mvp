@@ -1,0 +1,64 @@
+{
+  "point_cloud": {
+    "target_points": 1000000,
+    "voxel_size": 0.01,
+    "outlier_nb_neighbors": 20,
+    "outlier_std_ratio": 2.0,
+    "normal_radius": 0.1,
+    "normal_max_nn": 30
+  },
+  "mesh": {
+    "decimation_target_triangles": 500000,
+    "smooth_iterations": 1,
+    "texture_max_resolution": 2048,
+    "generate_uvs": true
+  },
+  "export": {
+    "formats": ["ply", "obj"],
+    "compression": true,
+    "binary_ply": true
+  },
+  "performance": {
+    "use_gpu": false,
+    "parallel_processing": true,
+    "memory_efficient": true
+  },
+  "quality_profiles": {
+    "web_low": {
+      "point_cloud": {
+        "target_points": 250000,
+        "voxel_size": 0.02
+      },
+      "mesh": {
+        "decimation_target_triangles": 100000
+      }
+    },
+    "web_medium": {
+      "point_cloud": {
+        "target_points": 500000,
+        "voxel_size": 0.015
+      },
+      "mesh": {
+        "decimation_target_triangles": 250000
+      }
+    },
+    "web_high": {
+      "point_cloud": {
+        "target_points": 1000000,
+        "voxel_size": 0.01
+      },
+      "mesh": {
+        "decimation_target_triangles": 500000
+      }
+    },
+    "analysis": {
+      "point_cloud": {
+        "target_points": 5000000,
+        "voxel_size": 0.005
+      },
+      "mesh": {
+        "decimation_target_triangles": 2000000
+      }
+    }
+  }
+}

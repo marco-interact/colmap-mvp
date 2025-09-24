@@ -4,8 +4,8 @@ import React, { useRef, useEffect, useState, useMemo } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Stats, Html, useProgress } from '@react-three/drei'
-import { Perf } from 'r3f-perf'
-import { useControls } from 'leva'
+// import { Perf } from 'r3f-perf' // Disabled for deployment
+// import { useControls } from 'leva' // Disabled for deployment
 import { 
   Play, 
   Pause, 
@@ -72,12 +72,12 @@ function PointCloudRenderer({ url, visible = true }: { url: string; visible?: bo
   const { setPointCloud, setLoadingProgress, setError, settings } = useViewerStore()
   const [isLoading, setIsLoading] = useState(true)
 
-  // Use Leva controls for point cloud settings
-  const pointCloudControls = useControls('Point Cloud', {
-    size: { value: settings.pointSize, min: 0.1, max: 10, step: 0.1 },
-    density: { value: settings.pointDensity, min: 0.1, max: 2, step: 0.1 },
-    visible: visible
-  })
+  // Note: Leva controls disabled for deployment - using settings from store directly
+  // const pointCloudControls = useControls('Point Cloud', {
+  //   size: { value: settings.pointSize, min: 0.1, max: 10, step: 0.1 },
+  //   density: { value: settings.pointDensity, min: 0.1, max: 2, step: 0.1 },
+  //   visible: visible
+  // })
 
   useEffect(() => {
     if (!url || !visible) return
@@ -90,8 +90,8 @@ function PointCloudRenderer({ url, visible = true }: { url: string; visible?: bo
         const pointCloud = await PointCloudLoader.load(
           url,
           {
-            pointSize: pointCloudControls.size,
-            maxPoints: Math.floor(1000000 * pointCloudControls.density),
+            pointSize: settings.pointSize,
+            maxPoints: Math.floor(1000000 * (settings.pointDensity || 1.0)),
             useVertexColors: true
           },
           (progress) => {
@@ -120,24 +120,24 @@ function PointCloudRenderer({ url, visible = true }: { url: string; visible?: bo
     return () => {
       cancelled = true
     }
-  }, [url, visible, pointCloudControls.size, pointCloudControls.density])
+  }, [url, visible, settings.pointSize, settings.pointDensity])
 
   // Update point size when controls change
   useEffect(() => {
     if (meshRef.current && meshRef.current.material instanceof THREE.PointsMaterial) {
-      meshRef.current.material.size = pointCloudControls.size
+      meshRef.current.material.size = settings.pointSize
       meshRef.current.material.needsUpdate = true
     }
-  }, [pointCloudControls.size])
+  }, [settings.pointSize])
 
-  if (!pointCloudControls.visible || !visible) return null
+  if (!visible) return null
   if (isLoading) return <Loader />
 
   return (
     <points ref={meshRef}>
       <bufferGeometry />
       <pointsMaterial 
-        size={pointCloudControls.size} 
+        size={settings.pointSize} 
         sizeAttenuation 
         vertexColors 
         transparent
