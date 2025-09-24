@@ -511,7 +511,7 @@ export class Open3DWebProcessor {
     const x = Math.floor(point.x / voxelSize)
     const y = Math.floor(point.y / voxelSize)
     const z = Math.floor(point.z / voxelSize)
-    return \`\${x},\${y},\${z}\`
+    return `${x},${y},${z}`
   }
 
   private computeNormalPCA(neighbors: THREE.Vector3[]): THREE.Vector3 {

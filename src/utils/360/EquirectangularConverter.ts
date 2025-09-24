@@ -214,7 +214,7 @@ export class EquirectangularConverter {
 
       this.worker!.onerror = (error) => {
         clearTimeout(timeout)
-        reject(new Error(\`Worker error: \${error.message}\`))
+        reject(new Error(`Worker error: ${error.message}`))
       }
 
       // Send data to worker
