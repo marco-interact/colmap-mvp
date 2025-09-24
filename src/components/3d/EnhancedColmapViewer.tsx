@@ -235,12 +235,12 @@ function EnhancedViewerScene({
       pointBudget: { value: 1000000, min: 100000, max: 10000000, step: 100000 }
     }),
     'Potree Optimization': folder({
-      enabled: { value: enablePotreeOptimization },
+      enabled: enablePotreeOptimization,
       lodScreenError: { value: 1.0, min: 0.1, max: 10, step: 0.1 },
       minNodePixelSize: { value: 1.0, min: 0.5, max: 5, step: 0.1 }
     }),
     '360° Support': folder({
-      enabled: { value: enable360Support },
+      enabled: enable360Support,
       autoDetect: { value: true },
       viewpointCount: { value: 16, min: 8, max: 32, step: 1 }
     }),
