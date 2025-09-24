@@ -1,4 +1,10 @@
+# Vendor directory (Composer dependencies will be installed on build)
+/vendor
+
+# Node modules
 node_modules
+
+# Development files
 .git
 .env*
 storage/logs/*
@@ -6,7 +12,24 @@ bootstrap/cache/*
 vendor/bin
 tests
 .phpunit.result.cache
+
+# IDE files
 .DS_Store
 .vscode
 .idea
+
+# Build artifacts
 *.log
+/public/hot
+
+# Python service (not needed on Vercel)
+python-colmap-service/venv
+python-colmap-service/__pycache__
+
+# Temporary files
+cookies.txt
+
+# Development configuration
+.env.local
+.env.development
+.env.staging
