@@ -6,6 +6,10 @@
       "use": "vercel-php@0.7.3"
     },
     {
+      "src": "python-colmap-service/main.py",
+      "use": "@vercel/python"
+    },
+    {
       "src": "public/build/**",
       "use": "@vercel/static"
     }
@@ -14,6 +18,10 @@
     {
       "source": "/build/(.*)",
       "destination": "/public/build/$1"
+    },
+    {
+      "source": "/api/colmap/(.*)",
+      "destination": "/python-colmap-service/main.py"
     },
     {
       "source": "/(.*)",
@@ -71,6 +79,6 @@
     "APP_ROUTES_CACHE": "/tmp/bootstrap/cache/routes.php",
     "APP_EVENTS_CACHE": "/tmp/bootstrap/cache/events.php",
     "LOG_CHANNEL": "stderr",
-    "COLMAP_SERVICE_URL": "https://python-colmap.vercel.app"
+    "COLMAP_SERVICE_URL": "https://colmap-app.vercel.app/api/colmap"
   }
 }
