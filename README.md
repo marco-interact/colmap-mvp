@@ -1,218 +1,218 @@
-# 🚀 DoMapping - 3D Visualization Platform
+# DoMapping - 3D Reconstruction Platform
 
-> **Laravel + COLMAP Integration** - Production-ready for Vercel deployment
+A modern Next.js 14 application for 3D reconstruction using COLMAP, built with TypeScript and TailwindCSS.
 
-## 🌟 Live Demo
+## 🚀 Features
 
-**Deploy to Vercel**: [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/marco-interact/colmap-app)
+- **Modern Tech Stack**: Next.js 14, TypeScript, TailwindCSS
+- **3D Reconstruction**: COLMAP 3.12.6 integration for professional photogrammetry
+- **Responsive Design**: Mobile-first design matching DoMapping brand
+- **Real-time Processing**: Background job processing with status updates
+- **Interactive 3D Viewer**: WebGL-based viewer with measurement tools
+- **Project Management**: Comprehensive project and scan management
+- **Authentication**: Secure JWT-based authentication system
 
-## ✨ Features
+## 🛠️ Technology Stack
 
-### 🎨 DoMapping UI
-- **Dark theme** with teal accent colors matching design mockups
-- **Responsive sidebar** navigation with user info
-- **"Mis Proyectos"** dashboard with search and project cards
-- **Modal forms** for creating new projects
-- **Authentication** system with login/register
+### Frontend
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **Styling**: TailwindCSS + Custom CSS Variables
+- **UI Components**: Custom component library
+- **3D Rendering**: Three.js with React Three Fiber
+- **State Management**: TanStack Query (React Query)
+- **Forms**: React Hook Form with Zod validation
 
-### 🛠️ COLMAP Integration
-- **Video upload** support up to 1GB with progress tracking
-- **Frame extraction** from uploaded videos
-- **3D reconstruction** with multiple quality settings (low, medium, high, extreme)
-- **Real-time job monitoring** with status updates
-- **File download** for processed 3D models (.ply, .obj files)
+### Backend
+- **API**: Next.js API Routes
+- **Authentication**: JWT with HTTP-only cookies
+- **Database**: Prisma ORM (ready for PostgreSQL/Supabase)
+- **File Uploads**: Native Next.js file handling
+- **Background Jobs**: Bull Queue (for COLMAP processing)
 
-### ⚡ Technical Stack
-- **Frontend**: Laravel 12 + Blade templates + LESS CSS
-- **Backend**: PHP 8.2 with Eloquent ORM
-- **3D Processing**: Python FastAPI + COLMAP (separate microservice)
-- **Database**: SQLite (serverless) or external database
-- **Deployment**: Vercel serverless functions
-
-## 🚀 Quick Deploy
-
-### One-Click Vercel Deployment
-
-1. **Deploy Main App**:
-   - Repository: `marco-interact/colmap-app`
-   - Framework: Other
-   - Root Directory: `/` (project root)
-
-2. **Deploy COLMAP Service** (separate deployment):
-   - Repository: `marco-interact/colmap-app`
-   - Framework: Python
-   - Root Directory: `python-colmap-service`
-
-### Environment Variables
-
-Set in Vercel dashboard:
-
-```bash
-# Required
-APP_KEY=base64:your-laravel-app-key-here
-APP_URL=https://your-domain.vercel.app
-COLMAP_SERVICE_URL=https://your-colmap-service.vercel.app
-
-# Optional
-APP_DEBUG=false
-LOG_LEVEL=info
-MAX_FILE_SIZE=1048576
-COLMAP_DEFAULT_QUALITY=medium
-```
-
-Generate APP_KEY:
-```bash
-php artisan key:generate --show
-```
+### COLMAP Integration
+- **Processing Service**: Dockerized COLMAP 3.12.6 worker
+- **Pipeline**: Feature extraction, matching, sparse & dense reconstruction
+- **File Formats**: PLY, OBJ, GLTF support
+- **Quality Settings**: Low, Medium, High, Extreme processing modes
 
 ## 🏗️ Architecture
 
 ```
-colmap-app/
-├── api/index.php              # Vercel serverless entry point
-├── app/                       # Laravel application logic
-├── resources/                 # Views, LESS CSS, assets
-├── public/                    # Public assets
-├── config/                    # Laravel configuration
-├── database/                  # Migrations, models
-├── python-colmap-service/     # Separate Python microservice
-├── vercel.json               # Vercel deployment config
-└── deploy-vercel.sh          # Deployment script
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Next.js App   │────│   API Routes     │────│  COLMAP Worker  │
+│   (Frontend)    │    │   (Backend)      │    │   (Docker)      │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+         │                        │                        │
+         │                        │                        │
+    ┌─────────┐            ┌─────────────┐         ┌─────────────┐
+    │ Browser │            │  Database   │         │   Cloud     │
+    │ Client  │            │ (Supabase)  │         │  Storage    │
+    └─────────┘            └─────────────┘         └─────────────┘
 ```
 
-## 🎨 DoMapping UI Implementation
+## 🚀 Quick Start
 
-### User Flow
-1. **Login/Register** → Laravel authentication
-2. **Dashboard** → "Mis Proyectos" with project grid
-3. **Create Project** → Modal form with project details
-4. **Upload Video** → Drag & drop interface, up to 1GB
-5. **Process Video** → COLMAP 3D reconstruction
-6. **Monitor Progress** → Real-time status updates
-7. **Download Results** → 3D models and point clouds
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Docker (for COLMAP worker)
 
-### Design System
-- **Colors**: Dark theme (`#1a1a1a`) with teal accent (`#4ade80`)
-- **Typography**: Inter font family
-- **Layout**: Sidebar navigation with main content area
-- **Components**: Cards, modals, forms, buttons with consistent styling
+### Local Development
 
-## 🛠️ Local Development
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/marco-interact/colmap-app.git
+   cd colmap-app
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Create environment file**
+   ```bash
+   cp .env.local.example .env.local
+   # Edit .env.local with your configuration
+   ```
+
+4. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Access the application**
+   - Frontend: http://localhost:3000
+   - Login with: `test@domapping.com` / `password`
+
+### Production Deployment
+
+#### Deploy to Vercel
+
+1. **Connect to GitHub**
+   - Import project in Vercel dashboard
+   - Connect to your GitHub repository
+
+2. **Configure Environment Variables**
+   ```bash
+   COLMAP_WORKER_URL=https://your-colmap-worker.railway.app
+   JWT_SECRET=your-production-jwt-secret
+   DATABASE_URL=your-production-database-url
+   ```
+
+3. **Deploy**
+   - Automatic deployment on push to `main`
+   - Preview deployments for pull requests
+
+#### Deploy COLMAP Worker
+
+1. **Railway/Fly.io Deployment**
+   ```bash
+   cd colmap-worker
+   docker build -t colmap-worker .
+   # Deploy to your preferred container service
+   ```
+
+2. **Configure Worker URL**
+   - Update `COLMAP_WORKER_URL` in Vercel environment variables
+
+## 📁 Project Structure
+
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes
+│   ├── auth/              # Authentication pages
+│   ├── dashboard/         # Dashboard pages
+│   └── globals.css        # Global styles
+├── components/            # React components
+│   ├── layout/           # Layout components
+│   ├── forms/            # Form components
+│   └── ui/               # UI components
+├── lib/                  # Utilities and configurations
+├── types/                # TypeScript type definitions
+└── hooks/                # Custom React hooks
+
+colmap-worker/            # COLMAP processing service
+├── Dockerfile           # Docker configuration
+├── main.py             # FastAPI application
+├── colmap_pipeline.py  # COLMAP processing logic
+└── requirements.txt    # Python dependencies
+```
+
+## 🎨 Design System
+
+### Colors
+- **Primary**: `#4ECDC4` (Turquoise)
+- **Background**: `#111111` (Dark)
+- **Secondary**: `#1a1a1a` (Card backgrounds)
+- **Text**: `#ffffff` (Primary), `#b3b3b3` (Secondary)
+
+### Typography
+- **Font**: Inter (Google Fonts)
+- **Scale**: 0.875rem, 1rem, 1.125rem, 1.5rem, 2rem
+
+### Components
+- **Buttons**: Primary, Secondary, Ghost variants
+- **Forms**: Custom inputs with focus states
+- **Cards**: Hover effects and shadows
+- **Modals**: Backdrop blur and animations
+
+## 🔧 Configuration
+
+### Environment Variables
 
 ```bash
-# Install dependencies
-composer install
-npm install
+# Required for production
+COLMAP_WORKER_URL=https://your-worker-service.com
+JWT_SECRET=your-jwt-secret
 
-# Set up environment
-cp .env.example .env
-php artisan key:generate
+# Optional (for enhanced features)
+DATABASE_URL=postgresql://...
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+```
 
-# Build assets
+### COLMAP Processing
+
+The application supports various COLMAP processing modes:
+
+- **Low Quality**: Fast processing, lower detail
+- **Medium Quality**: Balanced processing (default)
+- **High Quality**: Detailed processing, longer time
+- **Extreme Quality**: Maximum detail, very long processing
+
+## 🧪 Testing
+
+```bash
+# Run type checking
+npm run type-check
+
+# Run linting
+npm run lint
+
+# Run tests (when implemented)
+npm run test
+```
+
+## 📦 Build
+
+```bash
+# Build for production
 npm run build
 
-# Start Laravel server
-php artisan serve
-
-# Start Python COLMAP service (separate terminal)
-cd python-colmap-service
-python main.py
+# Start production server
+npm start
 ```
-
-## 📦 Vercel Deployment
-
-### Automatic Deployment Script
-
-```bash
-# Run deployment preparation
-./deploy-vercel.sh
-
-# Deploy to Vercel
-vercel --prod
-```
-
-### Manual Steps
-
-1. **Prepare Laravel**:
-   ```bash
-   composer install --optimize-autoloader --no-dev
-   npm run build
-   php artisan optimize:clear
-   ```
-
-2. **Deploy to Vercel**:
-   ```bash
-   vercel --prod
-   ```
-
-3. **Configure Environment Variables** in Vercel dashboard
-
-4. **Deploy Python Service** separately:
-   ```bash
-   cd python-colmap-service
-   vercel --prod
-   ```
-
-## 🔧 Configuration Files
-
-### `vercel.json` - Main Laravel App
-Configures PHP 8.2 runtime, routes, and environment variables for serverless deployment.
-
-### `api/index.php` - Serverless Entry Point
-Bootstraps Laravel application for Vercel's serverless environment.
-
-### `python-colmap-service/vercel.json` - COLMAP Service
-Separate Python service configuration for 3D processing.
-
-## 🎯 User Experience
-
-### Dashboard Features
-- **Project Cards**: Visual grid with thumbnails and status
-- **Search**: Real-time project filtering
-- **Create Button**: Modal form for new projects
-- **User Profile**: Avatar and account info in sidebar
-
-### Project Management
-- **Status Tracking**: Created, Processing, Completed, Failed states
-- **Progress Monitoring**: Real-time updates during COLMAP processing
-- **File Management**: Upload videos, download results
-- **Settings**: Quality preferences, processing options
-
-## 🔒 Security & Performance
-
-### Security
-- **Laravel Authentication**: Built-in user management
-- **CSRF Protection**: All forms protected
-- **Input Validation**: Server-side validation for all inputs
-- **File Upload Security**: Type and size validation
-
-### Performance
-- **Asset Optimization**: Vite bundling and minification
-- **Serverless Scaling**: Automatic with Vercel
-- **CDN Distribution**: Global edge network
-- **Database Optimization**: Efficient queries and caching
-
-## 📊 Database Schema
-
-### Projects Table
-- `id`, `name`, `description`, `status`, `user_id`
-- `settings` (JSON), `thumbnail`, `created_at`, `updated_at`
-
-### Scans Table
-- `id`, `name`, `project_id`, `video_filename`, `video_path`
-- `status`, `processing_results` (JSON), `model_path`
-
-### Processing Jobs Table
-- `id`, `job_id`, `scan_id`, `type`, `status`, `progress`
-- `message`, `started_at`, `completed_at`
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch: `git checkout -b feature/new-feature`
+3. Commit changes: `git commit -am 'Add new feature'`
+4. Push to branch: `git push origin feature/new-feature`
+5. Submit a pull request
 
 ## 📄 License
 
@@ -220,10 +220,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- **Issues**: [GitHub Issues](https://github.com/marco-interact/colmap-app/issues)
-- **Documentation**: [README-VERCEL.md](README-VERCEL.md)
-- **Deployment Guide**: [DEPLOYMENT-READY.md](DEPLOYMENT-READY.md)
+For support and questions:
+
+- **GitHub Issues**: [Create an issue](https://github.com/marco-interact/colmap-app/issues)
+- **Email**: marco.aurelio@interact.studio
+- **Documentation**: [Project Wiki](https://github.com/marco-interact/colmap-app/wiki)
+
+## 🏗️ Roadmap
+
+- [ ] **Database Integration**: Complete Prisma + Supabase setup
+- [ ] **User Management**: Registration, profiles, team collaboration
+- [ ] **File Storage**: Cloud storage integration
+- [ ] **Real-time Updates**: WebSocket integration for processing status
+- [ ] **3D Viewer**: Enhanced measurement and annotation tools
+- [ ] **API Documentation**: OpenAPI/Swagger documentation
+- [ ] **Mobile App**: React Native companion app
+- [ ] **Enterprise Features**: SSO, advanced permissions, audit logs
 
 ---
 
-**🎉 Ready for production deployment on Vercel!**
+Built with ❤️ by the DoMapping team using modern web technologies and COLMAP 3D reconstruction.

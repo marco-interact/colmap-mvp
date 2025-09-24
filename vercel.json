@@ -1,39 +1,20 @@
 {
   "version": 2,
-  "outputDirectory": "public",
-  "framework": null,
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
   "functions": {
-    "api/index.php": {
-      "runtime": "vercel-php@0.7.4"
+    "src/app/api/**/*.ts": {
+      "runtime": "nodejs20.x"
     }
   },
-  "rewrites": [
-    {
-      "source": "/build/(.*)",
-      "destination": "/public/build/$1"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/api/index.php"
-    }
-  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
   "headers": [
     {
-      "source": "/build/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "Strict-Transport-Security",
-          "value": "max-age=31536000; includeSubDomains"
-        },
         {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
@@ -48,26 +29,5 @@
         }
       ]
     }
-  ],
-  "env": {
-    "APP_NAME": "COLMAP App",
-    "APP_ENV": "production",
-    "APP_DEBUG": "true",
-    "APP_URL": "https://colmap-jzoz1ymmt-interact-tests-projects.vercel.app",
-    "APP_KEY": "base64:LYozMD8jzCS+7704frjWxMSdhzluDhlcjWAo7+mGpds=",
-    "SESSION_DRIVER": "cookie",
-    "CACHE_DRIVER": "array",
-    "CACHE_STORE": "array", 
-    "QUEUE_CONNECTION": "sync",
-    "DB_CONNECTION": "sqlite",
-    "DB_DATABASE": "/tmp/database.sqlite",
-    "VIEW_COMPILED_PATH": "/tmp/views",
-    "APP_SERVICES_CACHE": "/tmp/bootstrap/cache/services.php",
-    "APP_PACKAGES_CACHE": "/tmp/bootstrap/cache/packages.php", 
-    "APP_CONFIG_CACHE": "/tmp/bootstrap/cache/config.php",
-    "APP_ROUTES_CACHE": "/tmp/bootstrap/cache/routes.php",
-    "APP_EVENTS_CACHE": "/tmp/bootstrap/cache/events.php",
-    "LOG_CHANNEL": "stderr",
-    "COLMAP_SERVICE_URL": "https://colmap-mock.vercel.app"
-  }
+  ]
 }
