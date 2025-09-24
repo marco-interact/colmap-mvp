@@ -235,12 +235,12 @@ function EnhancedViewerScene({
       pointBudget: { value: 1000000, min: 100000, max: 10000000, step: 100000 }
     }),
     'Potree Optimization': folder({
-      enabled: enablePotreeOptimization,
+      enabled: { value: enablePotreeOptimization || false },
       lodScreenError: { value: 1.0, min: 0.1, max: 10, step: 0.1 },
       minNodePixelSize: { value: 1.0, min: 0.5, max: 5, step: 0.1 }
     }),
     '360° Support': folder({
-      enabled: enable360Support,
+      enabled: { value: enable360Support || false },
       autoDetect: { value: true },
       viewpointCount: { value: 16, min: 8, max: 32, step: 1 }
     }),
@@ -318,11 +318,11 @@ function EnhancedViewerControls({
 }: EnhancedColmapViewerProps) {
   const { 
     settings, 
-    setSettings, 
+    updateSettings, 
     measurementMode, 
-    setMeasurementMode,
+    startMeasurement,
     measurements,
-    removeMeasurement
+    deleteMeasurement
   } = useViewerStore()
   
   const [isFullScreen, setIsFullScreen] = useState(false)
@@ -375,18 +375,18 @@ function EnhancedViewerControls({
       const result = await exporter.exportPointCloud(mockPoints, exportOptions)
       
       if (result.success && result.filePath) {
-        const filename = \`\${scanId}_pointcloud.\${format}\`
+        const filename = `${scanId}_pointcloud.${format}`
         PointCloudExportUtils.downloadFile(result.filePath, filename)
         
-        toast.success(\`Point cloud exported successfully!
-Points: \${result.pointCount.toLocaleString()}
-Size: \${(result.fileSize / 1024 / 1024).toFixed(2)} MB
-Time: \${result.processingTime.toFixed(0)}ms\`)
+        toast.success(`Point cloud exported successfully!
+Points: ${result.pointCount.toLocaleString()}
+Size: ${(result.fileSize / 1024 / 1024).toFixed(2)} MB
+Time: ${result.processingTime.toFixed(0)}ms`)
       } else {
-        toast.error(\`Export failed: \${result.error || 'Unknown error'}\`)
+        toast.error(`Export failed: ${result.error || 'Unknown error'}`)
       }
     } catch (error) {
-      toast.error(\`Export error: \${error instanceof Error ? error.message : 'Unknown error'}\`)
+      toast.error(`Export error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -396,7 +396,7 @@ Time: \${result.processingTime.toFixed(0)}ms\`)
       // Similar implementation for mesh export
       toast.success('Mesh export functionality coming soon!')
     } catch (error) {
-      toast.error(\`Mesh export error: \${error instanceof Error ? error.message : 'Unknown error'}\`)
+      toast.error(`Mesh export error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -406,7 +406,7 @@ Time: \${result.processingTime.toFixed(0)}ms\`)
       // Potree format export implementation
       toast.success('Potree export functionality coming soon!')
     } catch (error) {
-      toast.error(\`Potree export error: \${error instanceof Error ? error.message : 'Unknown error'}\`)
+      toast.error(`Potree export error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -425,12 +425,12 @@ Time: \${result.processingTime.toFixed(0)}ms\`)
       const result = await exporter.exportPointCloud(mockPoints, exportOptions)
       
       if (result.success && result.filePath) {
-        const filename = \`\${scanId}_\${preset}.\${result.format}\`
+        const filename = `${scanId}_${preset}.${result.format}`
         PointCloudExportUtils.downloadFile(result.filePath, filename)
-        toast.success(\`\${preset} preset exported successfully!\`)
+        toast.success(`${preset} preset exported successfully!`)
       }
     } catch (error) {
-      toast.error(\`Preset export error: \${error instanceof Error ? error.message : 'Unknown error'}\`)
+      toast.error(`Preset export error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -493,7 +493,7 @@ Time: \${result.processingTime.toFixed(0)}ms\`)
                   <input
                     type="checkbox"
                     checked={settings.showSparseCloud}
-                    onChange={(e) => setSettings({ showSparseCloud: e.target.checked })}
+                    onChange={(e) => updateSettings({ showSparseCloud: e.target.checked })}
                   />
                   Sparse Point Cloud
                 </label>
@@ -501,7 +501,7 @@ Time: \${result.processingTime.toFixed(0)}ms\`)
                   <input
                     type="checkbox"
                     checked={settings.showDenseCloud}
-                    onChange={(e) => setSettings({ showDenseCloud: e.target.checked })}
+                    onChange={(e) => updateSettings({ showDenseCloud: e.target.checked })}
                   />
                   Dense Point Cloud
                 </label>
@@ -509,7 +509,7 @@ Time: \${result.processingTime.toFixed(0)}ms\`)
                   <input
                     type="checkbox"
                     checked={settings.showMesh}
-                    onChange={(e) => setSettings({ showMesh: e.target.checked })}
+                    onChange={(e) => updateSettings({ showMesh: e.target.checked })}
                   />
                   Mesh
                 </label>

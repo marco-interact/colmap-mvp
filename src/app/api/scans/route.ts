@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { addScan, getNextScanId } from '@/lib/mockData'
-import { EquirectangularConverter, Video360Utils } from '@/utils/360/EquirectangularConverter'
-import { OpenCVReconstruction, SfMUtils } from '@/utils/sfm/OpenCVReconstruction'
-import { PotreeIntegration } from '@/utils/potree/PotreeIntegration'
+import { mockDB } from '@/lib/database/mockDatabase'
+import { fileStorage, initializeScanStorage } from '@/lib/services/fileStorage'
 
 // Mock scans data (shared with projects/[id]/scans)
 let scans: any[] = [
@@ -54,148 +53,99 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create new scan - for demo, make it immediately completed
-    const newScan: any = {
-      id: getNextScanId(),
-      name,
-      project_id: projectId,
-      status: 'completed', // Immediately completed for demo
-      thumbnail: null,
-      model_url: '/models/sample.ply', // Use sample PLY file
-      video_filename: video.name,
-      video_size: video.size,
-      processing_options: {
-        quality,
-        dense_reconstruction: denseReconstruction,
-        meshing,
-        frame_rate: frameRate
-      },
-      processing_jobs: [] as any[],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
+        // Get workspace and user info
+        const workspace = mockDB.getWorkspaces()[0] // Default workspace
+        const user = mockDB.getUserByEmail('test@colmap.app') // Default user
+        
+        if (!workspace || !user) {
+          return NextResponse.json(
+            { success: false, message: 'Invalid workspace or user configuration' },
+            { status: 500 }
+          )
+        }
 
-    addScan(newScan)
+        // Generate scan ID and create storage structure
+        const scanId = `scan-${Date.now()}`
+        
+        try {
+          // Initialize file storage structure
+          await initializeScanStorage(workspace.id, user.id, projectId, scanId)
+          console.log(`Created storage structure for scan ${scanId}`)
+        } catch (error) {
+          console.error('Failed to initialize scan storage:', error)
+        }
 
-    // Enhanced COLMAP processing pipeline with 360° support
-    try {
-      // Convert video file to HTML video element for processing
-      const videoBlob = new Blob([await video.arrayBuffer()], { type: video.type })
-      const videoUrl = URL.createObjectURL(videoBlob)
-      
-      // Create video element for analysis (server-side simulation)
-      const videoMetadata = {
-        width: 1920, // Default, would be extracted from actual video
-        height: 1080,
-        duration: 30, // Default duration
-        aspectRatio: 1920 / 1080
-      }
-      
-      // Detect if video is 360°
-      const is360Video = videoMetadata.aspectRatio > 1.8 // Typical 360° aspect ratio
-      
-      if (is360Video) {
-        // 360° Video Processing Pipeline
-        console.log('Detected 360° video, initiating equirectangular processing...')
-        
-        newScan.processing_jobs.push({
-          job_id: `360_${Date.now()}`,
-          type: '360_conversion',
-          status: 'running',
-          description: 'Converting 360° video to perspective views'
-        })
-        
-        // Generate optimal viewpoints for COLMAP
-        const converter = new EquirectangularConverter()
-        const optimalViewpoints = converter.generateOptimalViewpoints({
-          numViews: 16, // More views for better reconstruction
-          verticalLevels: 3,
-          horizontalFOV: 90,
-          verticalFOV: 60,
-          outputWidth: quality === 'high' ? 1920 : quality === 'medium' ? 1280 : 854,
-          outputHeight: quality === 'high' ? 1080 : quality === 'medium' ? 720 : 480
-        })
-        
-        newScan.processing_options.is_360 = true
-        newScan.processing_options.viewpoints = optimalViewpoints.length
-        newScan.processing_options.conversion_type = 'equirectangular_to_perspective'
-      }
-      
-      // Start Structure from Motion processing
-      console.log('Initiating OpenCV Structure-from-Motion pipeline...')
-      
-      const sfmProcessor = new OpenCVReconstruction()
-      newScan.processing_jobs.push({
-        job_id: `sfm_${Date.now()}`,
-        type: 'structure_from_motion',
-        status: 'running',
-        description: 'SIFT feature extraction and camera pose estimation'
-      })
-      
-      // Upload to COLMAP worker with enhanced metadata
-      const colmapWorkerUrl = process.env.COLMAP_WORKER_URL || 'http://localhost:8001'
-      
-      const uploadFormData = new FormData()
-      uploadFormData.append('file', video)
-      uploadFormData.append('project_id', projectId)
-      uploadFormData.append('is_360', is360Video.toString())
-      uploadFormData.append('processing_options', JSON.stringify(newScan.processing_options))
-      
-      const uploadResponse = await fetch(`${colmapWorkerUrl}/upload-video`, {
-        method: 'POST',
-        body: uploadFormData
-      })
-      
-      if (uploadResponse.ok) {
-        // Start enhanced frame extraction
-        const extractResponse = await fetch(`${colmapWorkerUrl}/extract-frames`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            project_id: projectId,
+        // Create new scan with proper database structure
+        const newScan: any = {
+          name,
+          project_id: projectId,
+          user_id: user.id,
+          workspace_id: workspace.id,
+          status: 'completed', // Immediately completed for demo
+          video_filename: video.name,
+          video_size: video.size,
+          video_path: `/storage/${workspace.id}/${user.id}/${projectId}/${scanId}/input/${video.name}`,
+          processing_options: {
             quality,
             dense_reconstruction: denseReconstruction,
             meshing,
-            texturing: false,
-            frame_extraction_rate: frameRate,
-            is_360: is360Video,
-            use_potree_optimization: true
-          })
-        })
-        
-        if (extractResponse.ok) {
-          const extractData = await extractResponse.json()
-          newScan.processing_jobs.push({
-            job_id: extractData.job_id,
-            type: 'colmap_reconstruction',
-            status: 'running',
-            description: 'COLMAP sparse and dense reconstruction'
-          })
-          
-          // Add Potree conversion job
-          newScan.processing_jobs.push({
-            job_id: `potree_${Date.now()}`,
-            type: 'potree_conversion',
-            status: 'pending',
-            description: 'Converting point cloud to Potree octree format'
-          })
+            frame_rate: frameRate
+          },
+          processing_jobs: [
+            {
+              job_id: `job-${Date.now()}-1`,
+              type: 'frame_extraction',
+              status: 'completed',
+              progress: 100,
+              description: 'Frame extraction completed',
+              started_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+              completed_at: new Date(Date.now() - 8 * 60 * 1000).toISOString()
+            },
+            {
+              job_id: `job-${Date.now()}-2`,
+              type: 'sparse_reconstruction',
+              status: 'completed',
+              progress: 100,
+              description: 'COLMAP sparse reconstruction completed',
+              started_at: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
+              completed_at: new Date(Date.now() - 5 * 60 * 1000).toISOString()
+            },
+            {
+              job_id: `job-${Date.now()}-3`,
+              type: 'dense_reconstruction',
+              status: 'completed',
+              progress: 100,
+              description: 'COLMAP dense reconstruction completed',
+              started_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+              completed_at: new Date().toISOString()
+            }
+          ],
+          models: {
+            sparse_cloud: `/storage/${workspace.id}/${user.id}/${projectId}/${scanId}/sparse/points3D.ply`,
+            dense_cloud: `/storage/${workspace.id}/${user.id}/${projectId}/${scanId}/dense/fused.ply`,
+            mesh: `/storage/${workspace.id}/${user.id}/${projectId}/${scanId}/mesh/meshed-poisson.ply`,
+            thumbnails: [
+              `/storage/${workspace.id}/${user.id}/${projectId}/${scanId}/thumbnails/dense.jpg`
+            ]
+          },
+          frame_count: Math.floor(30 * frameRate), // Approximate based on 30s video
+          point_count: 125000 + Math.floor(Math.random() * 50000), // Random realistic count
+          processing_time: 8 * 60, // 8 minutes
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         }
-      }
-      
-      // Clean up temporary video URL
-      URL.revokeObjectURL(videoUrl)
-      
-    } catch (error) {
-      console.error('Enhanced COLMAP processing initiation failed:', error)
-      newScan.status = 'failed'
-      newScan.error_message = error instanceof Error ? error.message : 'Unknown processing error'
-    }
+
+        const createdScan = addScan(newScan)
+
+        // In production, this would trigger actual COLMAP processing
+        console.log(`Created scan ${createdScan.id} for project ${projectId}`)
+        console.log(`Storage structure initialized at: /storage/${workspace.id}/${user.id}/${projectId}/${scanId}`)
     
-    return NextResponse.json({
-      success: true,
-      data: newScan,
-      message: 'Scan created successfully'
-    })
+        return NextResponse.json({
+          success: true,
+          data: createdScan,
+          message: 'Scan created successfully'
+        })
   } catch (error) {
     console.error('Error creating scan:', error)
     return NextResponse.json(
