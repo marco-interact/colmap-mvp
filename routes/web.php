@@ -19,6 +19,11 @@ Route::get('/', function () {
     return redirect('/login');
 });
 
+// Legacy redirect for Laravel's default /home
+Route::get('/home', function () {
+    return redirect('/dashboard');
+});
+
 // Authentication Routes
 Auth::routes();
 
