@@ -73,31 +73,37 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
-      <div className="modal animate-slide-up">
-        <div className="modal-header">
-          <h2 className="modal-title">Nuevo Proyecto</h2>
-          <button
-            onClick={onClose}
-            style={{
-              position: 'absolute',
-              top: 'var(--spacing-lg)',
-              right: 'var(--spacing-lg)',
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer'
-            }}
-          >
-            <X size={24} />
-          </button>
+      <div className="modal animate-slide-up" style={{ maxWidth: '600px', borderRadius: '20px' }}>
+        <div className="modal-header" style={{ position: 'relative', borderBottom: 'none', paddingBottom: 0 }}>
+          <h2 className="modal-title" style={{ 
+            fontSize: '1.75rem', 
+            fontWeight: '300',
+            color: 'var(--text-primary)',
+            marginBottom: 'var(--spacing-xl)'
+          }}>
+            Nuevo Proyecto
+          </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-form">
+        <form onSubmit={handleSubmit} className="modal-form" style={{ gap: 'var(--spacing-xl)' }}>
           <div className="modal-form-group">
-            <label htmlFor="name" className="modal-form-label">
-              Nombre
-              <span className="mandatory">Mandatory</span>
-            </label>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: 'var(--spacing-sm)'
+            }}>
+              <label htmlFor="name" className="modal-form-label" style={{ fontSize: '1rem', fontWeight: '400', margin: 0 }}>
+                Nombre
+              </label>
+              <span className="mandatory" style={{ 
+                fontSize: '0.875rem', 
+                color: 'var(--text-muted)',
+                fontWeight: '300'
+              }}>
+                Mandatory
+              </span>
+            </div>
             <input
               id="name"
               name="name"
@@ -108,15 +114,40 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
               className="modal-form-input"
               required
               disabled={isLoading}
+              style={{
+                background: 'transparent',
+                borderLeft: 'none',
+                borderRight: 'none', 
+                borderTop: 'none',
+                borderBottom: '1px solid var(--border-primary)',
+                borderRadius: 0,
+                padding: 'var(--spacing-md) 0',
+                fontSize: '1rem'
+              }}
             />
-            <p className="modal-form-hint">¿Olvidaste tu contraseña?</p>
+            <p className="modal-form-hint" style={{ marginTop: 'var(--spacing-xs)', fontSize: '0.875rem' }}>
+              ¿Olvidaste tu contraseña?
+            </p>
           </div>
 
           <div className="modal-form-group">
-            <label htmlFor="description" className="modal-form-label">
-              Descripción
-              <span className="mandatory">Mandatory</span>
-            </label>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: 'var(--spacing-sm)'
+            }}>
+              <label htmlFor="description" className="modal-form-label" style={{ fontSize: '1rem', fontWeight: '400', margin: 0 }}>
+                Descripción
+              </label>
+              <span className="mandatory" style={{ 
+                fontSize: '0.875rem', 
+                color: 'var(--text-muted)',
+                fontWeight: '300'
+              }}>
+                Mandatory
+              </span>
+            </div>
             <textarea
               id="description"
               name="description"
@@ -126,15 +157,42 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
               className="modal-form-textarea"
               required
               disabled={isLoading}
+              style={{
+                background: 'transparent',
+                borderLeft: 'none',
+                borderRight: 'none', 
+                borderTop: 'none',
+                borderBottom: '1px solid var(--border-primary)',
+                borderRadius: 0,
+                padding: 'var(--spacing-md) 0',
+                fontSize: '1rem',
+                minHeight: '60px',
+                resize: 'none'
+              }}
             />
-            <p className="modal-form-hint">¿Olvidaste tu contraseña?</p>
+            <p className="modal-form-hint" style={{ marginTop: 'var(--spacing-xs)', fontSize: '0.875rem' }}>
+              ¿Olvidaste tu contraseña?
+            </p>
           </div>
 
           <div className="modal-form-group">
-            <label htmlFor="location" className="modal-form-label">
-              Ubicación
-              <span className="mandatory">Mandatory</span>
-            </label>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: 'var(--spacing-sm)'
+            }}>
+              <label htmlFor="location" className="modal-form-label" style={{ fontSize: '1rem', fontWeight: '400', margin: 0 }}>
+                Ubicación
+              </label>
+              <span className="mandatory" style={{ 
+                fontSize: '0.875rem', 
+                color: 'var(--text-muted)',
+                fontWeight: '300'
+              }}>
+                Mandatory
+              </span>
+            </div>
             <input
               id="location"
               name="location"
@@ -145,69 +203,162 @@ export function ProjectModal({ isOpen, onClose, onSuccess }: ProjectModalProps) 
               className="modal-form-input"
               required
               disabled={isLoading}
+              style={{
+                background: 'transparent',
+                borderLeft: 'none',
+                borderRight: 'none', 
+                borderTop: 'none',
+                borderBottom: '1px solid var(--border-primary)',
+                borderRadius: 0,
+                padding: 'var(--spacing-md) 0',
+                fontSize: '1rem'
+              }}
             />
-            <p className="modal-form-hint">¿No encuentras la ubicación?</p>
+            <p className="modal-form-hint" style={{ marginTop: 'var(--spacing-xs)', fontSize: '0.875rem' }}>
+              ¿No encuentras la ubicación?
+            </p>
           </div>
 
           <div className="modal-form-group">
-            <label htmlFor="space_type" className="modal-form-label">
-              Tipo de Espacio
-              <span className="mandatory">Mandatory</span>
-            </label>
-            <select
-              id="space_type"
-              name="space_type"
-              value={formData.space_type}
-              onChange={handleInputChange}
-              className="modal-form-select"
-              required
-              disabled={isLoading}
-            >
-              <option value="">Selecciona el tipo de espacio a escanear</option>
-              <option value="interior">Interior</option>
-              <option value="exterior">Exterior</option>
-              <option value="industrial">Industrial</option>
-              <option value="residential">Residencial</option>
-              <option value="commercial">Comercial</option>
-            </select>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: 'var(--spacing-sm)'
+            }}>
+              <label htmlFor="space_type" className="modal-form-label" style={{ fontSize: '1rem', fontWeight: '400', margin: 0 }}>
+                Tipo de Espacio
+              </label>
+              <span className="mandatory" style={{ 
+                fontSize: '0.875rem', 
+                color: 'var(--text-muted)',
+                fontWeight: '300'
+              }}>
+                Mandatory
+              </span>
+            </div>
+            <div style={{ position: 'relative' }}>
+              <select
+                id="space_type"
+                name="space_type"
+                value={formData.space_type}
+                onChange={handleInputChange}
+                className="modal-form-select"
+                required
+                disabled={isLoading}
+                style={{
+                  background: 'transparent',
+                  borderLeft: 'none',
+                  borderRight: 'none', 
+                  borderTop: 'none',
+                  borderBottom: '1px solid var(--border-primary)',
+                  borderRadius: 0,
+                  padding: 'var(--spacing-md) var(--spacing-lg) var(--spacing-md) 0',
+                  fontSize: '1rem',
+                  width: '100%',
+                  appearance: 'none',
+                  cursor: 'pointer',
+                  color: formData.space_type ? 'var(--text-primary)' : 'var(--text-muted)'
+                }}
+              >
+                <option value="">Selecciona el tipo de espacio a escanear</option>
+                <option value="interior">Interior</option>
+                <option value="exterior">Exterior</option>
+                <option value="industrial">Industrial</option>
+                <option value="residential">Residencial</option>
+                <option value="commercial">Comercial</option>
+              </select>
+              <div style={{
+                position: 'absolute',
+                right: '0',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                pointerEvents: 'none',
+                color: 'var(--text-muted)'
+              }}>
+                ▼
+              </div>
+            </div>
           </div>
 
           <div className="modal-form-group">
-            <label htmlFor="project_type" className="modal-form-label">
-              Tipo de Proyecto
-              <span className="mandatory">Mandatory</span>
-            </label>
-            <select
-              id="project_type"
-              name="project_type"
-              value={formData.project_type}
-              onChange={handleInputChange}
-              className="modal-form-select"
-              required
-              disabled={isLoading}
-            >
-              <option value="">Selecciona el tipo de proyecto</option>
-              <option value="reconstruction">Reconstrucción 3D</option>
-              <option value="measurement">Medición</option>
-              <option value="inspection">Inspección</option>
-              <option value="modeling">Modelado</option>
-              <option value="documentation">Documentación</option>
-            </select>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: 'var(--spacing-sm)'
+            }}>
+              <label htmlFor="project_type" className="modal-form-label" style={{ fontSize: '1rem', fontWeight: '400', margin: 0 }}>
+                Tipo de Proyecto
+              </label>
+              <span className="mandatory" style={{ 
+                fontSize: '0.875rem', 
+                color: 'var(--text-muted)',
+                fontWeight: '300'
+              }}>
+                Mandatory
+              </span>
+            </div>
+            <div style={{ position: 'relative' }}>
+              <select
+                id="project_type"
+                name="project_type"
+                value={formData.project_type}
+                onChange={handleInputChange}
+                className="modal-form-select"
+                required
+                disabled={isLoading}
+                style={{
+                  background: 'transparent',
+                  borderLeft: 'none',
+                  borderRight: 'none', 
+                  borderTop: 'none',
+                  borderBottom: '1px solid var(--border-primary)',
+                  borderRadius: 0,
+                  padding: 'var(--spacing-md) var(--spacing-lg) var(--spacing-md) 0',
+                  fontSize: '1rem',
+                  width: '100%',
+                  appearance: 'none',
+                  cursor: 'pointer',
+                  color: formData.project_type ? 'var(--text-primary)' : 'var(--text-muted)'
+                }}
+              >
+                <option value="">Selecciona el tipo de proyecto</option>
+                <option value="reconstruction">Reconstrucción 3D</option>
+                <option value="measurement">Medición</option>
+                <option value="inspection">Inspección</option>
+                <option value="modeling">Modelado</option>
+                <option value="documentation">Documentación</option>
+              </select>
+              <div style={{
+                position: 'absolute',
+                right: '0',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                pointerEvents: 'none',
+                color: 'var(--text-muted)'
+              }}>
+                ▼
+              </div>
+            </div>
           </div>
 
-          <div className="modal-actions">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn btn-secondary"
-              disabled={isLoading}
-            >
-              Cancelar
-            </button>
+          <div style={{ marginTop: 'var(--spacing-2xl)' }}>
             <button
               type="submit"
-              className="btn btn-primary btn-full"
+              className="btn btn-primary"
               disabled={isLoading}
+              style={{
+                width: '100%',
+                padding: 'var(--spacing-lg) var(--spacing-xl)',
+                fontSize: '1rem',
+                fontWeight: '500',
+                borderRadius: '50px',
+                background: 'var(--brand-primary)',
+                border: 'none',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}
             >
               {isLoading ? (
                 <>

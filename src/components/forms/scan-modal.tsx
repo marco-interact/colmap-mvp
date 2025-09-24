@@ -126,31 +126,37 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
-      <div className="modal animate-slide-up">
-        <div className="modal-header">
-          <h2 className="modal-title">Nuevo Scan</h2>
-          <button
-            onClick={onClose}
-            style={{
-              position: 'absolute',
-              top: 'var(--spacing-lg)',
-              right: 'var(--spacing-lg)',
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer'
-            }}
-          >
-            <X size={24} />
-          </button>
+      <div className="modal animate-slide-up" style={{ maxWidth: '600px', borderRadius: '20px' }}>
+        <div className="modal-header" style={{ position: 'relative', borderBottom: 'none', paddingBottom: 0 }}>
+          <h2 className="modal-title" style={{ 
+            fontSize: '1.75rem', 
+            fontWeight: '300',
+            color: 'var(--text-primary)',
+            marginBottom: 'var(--spacing-xl)'
+          }}>
+            Nuevo Proyecto
+          </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-form">
+        <form onSubmit={handleSubmit} className="modal-form" style={{ gap: 'var(--spacing-xl)' }}>
           <div className="modal-form-group">
-            <label htmlFor="name" className="modal-form-label">
-              Nombre del Scan
-              <span className="mandatory">Mandatory</span>
-            </label>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: 'var(--spacing-sm)'
+            }}>
+              <label htmlFor="name" className="modal-form-label" style={{ fontSize: '1rem', fontWeight: '400', margin: 0 }}>
+                Nombre del Scan
+              </label>
+              <span className="mandatory" style={{ 
+                fontSize: '0.875rem', 
+                color: 'var(--text-muted)',
+                fontWeight: '300'
+              }}>
+                Mandatory
+              </span>
+            </div>
             <input
               id="name"
               name="name"
@@ -161,31 +167,59 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
               className="modal-form-input"
               required
               disabled={isLoading}
+              style={{
+                background: 'transparent',
+                borderLeft: 'none',
+                borderRight: 'none', 
+                borderTop: 'none',
+                borderBottom: '1px solid var(--border-primary)',
+                borderRadius: 0,
+                padding: 'var(--spacing-md) 0',
+                fontSize: '1rem'
+              }}
             />
           </div>
 
           <div className="modal-form-group">
-            <label className="modal-form-label">
-              Media Input
-              <span className="mandatory">Mandatory</span>
-            </label>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: 'var(--spacing-sm)'
+            }}>
+              <label className="modal-form-label" style={{ fontSize: '1rem', fontWeight: '400', margin: 0 }}>
+                Media Input
+              </label>
+              <span className="mandatory" style={{ 
+                fontSize: '0.875rem', 
+                color: 'var(--text-muted)',
+                fontWeight: '300'
+              }}>
+                Mandatory
+              </span>
+            </div>
             
-            {/* File Upload Area */}
+            {/* File Upload Area - DoMapping Style */}
             <div
-              className={`
-                border-2 border-dashed rounded-xl p-8 text-center transition-all
-                ${dragActive 
-                  ? 'border-brand-primary bg-brand-primary/5' 
-                  : 'border-border-primary bg-bg-tertiary'
-                }
-                ${formData.video ? 'border-success bg-success/5' : ''}
-              `}
+              style={{
+                border: '2px dotted var(--border-primary)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--spacing-2xl)',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                background: dragActive 
+                  ? 'rgba(78, 205, 196, 0.05)' 
+                  : 'var(--bg-tertiary)',
+                borderColor: dragActive 
+                  ? 'var(--brand-primary)' 
+                  : (formData.video ? 'var(--success)' : 'var(--border-primary)')
+              }}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              style={{ cursor: 'pointer' }}
             >
               <input
                 ref={fileInputRef}
@@ -197,10 +231,10 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
               />
               
               {formData.video ? (
-                <div className="flex flex-col items-center gap-4">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-md)' }}>
                   <FileVideo size={48} style={{ color: 'var(--success)' }} />
                   <div>
-                    <p style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+                    <p style={{ color: 'var(--text-primary)', fontWeight: '500', marginBottom: 'var(--spacing-xs)' }}>
                       {formData.video.name}
                     </p>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
@@ -213,126 +247,68 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
                       e.stopPropagation()
                       setFormData(prev => ({ ...prev, video: null }))
                     }}
-                    className="btn btn-ghost"
-                    style={{ fontSize: '0.875rem' }}
+                    style={{ 
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      textDecoration: 'underline'
+                    }}
                   >
                     Cambiar archivo
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-4">
-                  <Upload size={48} style={{ color: 'var(--text-muted)' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
+                  {/* Camera Icon */}
+                  <div style={{ 
+                    width: '60px', 
+                    height: '60px', 
+                    borderRadius: '50%',
+                    border: '2px solid var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-muted)'
+                  }}>
+                    <Upload size={28} />
+                  </div>
                   <div>
-                    <p style={{ color: 'var(--text-primary)', fontWeight: 500, marginBottom: 'var(--spacing-xs)' }}>
+                    <p style={{ 
+                      color: 'var(--text-secondary)', 
+                      fontSize: '1rem',
+                      marginBottom: 0,
+                      fontWeight: '400'
+                    }}>
                       Agregar o seleccionar archivo aquí
-                    </p>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                      Arrastra y suelta o haz clic para seleccionar
                     </p>
                   </div>
                 </div>
               )}
             </div>
             
-            <p className="modal-form-hint">
+            <p className="modal-form-hint" style={{ marginTop: 'var(--spacing-sm)', fontSize: '0.875rem' }}>
               ¿Qué tipos de archivos puedo utilizar?
             </p>
           </div>
 
-          {/* Processing Options */}
-          <div className="modal-form-group">
-            <label className="modal-form-label">
-              Calidad de Procesamiento
-            </label>
-            <select
-              value={formData.quality}
-              onChange={(e) => setFormData(prev => ({ ...prev, quality: e.target.value as any }))}
-              className="modal-form-select"
-              disabled={isLoading}
-            >
-              <option value="low">Baja (Rápido - 800px)</option>
-              <option value="medium">Media (Equilibrado - 1200px)</option>
-              <option value="high">Alta (Detallado - 1600px)</option>
-              <option value="extreme">Extrema (Máximo detalle - 2400px)</option>
-            </select>
-          </div>
-
-          <div className="modal-form-group">
-            <label className="modal-form-label">
-              Tasa de Extracción de Frames
-            </label>
-            <select
-              value={formData.frameRate}
-              onChange={(e) => setFormData(prev => ({ ...prev, frameRate: parseInt(e.target.value) }))}
-              className="modal-form-select"
-              disabled={isLoading}
-            >
-              <option value={1}>1 frame por segundo (Recomendado)</option>
-              <option value={2}>1 frame cada 2 segundos</option>
-              <option value={5}>1 frame cada 5 segundos</option>
-              <option value={10}>1 frame cada 10 segundos</option>
-            </select>
-          </div>
-
-          <div className="modal-form-group">
-            <label className="modal-form-label">
-              Opciones de Reconstrucción
-            </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 'var(--spacing-sm)',
-                color: 'var(--text-secondary)',
-                fontSize: '0.875rem',
-                cursor: 'pointer'
-              }}>
-                <input
-                  type="checkbox"
-                  checked={formData.denseReconstruction}
-                  onChange={(e) => setFormData(prev => ({ ...prev, denseReconstruction: e.target.checked }))}
-                  disabled={isLoading}
-                  style={{
-                    accentColor: 'var(--brand-primary)'
-                  }}
-                />
-                Reconstrucción densa (Más detalle, más tiempo)
-              </label>
-              <label style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 'var(--spacing-sm)',
-                color: 'var(--text-secondary)',
-                fontSize: '0.875rem',
-                cursor: 'pointer'
-              }}>
-                <input
-                  type="checkbox"
-                  checked={formData.meshing}
-                  onChange={(e) => setFormData(prev => ({ ...prev, meshing: e.target.checked }))}
-                  disabled={isLoading}
-                  style={{
-                    accentColor: 'var(--brand-primary)'
-                  }}
-                />
-                Generar malla 3D (Para visualización)
-              </label>
-            </div>
-          </div>
-
-          <div className="modal-actions">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn btn-secondary"
-              disabled={isLoading}
-            >
-              Cancelar
-            </button>
+          <div style={{ marginTop: 'var(--spacing-2xl)' }}>
             <button
               type="submit"
-              className="btn btn-primary btn-full"
+              className="btn btn-primary"
               disabled={isLoading || !formData.video}
+              style={{
+                width: '100%',
+                padding: 'var(--spacing-lg) var(--spacing-xl)',
+                fontSize: '1rem',
+                fontWeight: '500',
+                borderRadius: '50px',
+                background: 'var(--brand-primary)',
+                border: 'none',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}
             >
               {isLoading ? (
                 <>

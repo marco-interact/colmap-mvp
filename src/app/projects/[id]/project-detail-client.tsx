@@ -150,26 +150,68 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
       <Sidebar user={user} />
       
       <div className="main-content">
-        <div className="topbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
-            <Link href="/dashboard" className="btn btn-ghost" style={{ padding: 'var(--spacing-sm)' }}>
-              <ArrowLeft size={20} />
-            </Link>
-            <h1 className="topbar-title">{project.name} &gt; Scans</h1>
-          </div>
-          <div className="topbar-actions">
+        <div style={{ 
+          background: 'var(--bg-primary)', 
+          borderBottom: '1px solid var(--border-primary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 'var(--spacing-lg) var(--spacing-2xl)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 5
+        }}>
+          <h1 style={{ 
+            fontSize: '1.5rem', 
+            fontWeight: '400',
+            color: 'var(--text-primary)',
+            margin: 0
+          }}>
+            {project.name} &gt; Scans
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
             <button
               onClick={handleDeleteProject}
-              className="btn btn-secondary"
+              style={{
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-primary)',
+                borderRadius: '25px',
+                padding: 'var(--spacing-sm) var(--spacing-lg)',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--spacing-sm)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}
             >
-              <Trash2 size={20} />
+              <Trash2 size={18} />
               ELIMINAR PROYECTO
             </button>
             <button
               onClick={() => setIsScanModalOpen(true)}
-              className="btn btn-primary"
+              style={{
+                background: 'var(--brand-primary)',
+                color: 'var(--bg-primary)',
+                border: 'none',
+                borderRadius: '25px',
+                padding: 'var(--spacing-sm) var(--spacing-lg)',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--spacing-sm)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}
             >
-              <Plus size={20} />
+              <Plus size={18} />
               NEW SCAN
             </button>
           </div>
@@ -261,11 +303,29 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
               </button>
             </div>
           ) : (
-            // Scans grid
-            <div className="projects-grid">
+            // Scans grid - DoMapping style
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+              gap: 'var(--spacing-xl)',
+              marginTop: 'var(--spacing-xl)'
+            }}>
               {scans.map((scan) => (
-                <div key={scan.id} className="project-card animate-fade-in">
-                  <div className="project-card-image">
+                <div key={scan.id} style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-primary)',
+                  borderRadius: 'var(--radius-xl)',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }} className="project-card animate-fade-in">
+                  <div style={{
+                    width: '100%',
+                    height: '180px',
+                    background: 'var(--bg-tertiary)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
                     {scan.status === 'completed' && scan.model_url ? (
                       // Show 3D viewer for completed scans
                       <ModelViewer
@@ -274,76 +334,74 @@ export function ProjectDetailClient({ user, projectId }: ProjectDetailClientProp
                         className="scan-viewer-preview"
                       />
                     ) : scan.thumbnail ? (
-                      <img src={scan.thumbnail} alt={scan.name} />
+                      <img src={scan.thumbnail} alt={scan.name} style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }} />
                     ) : (
-                      // Placeholder for scan thumbnail
+                      // Checkerboard placeholder matching DoMapping design
                       <div style={{
-                        background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)',
+                        background: '#f0f0f0',
+                        width: '100%',
+                        height: '100%',
+                        backgroundImage: `
+                          repeating-conic-gradient(
+                            #e0e0e0 0% 25%, 
+                            transparent 0% 50%
+                          ) 50% 50% / 20px 20px
+                        `,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         position: 'relative'
                       }}>
                         <div style={{
-                          width: '80%',
-                          height: '80%',
-                          background: 'repeating-conic-gradient(#333 0% 25%, transparent 0% 50%)',
-                          backgroundSize: '20px 20px',
-                          opacity: 0.3,
-                          borderRadius: '4px'
+                          background: 'rgba(0,0,0,0.1)',
+                          width: '100%',
+                          height: '100%',
+                          position: 'absolute'
                         }} />
                       </div>
                     )}
                   </div>
                   
-                  <div className="project-card-content">
-                    <div className="project-card-header">
-                      <h3 className="project-card-title">{scan.name}</h3>
-                      <div className="project-card-description">
-                        <span className={`status-badge ${scan.status}`}>
-                          {scan.status}
-                        </span>
-                        {scan.processing_options && (
-                          <div style={{ 
-                            fontSize: '0.75rem', 
-                            color: 'var(--text-muted)',
-                            marginTop: 'var(--spacing-xs)'
-                          }}>
-                            {scan.processing_options.quality} • 
-                            {scan.processing_options.dense_reconstruction ? ' Dense' : ' Sparse'} • 
-                            {scan.processing_options.meshing ? ' Mesh' : ' Points'}
-                          </div>
-                        )}
+                  <div style={{ padding: 'var(--spacing-lg)' }}>
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                      <div style={{
+                        color: 'var(--text-primary)',
+                        fontSize: '1.125rem',
+                        fontWeight: '600',
+                        marginBottom: 'var(--spacing-xs)'
+                      }}>
+                        {project.name}
                       </div>
-                    </div>
-                    
-                    {/* Processing Status */}
-                    {scan.processing_jobs && scan.processing_jobs.length > 0 && (
-                      <ProcessingStatus
-                        scanId={scan.id}
-                        projectId={projectId}
-                        jobs={scan.processing_jobs}
-                        onStatusUpdate={(status, jobs) => {
-                          // Update scan status in local state
-                          setScans(prevScans => 
-                            prevScans.map(s => 
-                              s.id === scan.id 
-                                ? { ...s, status: status as any, processing_jobs: jobs as any }
-                                : s
-                            )
-                          )
-                        }}
-                      />
-                    )}
-                    
-                    <div className="project-card-meta">
-                      <div className="project-card-date">
+                      <div style={{
+                        color: 'var(--text-muted)',
+                        fontSize: '0.875rem',
+                        marginBottom: 'var(--spacing-sm)'
+                      }}>
                         Actualizado: {formatDate(scan.updated_at)}
                       </div>
-                      <div className="project-card-location">
-                        <MapPin />
-                        {project.location}
-                      </div>
+                      <h3 style={{
+                        fontSize: '1rem',
+                        fontWeight: '500',
+                        color: 'var(--text-primary)',
+                        margin: 0
+                      }}>
+                        {scan.name}
+                      </h3>
+                    </div>
+                    
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--spacing-xs)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.875rem'
+                    }}>
+                      <MapPin size={14} />
+                      {project.location}
                     </div>
                   </div>
                 </div>

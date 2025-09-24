@@ -64,12 +64,29 @@ export function DashboardClient({ user }: DashboardClientProps) {
       <Sidebar user={user} />
       
       <div className="main-content">
-        <div className="topbar">
-          <h1 className="topbar-title">Mis Proyectos</h1>
-          <div className="topbar-actions">
+        <div className="topbar" style={{ 
+          background: 'var(--bg-primary)', 
+          borderBottom: '1px solid var(--border-primary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 'var(--spacing-lg) var(--spacing-2xl)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 5
+        }}>
+          <h1 style={{ 
+            fontSize: '1.5rem', 
+            fontWeight: '400',
+            color: 'var(--text-primary)',
+            margin: 0
+          }}>
+            Mis Proyectos
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
             <div style={{ position: 'relative' }}>
               <Search 
-                size={20} 
+                size={18} 
                 style={{ 
                   position: 'absolute', 
                   left: 'var(--spacing-md)', 
@@ -80,19 +97,42 @@ export function DashboardClient({ user }: DashboardClientProps) {
               />
               <input
                 type="text"
-                placeholder="Buscar Proyecto"
+                placeholder="Search Project"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-                style={{ paddingLeft: '2.5rem' }}
+                style={{
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-primary)',
+                  borderRadius: '25px',
+                  padding: 'var(--spacing-sm) var(--spacing-md)',
+                  paddingLeft: '2.5rem',
+                  color: 'var(--text-primary)',
+                  width: '280px',
+                  fontSize: '0.875rem'
+                }}
               />
             </div>
             <button
               onClick={() => setIsProjectModalOpen(true)}
-              className="btn btn-primary"
+              style={{
+                background: 'var(--brand-primary)',
+                color: 'var(--bg-primary)',
+                border: 'none',
+                borderRadius: '25px',
+                padding: 'var(--spacing-sm) var(--spacing-lg)',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--spacing-sm)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}
             >
-              <Plus size={20} />
-              NUEVO PROYECTO
+              <Plus size={18} />
+              NEW PROJECT
             </button>
           </div>
         </div>
@@ -156,86 +196,163 @@ export function DashboardClient({ user }: DashboardClientProps) {
               <p>No se encontraron proyectos que coincidan con "{searchTerm}"</p>
             </div>
           ) : (
-            <div className="projects-grid">
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+              gap: 'var(--spacing-xl)',
+              marginTop: 'var(--spacing-xl)'
+            }}>
               {filteredProjects.map((project) => (
-                <Link href={`/projects/${project.id}`} key={project.id}>
-                  <div className="project-card animate-fade-in">
-                    <div className="project-card-image">
+                <Link href={`/projects/${project.id}`} key={project.id} style={{ textDecoration: 'none' }}>
+                  <div style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-primary)',
+                    borderRadius: 'var(--radius-xl)',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  className="project-card animate-fade-in"
+                  >
+                    <div style={{
+                      width: '100%',
+                      height: '180px',
+                      background: 'var(--bg-tertiary)',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}>
                       {project.thumbnail ? (
-                        <img src={project.thumbnail} alt={project.name} />
+                        <img src={project.thumbnail} alt={project.name} style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }} />
                       ) : (
+                        // 3D Building Mockup matching DoMapping design
                         <div style={{
                           background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)',
+                          width: '100%',
+                          height: '100%',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           position: 'relative',
                           overflow: 'hidden'
                         }}>
+                          {/* Industrial Building 3D Mockup */}
                           <div style={{
-                            width: '80%',
-                            height: '60%',
-                            background: 'linear-gradient(45deg, #4a4a4a, #6a6a6a, #8a8a8a)',
+                            width: '85%',
+                            height: '70%',
+                            background: 'linear-gradient(45deg, #6a5d4a, #8a7a5a, #aa9a7a)',
                             borderRadius: '4px',
                             position: 'relative',
-                            transform: 'perspective(100px) rotateX(15deg) rotateY(-10deg)',
-                            boxShadow: '0 10px 20px rgba(0,0,0,0.3)'
+                            transform: 'perspective(120px) rotateX(20deg) rotateY(-15deg)',
+                            boxShadow: '0 15px 25px rgba(0,0,0,0.4)'
                           }}>
+                            {/* Main building structure */}
                             <div style={{
                               position: 'absolute',
-                              top: '10%',
-                              left: '20%',
-                              right: '20%',
-                              bottom: '30%',
+                              top: '15%',
+                              left: '15%',
+                              right: '15%',
+                              bottom: '25%',
                               background: 'linear-gradient(to bottom, #8a7a5a, #6a5a4a)',
-                              borderRadius: '2px'
+                              borderRadius: '2px',
+                              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)'
                             }} />
+                            
+                            {/* Side structures */}
                             <div style={{
                               position: 'absolute',
-                              top: '15%',
-                              left: '10%',
-                              width: '15%',
-                              height: '40%',
+                              top: '20%',
+                              left: '5%',
+                              width: '12%',
+                              height: '45%',
                               background: '#5a4a3a',
                               borderRadius: '1px'
                             }} />
                             <div style={{
                               position: 'absolute',
-                              top: '15%',
-                              right: '10%',
-                              width: '15%',
-                              height: '40%',
+                              top: '20%',
+                              right: '5%',
+                              width: '12%',
+                              height: '45%',
                               background: '#5a4a3a',
                               borderRadius: '1px'
                             }} />
+                            
+                            {/* Ground/base */}
                             <div style={{
                               position: 'absolute',
                               bottom: '0',
                               left: '0',
                               right: '0',
-                              height: '20%',
+                              height: '15%',
                               background: 'linear-gradient(to top, #2d5a2d, #3d6a3d)',
                               borderRadius: '0 0 4px 4px'
+                            }} />
+                            
+                            {/* Vegetation spots */}
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '10%',
+                              left: '20%',
+                              width: '8px',
+                              height: '8px',
+                              background: '#4a7a4a',
+                              borderRadius: '50%'
+                            }} />
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '12%',
+                              right: '25%',
+                              width: '6px',
+                              height: '6px',
+                              background: '#5a8a5a',
+                              borderRadius: '50%'
                             }} />
                           </div>
                         </div>
                       )}
                     </div>
                     
-                    <div className="project-card-content">
-                      <div className="project-card-header">
-                        <h3 className="project-card-title">{project.name}</h3>
-                        <p className="project-card-description">{project.description}</p>
-                      </div>
-                      
-                      <div className="project-card-meta">
-                        <div className="project-card-date">
+                    <div style={{ padding: 'var(--spacing-lg)' }}>
+                      <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                        <div style={{
+                          color: 'var(--text-muted)',
+                          fontSize: '0.875rem',
+                          marginBottom: 'var(--spacing-xs)'
+                        }}>
                           Actualizado: {formatDate(project.updated_at)}
                         </div>
-                        <div className="project-card-location">
-                          <MapPin />
-                          {project.location}
-                        </div>
+                        <h3 style={{
+                          fontSize: '1.125rem',
+                          fontWeight: '600',
+                          color: 'var(--text-primary)',
+                          marginBottom: 'var(--spacing-xs)',
+                          margin: 0
+                        }}>
+                          {project.name}
+                        </h3>
+                        <p style={{
+                          color: 'var(--text-secondary)',
+                          fontSize: '0.875rem',
+                          lineHeight: '1.4',
+                          margin: 0
+                        }}>
+                          {project.description}
+                        </p>
+                      </div>
+                      
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--spacing-xs)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.875rem'
+                      }}>
+                        <MapPin size={14} />
+                        {project.location}
                       </div>
                     </div>
                   </div>
