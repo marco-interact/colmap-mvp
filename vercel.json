@@ -3,13 +3,9 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "functions": {
-    "src/app/api/**/*.ts": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "COLMAP_WORKER_URL": "https://colmap-worker.railway.app"
   },
   "headers": [
     {
