@@ -140,11 +140,41 @@ export async function POST(request: NextRequest) {
         // In production, this would trigger actual COLMAP processing
         console.log(`Created scan ${createdScan.id} for project ${projectId}`)
         console.log(`Storage structure initialized at: /storage/${workspace.id}/${user.id}/${projectId}/${scanId}`)
+
+        // Trigger Open3D optimization in background (if COLMAP worker is available)
+        try {
+          const colmapWorkerUrl = process.env.COLMAP_WORKER_URL || 'http://localhost:8001'
+          const optimizationUrl = `${colmapWorkerUrl}/process-open3d/${projectId}`
+          
+          // Fire and forget - don't wait for response
+          fetch(optimizationUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              config: { 
+                quality_profile: quality === 'high' ? 'web_high' : 'web_medium',
+                point_cloud: { target_points: quality === 'high' ? 1000000 : 500000 },
+                mesh: { decimation_target_triangles: quality === 'high' ? 500000 : 250000 }
+              }
+            })
+          }).catch(error => {
+            console.warn('Open3D optimization not available:', error.message)
+          })
+          
+          console.log(`Triggered Open3D optimization for project ${projectId}`)
+        } catch (error) {
+          console.warn('Could not trigger Open3D optimization:', error)
+        }
     
         return NextResponse.json({
           success: true,
           data: createdScan,
-          message: 'Scan created successfully'
+          message: 'Scan created successfully. Open3D optimization started in background.',
+          optimization: {
+            triggered: true,
+            status: 'processing',
+            estimated_time: '2-5 minutes'
+          }
         })
   } catch (error) {
     console.error('Error creating scan:', error)

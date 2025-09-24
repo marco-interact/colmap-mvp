@@ -157,9 +157,9 @@ export function ScanModal({ isOpen, onClose, projectId, onSuccess }: ScanModalPr
         await simulateProgress('generating', 2000, 100)
         
         // Stage 4: Complete
-        setProcessingState({ stage: 'completed', progress: 100, message: 'Redirecting to 3D viewer...' })
+        setProcessingState({ stage: 'completed', progress: 100, message: 'Opening 3D viewer...' })
         
-        toast.success('Scan processed successfully')
+        toast.success('Scan created! Opening 3D viewer with COLMAP + Open3D processing...')
         
         // Wait a moment before navigating
         setTimeout(() => {
