@@ -29,6 +29,14 @@ const nextConfig = {
   // Environment variables for build
   env: {
     COLMAP_WORKER_URL: process.env.COLMAP_WORKER_URL,
+  },
+  // Google Cloud Run specific configuration
+  trailingSlash: false,
+  generateEtags: false,
+  poweredByHeader: false,
+  compress: true,
+  generateBuildId: async () => {
+    return 'build-' + Date.now()
   }
 };
 
