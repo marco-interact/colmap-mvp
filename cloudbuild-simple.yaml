@@ -27,7 +27,7 @@ steps:
     - '--port'
     - '3000'
     - '--set-env-vars'
-    - 'NODE_ENV=production'
+    - 'NODE_ENV=production,COLMAP_WORKER_URL=https://colmap-app-64102061337.us-central1.run.app'
     - '--max-instances'
     - '10'
     - '--min-instances'
