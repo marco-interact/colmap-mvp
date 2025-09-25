@@ -14,3 +14,4 @@ gcloud builds submit --config cloudbuild-simple.yaml --substitutions _TAG_NAME=l
 
 echo "✅ Deployment completed!"
 echo "🌐 Check your Cloud Run services: https://console.cloud.google.com/run"
+

@@ -6,28 +6,136 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  PROJECT_ID: colmap-app-1758759622
+  REGION: us-central1
+  FRONTEND_SERVICE: colmap-frontend
+  WORKER_SERVICE: colmap-worker
+
 jobs:
-  deploy:
+  deploy-worker:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Setup Google Cloud CLI
       uses: google-github-actions/setup-gcloud@v2
       with:
         service_account_key: ${{ secrets.GCP_SA_KEY }}
-        project_id: colmap-app-1758759622
-        
-    - name: Configure Docker for GCR
+        project_id: ${{ env.PROJECT_ID }}
+
+    - name: Configure Docker to use gcloud as credential helper
       run: gcloud auth configure-docker
-      
-    - name: Build and Deploy
+
+    - name: Build and push COLMAP worker image
       run: |
-        gcloud builds submit --config cloudbuild-simple.yaml --substitutions _TAG_NAME=${{ github.sha }}
-        
-    - name: Get Service URL
+        docker build -t gcr.io/$PROJECT_ID/$WORKER_SERVICE ./gcp-deployment/colmap-worker
+        docker push gcr.io/$PROJECT_ID/$WORKER_SERVICE
+
+    - name: Deploy COLMAP worker to Cloud Run
       run: |
-        SERVICE_URL=$(gcloud run services describe colmap-frontend --region=northamerica-south1 --format='value(status.url)')
-        echo "🚀 Service deployed at: $SERVICE_URL"
+        gcloud run deploy $WORKER_SERVICE \
+          --image gcr.io/$PROJECT_ID/$WORKER_SERVICE \
+          --region $REGION \
+          --platform managed \
+          --allow-unauthenticated \
+          --memory 4Gi \
+          --cpu 2 \
+          --timeout 3600 \
+          --max-instances 10 \
+          --min-instances 0
+
+  deploy-frontend:
+    if: github.ref == 'refs/heads/main'
+    needs: deploy-worker
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build Next.js application
+      run: npm run build
+
+    - name: Setup Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        project_id: ${{ env.PROJECT_ID }}
+
+    - name: Configure Docker to use gcloud as credential helper
+      run: gcloud auth configure-docker
+
+    - name: Get worker URL
+      id: get_worker_url
+      run: |
+        WORKER_URL=$(gcloud run services describe $WORKER_SERVICE --region $REGION --format 'value(status.url)')
+        echo "worker_url=$WORKER_URL" >> $GITHUB_OUTPUT
+
+    - name: Build and push frontend image
+      run: |
+        docker build -t gcr.io/$PROJECT_ID/$FRONTEND_SERVICE \
+          --build-arg COLMAP_WORKER_URL=${{ steps.get_worker_url.outputs.worker_url }} \
+          -f Dockerfile.frontend .
+        docker push gcr.io/$PROJECT_ID/$FRONTEND_SERVICE
+
+    - name: Deploy frontend to Cloud Run
+      run: |
+        gcloud run deploy $FRONTEND_SERVICE \
+          --image gcr.io/$PROJECT_ID/$FRONTEND_SERVICE \
+          --region $REGION \
+          --platform managed \
+          --allow-unauthenticated \
+          --memory 2Gi \
+          --cpu 1 \
+          --port 3000 \
+          --set-env-vars NODE_ENV=production,COLMAP_WORKER_URL=${{ steps.get_worker_url.outputs.worker_url }} \
+          --max-instances 10 \
+          --min-instances 0
+
+    - name: Output URLs
+      run: |
+        echo "🚀 Deployment Complete!"
+        echo "Frontend URL: $(gcloud run services describe $FRONTEND_SERVICE --region $REGION --format 'value(status.url)')"
+        echo "Worker URL: $(gcloud run services describe $WORKER_SERVICE --region $REGION --format 'value(status.url)')"
+
+  test-deployment:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run linting
+      run: npm run lint
+
+    - name: Build application (test)
+      run: npm run build
+
+    - name: Test Docker build (frontend)
+      run: docker build -f Dockerfile.frontend -t test-frontend .
+
+    - name: Test Docker build (worker)
+      run: docker build -f ./gcp-deployment/colmap-worker/Dockerfile -t test-worker ./gcp-deployment/colmap-worker

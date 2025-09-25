@@ -38,3 +38,4 @@ gcloud run deploy $SERVICE_NAME \
 
 echo "✅ Deployment completed!"
 echo "🌐 Your app should be available at: https://$SERVICE_NAME-*.$REGION.run.app"
+

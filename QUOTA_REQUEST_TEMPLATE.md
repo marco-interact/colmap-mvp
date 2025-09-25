@@ -106,3 +106,4 @@ gcloud alpha services quota increase \
 - **Project**: colmap-app-1758759622
 - **Contact**: marco.aurelio@interact.studio
 - **Business Justification**: 3D reconstruction platform for computer vision research
+

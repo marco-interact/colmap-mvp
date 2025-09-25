@@ -29,3 +29,4 @@ gcloud run deploy $SERVICE_NAME \
 
 echo "✅ Frontend deployed successfully!"
 echo "🌐 Your app should be available at: https://colmap-frontend-*.northamerica-south1.run.app"
+

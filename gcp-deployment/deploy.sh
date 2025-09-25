@@ -69,3 +69,4 @@ echo "📝 Next steps:"
 echo "1. Update your frontend environment variables with the worker URL"
 echo "2. Test the COLMAP processing pipeline"
 echo "3. Set up monitoring and logging"
+

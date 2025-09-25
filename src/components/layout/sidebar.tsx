@@ -109,3 +109,4 @@ export function Sidebar({ activeItem = 'projects' }: SidebarProps) {
     </div>
   )
 }
+

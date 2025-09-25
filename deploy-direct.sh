@@ -39,3 +39,4 @@ gcloud run deploy $SERVICE_NAME \
 
 echo "✅ Deployment completed!"
 echo "🌐 Check your deployment: https://console.cloud.google.com/run"
+

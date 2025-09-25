@@ -1,0 +1,38 @@
+name: Deploy via Cloud Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: colmap-app-1758759622
+  REGION: us-central1
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        project_id: ${{ env.PROJECT_ID }}
+
+    - name: Submit build to Cloud Build
+      run: |
+        gcloud builds submit \
+          --config=gcp-deployment/cloudbuild.yaml \
+          --substitutions=_REGION=$REGION \
+          --timeout=3600s
+
+    - name: Get service URLs
+      run: |
+        echo "🚀 Deployment Complete!"
+        echo "Worker URL: $(gcloud run services describe colmap-worker --region $REGION --format 'value(status.url)')"
+        echo "Frontend URL: $(gcloud run services describe colmap-frontend --region $REGION --format 'value(status.url)')"

@@ -4,20 +4,18 @@ steps:
   - name: 'node:18'
     entrypoint: 'npm'
     args: ['ci']
-    dir: 'frontend'
   
   - name: 'node:18'
     entrypoint: 'npm'
     args: ['run', 'build']
-    dir: 'frontend'
   
   # Build COLMAP worker container
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/colmap-worker', './colmap-worker']
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/colmap-worker', './gcp-deployment/colmap-worker']
   
-  # Build frontend container
+  # Build frontend container  
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/colmap-frontend', './frontend']
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/colmap-frontend', '-f', 'Dockerfile.frontend', '.']
   
   # Push containers to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
@@ -68,3 +66,4 @@ options:
   diskSizeGb: 100
 
 timeout: '3600s'
+

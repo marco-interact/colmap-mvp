@@ -48,3 +48,4 @@ if __name__ == '__main__':
     server = HTTPServer(('0.0.0.0', port), SimpleHandler)
     print(f"Server running on port {port}")
     server.serve_forever()
+

@@ -97,3 +97,4 @@ export function ModelViewer({ modelUrl, className = '' }: ModelViewerProps) {
     </motion.div>
   )
 }
+
