@@ -1,0 +1,166 @@
+/* Colmap App Global Styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Colmap App Brand Colors */
+  --primary: #22c55e;
+  --primary-dark: #16a34a;
+  --secondary: #64748b;
+  --accent: #0ea5e9;
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --muted: #f1f5f9;
+  --border: #e2e8f0;
+  --input: #f8fafc;
+  --ring: #22c55e;
+  --error: #ef4444;
+  --success: #22c55e;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* Typography */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Breakpoints */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
+
+/* App Layout */
+.app-layout {
+  @apply min-h-screen bg-gray-50;
+}
+
+.sidebar {
+  @apply fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 z-40;
+}
+
+.topbar {
+  @apply fixed top-0 right-0 left-64 h-16 bg-white border-b border-gray-200 z-30;
+}
+
+/* Auth Styles */
+.auth-container {
+  @apply min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8;
+}
+
+.auth-card {
+  @apply max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md;
+}
+
+.auth-logo {
+  @apply text-3xl font-bold text-center text-gray-900 mb-8;
+}
+
+/* Button Styles */
+.btn-primary {
+  @apply bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium py-2 px-4 rounded-md transition-colors duration-200;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center;
+}
+
+.modal-content {
+  @apply bg-white rounded-lg shadow-xl max-w-md w-full mx-4;
+}
+
+.modal-form-group {
+  @apply space-y-4;
+}
+
+/* Project Card Styles */
+.project-card {
+  @apply bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer;
+}
+
+.projects-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+}
+
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.scan-viewer-preview {
+  @apply w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center;
+}
+
+/* Processing Status */
+.processing-status {
+  @apply bg-blue-50 border border-blue-200 rounded-lg p-4;
+}
+
+.processing-header {
+  @apply flex items-center justify-between mb-3;
+}
+
+.progress-bar {
+  @apply w-full bg-gray-200 rounded-full h-2;
+}
+
+.processing-jobs {
+  @apply space-y-3;
+}
+
+.processing-job {
+  @apply bg-white border border-gray-200 rounded-lg p-3;
+}
+
+.job-info {
+  @apply flex items-center justify-between;
+}
+
+.job-label {
+  @apply text-sm font-medium text-gray-900;
+}
+
+.job-status {
+  @apply text-xs text-gray-500;
+}
+
+.job-progress {
+  @apply w-full bg-gray-200 rounded-full h-1 mt-2;
+}
+
+.processing-actions {
+  @apply flex space-x-2;
+}
+
+.btn-sm {
+  @apply text-xs px-2 py-1;
+}
+
+.processing-options {
+  @apply space-y-2;
+}
+
+.processing-option-tag {
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800;
+}
+
+/* Scan Card */
+.scan-card {
+  @apply bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer transform hover:scale-105;
+}
