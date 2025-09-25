@@ -1,0 +1,17 @@
+runtime: python311
+service: colmap-worker
+
+env_variables:
+  PYTHONPATH: /app
+
+automatic_scaling:
+  min_instances: 0
+  max_instances: 10
+
+resources:
+  cpu: 2
+  memory_gb: 4
+
+handlers:
+- url: /.*
+  script: auto
