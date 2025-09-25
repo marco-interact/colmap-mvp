@@ -28,7 +28,7 @@ const nextConfig = {
   },
   // Environment variables for build
   env: {
-    COLMAP_WORKER_URL: process.env.COLMAP_WORKER_URL,
+    COLMAP_WORKER_URL: process.env.COLMAP_WORKER_URL || 'http://localhost:8080',
   },
   // Google Cloud Run specific configuration
   trailingSlash: false,

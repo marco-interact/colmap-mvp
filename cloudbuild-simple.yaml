@@ -28,6 +28,12 @@ steps:
     - '3000'
     - '--set-env-vars'
     - 'NODE_ENV=production'
+    - '--max-instances'
+    - '10'
+    - '--min-instances'
+    - '0'
+    - '--timeout'
+    - '300'
 
 images:
 - 'gcr.io/$PROJECT_ID/colmap-frontend:$TAG_NAME'
