@@ -3,7 +3,7 @@
 # Setup script for GitHub Actions integration with Google Cloud Run
 # This script creates a service account and sets up the necessary permissions
 
-PROJECT_ID="colmap-app-1758759622"
+PROJECT_ID="colmap-app"
 SERVICE_ACCOUNT_NAME="github-actions-deployer"
 SERVICE_ACCOUNT_EMAIL="${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 KEY_FILE="github-actions-key.json"
