@@ -108,7 +108,7 @@ export function ProjectModal({ isOpen, onClose, onSubmit }: ProjectModalProps) {
       setErrors({})
       onClose()
     } catch (error) {
-      setErrors({ submit: "Error al crear el proyecto. Intenta nuevamente." })
+      setErrors({ submit: "Error creating project. Please try again." })
     } finally {
       setLoading(false)
     }
@@ -133,7 +133,7 @@ export function ProjectModal({ isOpen, onClose, onSubmit }: ProjectModalProps) {
     <Modal 
       isOpen={isOpen} 
       onClose={handleClose}
-      title="Nuevo Proyecto"
+      title="New Project"
       className="max-w-2xl"
     >
       <form onSubmit={handleSubmit}>
@@ -141,11 +141,11 @@ export function ProjectModal({ isOpen, onClose, onSubmit }: ProjectModalProps) {
           {/* Project Name */}
           <div>
             <label htmlFor="project-name" className="block text-sm font-medium text-gray-300 mb-2">
-              Nombre del Proyecto *
+              Project Name *
             </label>
             <Input
               id="project-name"
-              placeholder="Ej: Inspección Edificio Central"
+              placeholder="Project's name or title"
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
               error={errors.name}
@@ -156,11 +156,11 @@ export function ProjectModal({ isOpen, onClose, onSubmit }: ProjectModalProps) {
           {/* Description */}
           <div>
             <label htmlFor="project-description" className="block text-sm font-medium text-gray-300 mb-2">
-              Descripción *
+              Description *
             </label>
             <Textarea
               id="project-description"
-              placeholder="Describe el objetivo y alcance del proyecto..."
+              placeholder="Project's short description"
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
               error={errors.description}
@@ -171,7 +171,7 @@ export function ProjectModal({ isOpen, onClose, onSubmit }: ProjectModalProps) {
           {/* Location */}
           <div>
             <label htmlFor="project-location" className="block text-sm font-medium text-gray-300 mb-2">
-              Ubicación *
+              Location *
             </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />

@@ -130,7 +130,7 @@ export function ScanModal({ isOpen, onClose, onSubmit, projectId }: ScanModalPro
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-white font-mono text-sm font-bold">
-                      Nombre del Scan
+                      Scan Name
                     </label>
                     <span className="text-gray-400 text-xs font-mono">Mandatory</span>
                   </div>

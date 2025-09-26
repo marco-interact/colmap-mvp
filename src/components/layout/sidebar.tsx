@@ -17,25 +17,25 @@ export function Sidebar({ activeItem = 'projects' }: SidebarProps) {
   const navigationItems = [
     {
       id: 'projects',
-      label: 'Mis Proyectos',
+      label: 'My Projects',
       icon: FolderOpen,
       href: '/dashboard'
     },
     {
       id: 'recent',
-      label: 'Recientes',
+      label: 'Recent',
       icon: Clock,
       href: '/dashboard/recent'
     },
     {
       id: 'settings',
-      label: 'Configuración',
+      label: 'Settings',
       icon: Settings,
       href: '/dashboard/settings'
     },
     {
       id: 'help',
-      label: 'Ayuda',
+      label: 'Help',
       icon: HelpCircle,
       href: '/help'
     }

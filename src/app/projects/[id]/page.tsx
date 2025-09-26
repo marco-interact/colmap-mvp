@@ -495,7 +495,7 @@ export default function ProjectDetailPage() {
                     <Upload className="w-6 h-6 text-gray-400" />
                   </div>
                   <div>
-                    <p className="text-white mb-2">Agregar o seleccionar archivo aquí</p>
+                    <p className="text-white mb-2">Drag and drop media or click to browse</p>
                     <p className="text-gray-400 text-sm">
                       Maximum file size: 500MB • Supported format: MP4
                     </p>
@@ -518,7 +518,7 @@ export default function ProjectDetailPage() {
             </div>
 
             <p className="text-xs text-gray-500 mt-2">
-              ¿Qué tipos de archivos puedo utilizar?
+              Only .mp4 files no larger than 500mb
             </p>
           </div>
 

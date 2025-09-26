@@ -210,7 +210,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="text-center">
           <p className="text-xs text-gray-500">
-            ¿Necesitas ayuda? Contacta al administrador
+            Need help? Contact administrator
           </p>
         </div>
       </div>

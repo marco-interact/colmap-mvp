@@ -23,7 +23,7 @@ export interface SelectItemProps {
 export function Select({ 
   value, 
   onValueChange, 
-  placeholder = "Seleccionar...", 
+  placeholder = "Select...", 
   children, 
   error,
   className,

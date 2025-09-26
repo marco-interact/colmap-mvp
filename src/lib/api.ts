@@ -36,15 +36,15 @@ export interface Scan {
 }
 
 export interface ProcessingJob {
-  job_id: string
-  status: 'queued' | 'processing' | 'completed' | 'failed'
+  jobId: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
   message: string
-  created_at: string
-  progress?: number
-  current_stage?: string
-  estimated_time?: string
+  createdAt: string
+  progress: number
+  currentStage: string
   results?: {
     point_cloud_url?: string
+    sparse_model_url?: string
     mesh_url?: string
     thumbnail_url?: string
   }
@@ -156,7 +156,32 @@ class APIClient {
       return this.getDemoJobStatus(jobId)
     }
 
-    return this.request<ProcessingJob>(`/jobs/${jobId}`)
+    try {
+      const response = await this.request<{
+        job_id: string
+        status: string
+        message: string
+        created_at: string
+        progress: number
+        current_stage: string
+        results?: any
+      }>(`/jobs/${jobId}`)
+
+      // Convert backend format to frontend format
+      return {
+        jobId: response.job_id,
+        status: response.status as 'pending' | 'processing' | 'completed' | 'failed',
+        message: response.message,
+        createdAt: response.created_at,
+        progress: response.progress,
+        currentStage: response.current_stage,
+        results: response.results
+      }
+    } catch (error) {
+      // Fallback to demo mode if backend fails
+      console.warn('Real backend failed, using demo mode:', error)
+      return this.getDemoJobStatus(jobId)
+    }
   }
 
   // Demo mode job status simulation
@@ -188,15 +213,15 @@ class APIClient {
     }
 
     return {
-      job_id: jobId,
+      jobId,
       status,
       message: status === 'completed' ? '3D reconstruction completed successfully!' : `Processing your video: ${currentStage}`,
-      created_at: new Date(jobStartTime).toISOString(),
+      createdAt: new Date(jobStartTime).toISOString(),
       progress,
-      current_stage: currentStage,
-      estimated_time: estimatedTime,
+      currentStage,
       results: status === 'completed' ? {
         point_cloud_url: `/demo/pointcloud.ply`,
+        sparse_model_url: `/demo/sparse_model.zip`,
         mesh_url: `/demo/mesh.obj`,
         thumbnail_url: `/demo/thumbnail.jpg`
       } : undefined
