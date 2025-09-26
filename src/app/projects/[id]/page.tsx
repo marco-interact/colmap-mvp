@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Modal, ModalContent, ModalFooter } from "@/components/ui/modal"
 import { Input } from "@/components/ui/input"
+import { apiClient, localStorage as apiStorage, validateVideoFile, formatFileSize, isDemoMode, type Project as APIProject, type Scan as APIScan } from "@/lib/api"
 
 interface Project {
   id: string
@@ -34,6 +35,9 @@ interface Scan {
   status: 'completed' | 'processing' | 'failed' | 'queued'
   location: string
   updated: string
+  fileSize?: string
+  processingTime?: string
+  pointCount?: number
 }
 
 export default function ProjectDetailPage() {
@@ -139,29 +143,105 @@ export default function ProjectDetailPage() {
   const handleCreateScan = async () => {
     if (!newScan.name.trim() || !newScan.file) return
 
-    setIsUploading(true)
-    
-    // Simulate upload progress
-    for (let i = 0; i <= 100; i += 10) {
-      setUploadProgress(i)
-      await new Promise(resolve => setTimeout(resolve, 200))
+    // Validate file before upload
+    const validation = validateVideoFile(newScan.file)
+    if (!validation.valid) {
+      alert(validation.error)
+      return
     }
 
-    const scan: Scan = {
-      id: Date.now().toString(),
-      name: newScan.name,
-      projectId,
-      projectName: project?.name || "",
-      status: "processing",
-      location: project?.location || "",
-      updated: new Date().toLocaleDateString('en-GB')
+    setIsUploading(true)
+    
+    try {
+      // Upload video to COLMAP worker (or simulate in demo mode)
+      if (isDemoMode()) {
+        // Demo mode - simulate upload progress
+        for (let i = 0; i <= 100; i += 10) {
+          setUploadProgress(i)
+          await new Promise(resolve => setTimeout(resolve, 200))
+        }
+        
+        // Create demo scan with processing job
+        const jobId = `demo-job-${Date.now()}`
+        const scan: Scan = {
+          id: Date.now().toString(),
+          name: newScan.name,
+          projectId,
+          projectName: project?.name || "",
+          status: "processing",
+          location: project?.location || "",
+          updated: new Date().toLocaleDateString('en-GB'),
+          fileSize: formatFileSize(newScan.file.size)
+        }
+        
+        // Save to localStorage for demo
+        const existingScans = apiStorage.getScans()
+        const updatedScans = [scan, ...existingScans]
+        apiStorage.saveScans(updatedScans)
+        setScans(prev => [scan, ...prev])
+        
+        // Start processing status tracking
+        trackProcessingStatus(scan.id, jobId)
+      } else {
+        // Real API upload
+        const result = await apiClient.uploadVideo(newScan.file, projectId, newScan.name)
+        
+        const scan: Scan = {
+          id: result.jobId,
+          name: newScan.name,
+          projectId,
+          projectName: project?.name || "",
+          status: "queued",
+          location: project?.location || "",
+          updated: new Date().toLocaleDateString('en-GB'),
+          fileSize: formatFileSize(newScan.file.size)
+        }
+        
+        setScans(prev => [scan, ...prev])
+        
+        // Start polling for status updates
+        trackProcessingStatus(scan.id, result.jobId)
+      }
+      
+      setNewScan({ name: "", file: null })
+      setIsNewScanModalOpen(false)
+    } catch (error) {
+      console.error('Upload failed:', error)
+      alert('Upload failed: ' + (error as Error).message)
+    } finally {
+      setIsUploading(false)
+      setUploadProgress(0)
+    }
+  }
+
+  // Track processing status with real-time updates
+  const trackProcessingStatus = (scanId: string, jobId: string) => {
+    const pollStatus = async () => {
+      try {
+        const status = await apiClient.getJobStatus(jobId)
+        
+        // Update scan status
+        setScans(prev => prev.map(scan => 
+          scan.id === scanId ? {
+            ...scan,
+            status: status.status === 'completed' ? 'completed' : 
+                   status.status === 'failed' ? 'failed' : 'processing',
+            processingTime: status.status === 'completed' ? 
+              `${Math.round((Date.now() - new Date(status.created_at).getTime()) / 60000)} minutes` : undefined
+          } : scan
+        ))
+        
+        // Continue polling if still processing
+        if (status.status === 'processing' || status.status === 'queued') {
+          setTimeout(pollStatus, 5000) // Poll every 5 seconds
+        }
+      } catch (error) {
+        console.error('Status polling error:', error)
+      }
     }
     
-    setScans(prev => [scan, ...prev])
-    setNewScan({ name: "", file: null })
-    setIsNewScanModalOpen(false)
-    setIsUploading(false)
-    setUploadProgress(0)
+    // Start polling after 2 seconds
+    setTimeout(pollStatus, 2000)
   }
 
   const handleDeleteProject = () => {

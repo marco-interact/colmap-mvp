@@ -1,33 +1,38 @@
-// API client for COLMAP Worker Cloud Run service
+// Videogrammetry SaaS Platform - API Integration Layer
+// Handles all communication with COLMAP worker service
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_COLMAP_WORKER_URL || 'https://colmap-app-64102061337.us-central1.run.app'
-
-export interface ProjectData {
+export interface Project {
   id: string
   name: string
   description: string
   location: string
-  spaceType: string
-  projectType: string
-  createdAt: string
+  spaceType: 'residential' | 'commercial' | 'industrial' | 'outdoor'
+  projectType: 'new_build' | 'renovation' | 'inspection' | 'documentation'
+  updated: string
+  thumbnail?: string
   status: 'active' | 'completed' | 'processing'
-  scanCount?: number
-  lastUpdate?: string
 }
 
-export interface ScanData {
+export interface Scan {
   id: string
   name: string
   projectId: string
+  projectName: string
   status: 'completed' | 'processing' | 'failed' | 'queued'
   location: string
-  capturedAt: string
+  updated: string
+  thumbnail?: string
   fileSize?: string
-  duration?: string
+  processingTime?: string
   pointCount?: number
-  thumbnailUrl?: string
-  meshUrl?: string
-  pointCloudUrl?: string
+  progress?: number
+  currentStage?: string
+  estimatedTime?: string
+  results?: {
+    pointCloudUrl?: string
+    meshUrl?: string
+    thumbnailUrl?: string
+  }
 }
 
 export interface ProcessingJob {
@@ -35,266 +40,231 @@ export interface ProcessingJob {
   status: 'queued' | 'processing' | 'completed' | 'failed'
   message: string
   created_at: string
+  progress?: number
+  current_stage?: string
+  estimated_time?: string
   results?: {
-    point_cloud_url: string
-    mesh_url: string
-    thumbnail_url: string
+    point_cloud_url?: string
+    mesh_url?: string
+    thumbnail_url?: string
   }
 }
 
-class ApiClient {
-  private baseUrl: string
-  private authToken: string | null = null
+// Get the COLMAP worker URL from environment
+const getWorkerUrl = () => {
+  const url = process.env.NEXT_PUBLIC_COLMAP_WORKER_URL
+  if (!url) {
+    console.warn('NEXT_PUBLIC_COLMAP_WORKER_URL not configured, using demo mode')
+    return null
+  }
+  return url
+}
+
+// Check if we're in demo mode (no worker configured)
+export const isDemoMode = () => getWorkerUrl() === null
+
+class APIClient {
+  private baseUrl: string | null
 
   constructor() {
-    this.baseUrl = API_BASE_URL
-    
-    // Initialize auth token from localStorage if available
-    if (typeof window !== 'undefined') {
-      this.authToken = localStorage.getItem('auth_token')
-    }
+    this.baseUrl = getWorkerUrl()
   }
 
-  private getHeaders(): HeadersInit {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    if (!this.baseUrl) {
+      throw new Error('Worker service not available - running in demo mode')
     }
-    
-    if (this.authToken) {
-      headers['Authorization'] = `Bearer ${this.authToken}`
-    }
-    
-    return headers
-  }
 
-  private async request<T>(
-    endpoint: string, 
-    options: RequestInit = {}
-  ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
     
     const response = await fetch(url, {
-      ...options,
       headers: {
-        ...this.getHeaders(),
+        'Content-Type': 'application/json',
         ...options.headers,
       },
+      ...options,
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`API Error ${response.status}: ${errorText}`)
+      throw new Error(`API Error: ${response.status} ${response.statusText}`)
     }
 
-    const contentType = response.headers.get('content-type')
-    if (contentType && contentType.includes('application/json')) {
-      return response.json()
+    return response.json()
+  }
+
+  // Upload video for processing
+  async uploadVideo(file: File, projectId: string, scanName: string): Promise<{ jobId: string }> {
+    if (!this.baseUrl) {
+      // Demo mode - simulate upload
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({ jobId: `demo-job-${Date.now()}` })
+        }, 1000)
+      })
     }
+
+    const formData = new FormData()
+    formData.append('video', file)
+    formData.append('project_id', projectId)
+    formData.append('scan_name', scanName)
+    formData.append('quality', 'medium')
+    formData.append('dense_reconstruction', 'true')
+    formData.append('meshing', 'true')
+
+    const response = await fetch(`${this.baseUrl}/upload-video`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status} ${response.statusText}`)
+    }
+
+    const result = await response.json()
+    return { jobId: result.job_id }
+  }
+
+  // Get processing job status
+  async getJobStatus(jobId: string): Promise<ProcessingJob> {
+    if (!this.baseUrl) {
+      // Demo mode - simulate processing stages
+      return this.getDemoJobStatus(jobId)
+    }
+
+    return this.request<ProcessingJob>(`/jobs/${jobId}`)
+  }
+
+  // Demo mode job status simulation
+  private getDemoJobStatus(jobId: string): ProcessingJob {
+    const now = Date.now()
+    const jobStartTime = parseInt(jobId.split('-').pop() || '0')
+    const elapsed = now - jobStartTime
     
-    return response.text() as T
+    // Simulate 30-minute processing time
+    const totalTime = 30 * 60 * 1000 // 30 minutes in ms
+    const progress = Math.min(Math.round((elapsed / totalTime) * 100), 100)
+    
+    let status: ProcessingJob['status'] = 'processing'
+    let currentStage = 'Frame Extraction'
+    let estimatedTime = `${Math.max(0, Math.round((totalTime - elapsed) / 60000))} minutes remaining`
+
+    if (progress >= 100) {
+      status = 'completed'
+      currentStage = 'Complete'
+      estimatedTime = 'Finished'
+    } else if (progress >= 80) {
+      currentStage = 'Mesh Generation'
+    } else if (progress >= 60) {
+      currentStage = 'Dense Reconstruction'
+    } else if (progress >= 40) {
+      currentStage = 'Sparse Reconstruction'
+    } else if (progress >= 20) {
+      currentStage = 'Feature Detection'
+    }
+
+    return {
+      job_id: jobId,
+      status,
+      message: status === 'completed' ? '3D reconstruction completed successfully!' : `Processing your video: ${currentStage}`,
+      created_at: new Date(jobStartTime).toISOString(),
+      progress,
+      current_stage: currentStage,
+      estimated_time: estimatedTime,
+      results: status === 'completed' ? {
+        point_cloud_url: `/demo/pointcloud.ply`,
+        mesh_url: `/demo/mesh.obj`,
+        thumbnail_url: `/demo/thumbnail.jpg`
+      } : undefined
+    }
+  }
+
+  // Download processed file
+  async downloadFile(projectId: string, fileType: 'ply' | 'obj' | 'glb'): Promise<Blob> {
+    if (!this.baseUrl) {
+      // Demo mode - return empty blob
+      return new Blob(['Demo file content'], { type: 'application/octet-stream' })
+    }
+
+    const response = await fetch(`${this.baseUrl}/download/${projectId}/${fileType}`)
+    
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.status} ${response.statusText}`)
+    }
+
+    return response.blob()
   }
 
   // Health check
-  async healthCheck(): Promise<{ status: string; timestamp: string }> {
-    return this.request('/health')
-  }
-
-  // Authentication
-  setAuthToken(token: string) {
-    this.authToken = token
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('auth_token', token)
+  async healthCheck(): Promise<{ status: string }> {
+    if (!this.baseUrl) {
+      return { status: 'demo' }
     }
-  }
 
-  clearAuthToken() {
-    this.authToken = null
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth_token')
-    }
-  }
-
-  // Projects API
-  async getProjects(): Promise<ProjectData[]> {
-    // Since the current worker doesn't have project endpoints,
-    // we'll return demo data for now
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          {
-            id: "1",
-            name: "Inspección Edificio Central",
-            description: "Documentación 3D del edificio principal para análisis estructural",
-            location: "Ciudad de México, CDMX",
-            spaceType: "interior",
-            projectType: "inspection",
-            createdAt: "2024-01-15T00:00:00Z",
-            status: "active",
-            scanCount: 12,
-            lastUpdate: "Hace 2 días"
-          }
-        ])
-      }, 500)
-    })
-  }
-
-  async createProject(data: Omit<ProjectData, 'id' | 'createdAt' | 'status'>): Promise<ProjectData> {
-    // Demo implementation - in production, this would call the backend
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          ...data,
-          id: Date.now().toString(),
-          createdAt: new Date().toISOString(),
-          status: 'active',
-          scanCount: 0
-        })
-      }, 1000)
-    })
-  }
-
-  async getProject(id: string): Promise<ProjectData> {
-    // Demo implementation
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (id === "1") {
-          resolve({
-            id,
-            name: "Inspección Edificio Central",
-            description: "Documentación 3D del edificio principal para análisis estructural",
-            location: "Ciudad de México, CDMX",
-            spaceType: "interior",
-            projectType: "inspection",
-            createdAt: "2024-01-15T00:00:00Z",
-            status: "active"
-          })
-        } else {
-          reject(new Error('Project not found'))
-        }
-      }, 500)
-    })
-  }
-
-  async deleteProject(id: string): Promise<void> {
-    // Demo implementation
-    return new Promise((resolve) => {
-      setTimeout(resolve, 1000)
-    })
-  }
-
-  // Scans API
-  async getScans(projectId: string): Promise<ScanData[]> {
-    // Demo implementation
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([
-          {
-            id: "scan-1",
-            name: "Planta Baja - Lobby Principal",
-            projectId,
-            status: "completed",
-            location: "Planta Baja, Sector A",
-            capturedAt: "2024-01-20T10:30:00Z",
-            fileSize: "245 MB",
-            duration: "8 min",
-            pointCount: 2850000,
-            thumbnailUrl: "/api/assets/sample-scan-thumbnail.jpg"
-          }
-        ])
-      }, 500)
-    })
-  }
-
-  async getScan(projectId: string, scanId: string): Promise<ScanData> {
-    // Demo implementation
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (scanId === "scan-1") {
-          resolve({
-            id: scanId,
-            name: "Planta Baja - Lobby Principal",
-            projectId,
-            status: "completed",
-            location: "Planta Baja, Sector A",
-            capturedAt: "2024-01-20T10:30:00Z",
-            fileSize: "245 MB",
-            duration: "8 min",
-            pointCount: 2850000,
-            thumbnailUrl: "/api/assets/sample-scan-thumbnail.jpg",
-            meshUrl: "/models/sample.ply",
-            pointCloudUrl: "/pointclouds/sample.las"
-          })
-        } else {
-          reject(new Error('Scan not found'))
-        }
-      }, 500)
-    })
-  }
-
-  // Video processing (integrates with existing worker endpoint)
-  async uploadVideo(data: {
-    project_id: string
-    video_url: string
-    quality?: string
-    dense_reconstruction?: boolean
-    meshing?: boolean
-  }): Promise<ProcessingJob> {
-    return this.request('/upload-video', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    })
-  }
-
-  async getJobStatus(jobId: string): Promise<ProcessingJob> {
-    return this.request(`/jobs/${jobId}`)
-  }
-
-  // File downloads
-  async downloadFile(projectId: string, fileType: string): Promise<Blob> {
-    const response = await fetch(`${this.baseUrl}/download/${projectId}/${fileType}`, {
-      headers: this.getHeaders()
-    })
-    
-    if (!response.ok) {
-      throw new Error(`Download failed: ${response.statusText}`)
-    }
-    
-    return response.blob()
+    return this.request<{ status: string }>('/health')
   }
 }
 
 // Export singleton instance
-export const apiClient = new ApiClient()
+export const apiClient = new APIClient()
+
+// Local storage helpers for demo mode
+export const localStorage = {
+  getProjects: (): Project[] => {
+    if (typeof window === 'undefined') return []
+    const stored = window.localStorage.getItem('videogrammetry_projects')
+    return stored ? JSON.parse(stored) : []
+  },
+
+  saveProjects: (projects: Project[]) => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('videogrammetry_projects', JSON.stringify(projects))
+  },
+
+  getScans: (): Scan[] => {
+    if (typeof window === 'undefined') return []
+    const stored = window.localStorage.getItem('videogrammetry_scans')
+    return stored ? JSON.parse(stored) : []
+  },
+
+  saveScans: (scans: Scan[]) => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem('videogrammetry_scans', JSON.stringify(scans))
+  },
+
+  getProcessingJobs: (): Record<string, ProcessingJob> => {
+    if (typeof window === 'undefined') return {}
+    const stored = window.localStorage.getItem('videogrammetry_jobs')
+    return stored ? JSON.parse(stored) : {}
+  },
+
+  saveProcessingJob: (jobId: string, job: ProcessingJob) => {
+    if (typeof window === 'undefined') return
+    const jobs = localStorage.getProcessingJobs()
+    jobs[jobId] = job
+    window.localStorage.setItem('videogrammetry_jobs', JSON.stringify(jobs))
+  }
+}
 
 // Utility functions
 export const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
+  if (bytes === 0) return '0 Bytes'
   const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-export const formatDuration = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
-  
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${secs}s`
-  } else if (minutes > 0) {
-    return `${minutes}m ${secs}s`
-  } else {
-    return `${secs}s`
+export const validateVideoFile = (file: File): { valid: boolean; error?: string } => {
+  // Check file size (500MB max)
+  const maxSize = 500 * 1024 * 1024
+  if (file.size > maxSize) {
+    return { valid: false, error: 'File size must be under 500MB' }
   }
-}
 
-export const formatPointCount = (count: number): string => {
-  if (count >= 1000000) {
-    return `${(count / 1000000).toFixed(1)}M`
-  } else if (count >= 1000) {
-    return `${(count / 1000).toFixed(1)}K`
-  } else {
-    return count.toString()
+  // Check file type (MP4 only for MVP)
+  if (!file.type.includes('mp4') && !file.name.toLowerCase().endsWith('.mp4')) {
+    return { valid: false, error: 'Only MP4 video files are supported' }
   }
+
+  return { valid: true }
 }

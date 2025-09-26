@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Modal, ModalContent, ModalFooter } from "@/components/ui/modal"
+import { ServiceStatus } from "@/components/service-status"
 
 interface Project {
   id: string
@@ -35,7 +36,10 @@ export default function DashboardPage() {
   const [userName, setUserName] = useState("")
   const [newProject, setNewProject] = useState({
     name: "",
-    description: ""
+    description: "",
+    location: "",
+    spaceType: "",
+    projectType: ""
   })
 
   // Check authentication and load data
@@ -94,7 +98,7 @@ export default function DashboardPage() {
     }
     
     setProjects(prev => [project, ...prev])
-    setNewProject({ name: "", description: "" })
+    setNewProject({ name: "", description: "", location: "", spaceType: "", projectType: "" })
     setIsNewProjectModalOpen(false)
   }
 
@@ -150,9 +154,12 @@ export default function DashboardPage() {
           </ul>
         </nav>
 
-        {/* Bottom Version */}
-        <div className="p-6">
-          <span className="text-xs text-gray-500">Demo Version</span>
+        {/* Bottom Status */}
+        <div className="p-6 border-t border-gray-800">
+          <div className="space-y-2">
+            <ServiceStatus />
+            <span className="text-xs text-gray-500">MVP Version</span>
+          </div>
         </div>
       </aside>
 
@@ -286,6 +293,52 @@ export default function DashboardPage() {
               onChange={(e) => setNewProject(prev => ({ ...prev, description: e.target.value }))}
               className="w-full h-24 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder:text-gray-400 focus:border-primary-500 focus:outline-none resize-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Location <span className="text-red-400">Mandatory</span>
+            </label>
+            <Input
+              placeholder="Search Location"
+              value={newProject.location}
+              onChange={(e) => setNewProject(prev => ({ ...prev, location: e.target.value }))}
+              className="w-full bg-gray-800 border-gray-700"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Space Type <span className="text-red-400">Mandatory</span>
+            </label>
+            <select
+              value={newProject.spaceType}
+              onChange={(e) => setNewProject(prev => ({ ...prev, spaceType: e.target.value }))}
+              className="w-full h-12 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-primary-500 focus:outline-none appearance-none"
+            >
+              <option value="" className="text-gray-400">Select the type of space you wish to scan</option>
+              <option value="residential">Residential</option>
+              <option value="commercial">Commercial</option>
+              <option value="industrial">Industrial</option>
+              <option value="outdoor">Outdoor</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Project Type <span className="text-red-400">Mandatory</span>
+            </label>
+            <select
+              value={newProject.projectType}
+              onChange={(e) => setNewProject(prev => ({ ...prev, projectType: e.target.value }))}
+              className="w-full h-12 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-primary-500 focus:outline-none appearance-none"
+            >
+              <option value="" className="text-gray-400">Select the type of project you're creating</option>
+              <option value="new_build">New Build</option>
+              <option value="renovation">Renovation</option>
+              <option value="inspection">Inspection</option>
+              <option value="documentation">Documentation</option>
+            </select>
           </div>
         </ModalContent>
 

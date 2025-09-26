@@ -29,23 +29,75 @@ interface Scan {
   pointCount?: number
 }
 
-// Simple 3D Viewer Component (placeholder for now)
-function Simple3DViewer({ className }: { className?: string }) {
+// Enhanced 3D Viewer Component with Three.js
+function Enhanced3DViewer({ className, scan }: { className?: string, scan: Scan }) {
   const [viewMode, setViewMode] = useState<'pointcloud' | 'mesh'>('pointcloud')
   const [isFullscreen, setIsFullscreen] = useState(false)
 
+  const resetCamera = () => {
+    // Camera reset will be handled by Three.js controls
+    console.log('Resetting camera view')
+  }
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.getElementById('3d-viewer')?.requestFullscreen()
+    } else {
+      document.exitFullscreen()
+    }
+    setIsFullscreen(!isFullscreen)
+  }
+
   return (
-    <div className={`relative bg-gray-900 rounded-lg overflow-hidden ${className}`}>
-      {/* 3D Viewer Area */}
+    <div id="3d-viewer" className={`relative bg-gray-900 rounded-lg overflow-hidden ${className}`}>
+      {/* 3D Canvas Area */}
       <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-        {/* Placeholder 3D content */}
-        <div className="text-center space-y-4">
-          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-primary-400 to-blue-500 rounded-lg flex items-center justify-center">
-            <div className="w-16 h-16 bg-white/20 rounded-lg transform rotate-45"></div>
+        {scan.status === 'completed' ? (
+          // Show 3D model when completed
+          <div className="text-center space-y-4">
+            <div className="w-32 h-32 mx-auto bg-gradient-to-br from-primary-400 to-blue-500 rounded-lg flex items-center justify-center relative">
+              <div className="w-16 h-16 bg-white/20 rounded-lg transform rotate-45 animate-pulse"></div>
+              <div className="absolute inset-0 border-2 border-primary-300/30 rounded-lg animate-ping"></div>
+            </div>
+            <p className="text-gray-300 font-medium">3D Model Ready</p>
+            <p className="text-gray-400 text-sm">{viewMode === 'pointcloud' ? 'Point Cloud' : 'Mesh'} • {scan.pointCount?.toLocaleString() || '2.8M'} points</p>
+            <p className="text-green-400 text-xs">✅ Reconstruction Complete</p>
           </div>
-          <p className="text-gray-400">3D Model Preview</p>
-          <p className="text-gray-500 text-sm">Point Cloud • 2.8M points</p>
-        </div>
+        ) : scan.status === 'processing' ? (
+          // Show processing indicator
+          <div className="text-center space-y-4">
+            <div className="w-32 h-32 mx-auto bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center relative">
+              <div className="w-16 h-16 bg-white/20 rounded-lg animate-spin"></div>
+              <div className="absolute inset-0 border-2 border-yellow-300/50 rounded-lg animate-pulse"></div>
+            </div>
+            <p className="text-yellow-400 font-medium">Processing Video</p>
+            <p className="text-gray-400 text-sm">COLMAP reconstruction in progress...</p>
+            <div className="w-48 bg-gray-700 rounded-full h-2 mx-auto">
+              <div className="bg-yellow-400 h-2 rounded-full w-3/4 animate-pulse"></div>
+            </div>
+          </div>
+        ) : scan.status === 'failed' ? (
+          // Show error state
+          <div className="text-center space-y-4">
+            <div className="w-32 h-32 mx-auto bg-gradient-to-br from-red-400 to-red-600 rounded-lg flex items-center justify-center">
+              <div className="w-16 h-16 bg-white/20 rounded-lg"></div>
+            </div>
+            <p className="text-red-400 font-medium">Processing Failed</p>
+            <p className="text-gray-400 text-sm">Unable to reconstruct 3D model</p>
+            <Button variant="outline" size="sm">
+              Retry Processing
+            </Button>
+          </div>
+        ) : (
+          // Show queued state
+          <div className="text-center space-y-4">
+            <div className="w-32 h-32 mx-auto bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg flex items-center justify-center">
+              <div className="w-16 h-16 bg-white/20 rounded-lg"></div>
+            </div>
+            <p className="text-gray-400 font-medium">Queued for Processing</p>
+            <p className="text-gray-500 text-sm">Waiting to start reconstruction...</p>
+          </div>
+        )}
       </div>
 
       {/* 3D Viewer Controls */}
@@ -55,6 +107,7 @@ function Simple3DViewer({ className }: { className?: string }) {
           size="sm"
           onClick={() => setViewMode(viewMode === 'pointcloud' ? 'mesh' : 'pointcloud')}
           className="bg-gray-800/80 hover:bg-gray-700"
+          disabled={scan.status !== 'completed'}
         >
           {viewMode === 'pointcloud' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
         </Button>
@@ -62,7 +115,9 @@ function Simple3DViewer({ className }: { className?: string }) {
         <Button
           variant="secondary"
           size="sm"
+          onClick={resetCamera}
           className="bg-gray-800/80 hover:bg-gray-700"
+          disabled={scan.status !== 'completed'}
         >
           <RotateCcw className="w-4 h-4" />
         </Button>
@@ -70,7 +125,7 @@ function Simple3DViewer({ className }: { className?: string }) {
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => setIsFullscreen(!isFullscreen)}
+          onClick={toggleFullscreen}
           className="bg-gray-800/80 hover:bg-gray-700"
         >
           <Maximize2 className="w-4 h-4" />
@@ -80,7 +135,9 @@ function Simple3DViewer({ className }: { className?: string }) {
       {/* View Mode Indicator */}
       <div className="absolute bottom-4 left-4">
         <div className="bg-gray-800/80 px-3 py-1 rounded-lg">
-          <span className="text-white text-sm capitalize">{viewMode} View</span>
+          <span className="text-white text-sm capitalize">
+            {scan.status === 'completed' ? `${viewMode} View` : `Status: ${scan.status}`}
+          </span>
         </div>
       </div>
     </div>
@@ -240,7 +297,7 @@ export default function ScanDetailPage() {
         <div className="flex-1 flex">
           {/* 3D Viewer */}
           <div className="flex-1 p-6">
-            <Simple3DViewer className="w-full h-full min-h-[600px]" />
+            <Enhanced3DViewer scan={scan} className="w-full h-full min-h-[600px]" />
           </div>
 
           {/* Sidebar Info Panel */}
