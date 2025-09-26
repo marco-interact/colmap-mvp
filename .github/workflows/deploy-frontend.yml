@@ -44,21 +44,35 @@ jobs:
         with:
           project_id: ${{ env.PROJECT_ID }}
       
-      - name: Configure Docker for Artifact Registry
+      - name: Configure Docker for GCR
         run: gcloud auth configure-docker gcr.io
       
-      - name: Deploy Frontend to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v2
-        with:
-          service: ${{ env.SERVICE_NAME }}
-          region: ${{ env.REGION }}
-          source: .
-          dockerfile: Dockerfile.frontend
-          # Pass the worker URL to the frontend as an environment variable
-          env_vars: "NODE_ENV=production,NEXT_PUBLIC_COLMAP_WORKER_URL=${{ secrets.COLMAP_WORKER_URL }}"
-          # Pass build-time arguments to the Cloud Run build process.
-          # The NEXT_PUBLIC_COLMAP_WORKER_URL is used by the Next.js app.
-          build_env_vars: "NEXT_PUBLIC_COLMAP_WORKER_URL=${{ secrets.COLMAP_WORKER_URL }}"
+      - name: Build and Push Docker Image
+        run: |
+          docker build \
+            -f Dockerfile.frontend \
+            --build-arg NEXT_PUBLIC_COLMAP_WORKER_URL="${{ secrets.COLMAP_WORKER_URL }}" \
+            -t gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            -t gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:latest \
+            .
+          docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:latest
+      
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 1Gi \
+            --cpu 1 \
+            --concurrency 80 \
+            --max-instances 10 \
+            --min-instances 0 \
+            --timeout 300 \
+            --set-env-vars NODE_ENV=production,NEXT_PUBLIC_COLMAP_WORKER_URL=${{ secrets.COLMAP_WORKER_URL }} \
+            --execution-environment gen2
       
       - name: Get Service URL
         id: get-url
