@@ -113,10 +113,10 @@ export function ProcessingStatus({ jobId, onComplete, className }: ProcessingSta
       
       <CardContent className="space-y-4">
         {/* Current Stage */}
-        {job.current_stage && (
+        {job.currentStage && (
           <div>
             <p className="text-sm text-gray-400 mb-1">Current Stage</p>
-            <p className="text-white font-medium">{job.current_stage}</p>
+            <p className="text-white font-medium">{job.currentStage}</p>
           </div>
         )}
 
