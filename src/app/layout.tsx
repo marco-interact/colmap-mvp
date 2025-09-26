@@ -4,12 +4,16 @@ import './globals.css'
 
 const inter = Inter({ 
   subsets: ['latin'],
-  variable: '--font-inter'
+  variable: '--font-inter',
+  display: 'swap', // Optimize font loading
+  fallback: ['system-ui', 'sans-serif']
 })
 
 const jetbrainsMono = JetBrains_Mono({ 
   subsets: ['latin'],
-  variable: '--font-jetbrains-mono'
+  variable: '--font-jetbrains-mono',
+  display: 'swap', // Optimize font loading
+  fallback: ['monospace']
 })
 
 export const metadata: Metadata = {

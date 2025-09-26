@@ -1,6 +1,5 @@
 /* Colmap App Global Styles */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+/* Fonts loaded via Next.js font optimization in layout.tsx */
 
 @tailwind base;
 @tailwind components;
@@ -8,7 +7,7 @@
 
 @layer base {
   html {
-    @apply dark;
+    /* Dark mode is handled by layout.tsx className */
   }
   
   body {
@@ -49,19 +48,21 @@
 }
 
 :root {
-  /* Colmap App Brand Colors */
-  --primary: #22c55e;
-  --primary-dark: #16a34a;
-  --secondary: #64748b;
-  --accent: #0ea5e9;
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --muted: #f1f5f9;
-  --border: #e2e8f0;
-  --input: #f8fafc;
-  --ring: #22c55e;
-  --error: #ef4444;
-  --success: #22c55e;
+  /* Colmap App Brand Colors - Synchronized with tailwind.config.ts */
+  --primary: #10b981;          /* Matches tailwind primary-500 */
+  --primary-dark: #059669;     /* Matches tailwind primary-600 */
+  --secondary: #64748b;        /* Matches tailwind secondary-500 */
+  --accent: #0ea5e9;          /* Matches tailwind accent-500 */
+  --background-dark: #030712;  /* gray-950 */
+  --background-light: #ffffff;
+  --foreground-dark: #f8fafc;  /* gray-50 */
+  --foreground-light: #0f172a; /* gray-900 */
+  --muted: #1e293b;           /* gray-800 for dark theme */
+  --border: #374151;          /* gray-700 for dark theme */
+  --input: #1f2937;           /* gray-800 for dark theme */
+  --ring: #10b981;            /* Matches primary */
+  --error: #ef4444;           /* red-500 */
+  --success: #10b981;         /* Matches primary */
   
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -87,30 +88,30 @@
   --breakpoint-xl: 1280px;
 }
 
-/* App Layout */
+/* App Layout - Dark Theme Consistent */
 .app-layout {
-  @apply min-h-screen bg-gray-50;
+  @apply min-h-screen bg-gray-950;
 }
 
 .sidebar {
-  @apply fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 z-40;
+  @apply fixed left-0 top-0 h-full w-64 bg-gray-900 border-r border-gray-800 z-40;
 }
 
 .topbar {
-  @apply fixed top-0 right-0 left-64 h-16 bg-white border-b border-gray-200 z-30;
+  @apply fixed top-0 right-0 left-64 h-16 bg-gray-900 border-b border-gray-800 z-30;
 }
 
-/* Auth Styles */
+/* Auth Styles - Dark Theme */
 .auth-container {
-  @apply min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8;
+  @apply min-h-screen flex items-center justify-center bg-gray-950 py-12 px-4 sm:px-6 lg:px-8;
 }
 
 .auth-card {
-  @apply max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md;
+  @apply max-w-md w-full space-y-8 bg-gray-900 border border-gray-800 p-8 rounded-lg shadow-xl;
 }
 
 .auth-logo {
-  @apply text-3xl font-bold text-center text-gray-900 mb-8;
+  @apply text-3xl font-bold text-center text-white mb-8;
 }
 
 /* Button Styles */
@@ -122,22 +123,22 @@
   @apply bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium py-2 px-4 rounded-md transition-colors duration-200;
 }
 
-/* Modal Styles */
+/* Modal Styles - Dark Theme */
 .modal-overlay {
-  @apply fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center;
+  @apply fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center backdrop-blur-sm;
 }
 
 .modal-content {
-  @apply bg-white rounded-lg shadow-xl max-w-md w-full mx-4;
+  @apply bg-gray-900 border border-gray-800 rounded-lg shadow-2xl max-w-md w-full mx-4;
 }
 
 .modal-form-group {
   @apply space-y-4;
 }
 
-/* Project Card Styles */
+/* Project Card Styles - Dark Theme */
 .project-card {
-  @apply bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 cursor-pointer;
+  @apply bg-gray-900 border border-gray-800 rounded-lg shadow-lg hover:shadow-xl hover:border-gray-700 transition-all duration-200 cursor-pointer;
 }
 
 .projects-grid {
@@ -149,12 +150,12 @@
 }
 
 .scan-viewer-preview {
-  @apply w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center;
+  @apply w-full h-48 bg-gray-800 rounded-lg flex items-center justify-center border border-gray-700;
 }
 
-/* Processing Status */
+/* Processing Status - Dark Theme */
 .processing-status {
-  @apply bg-blue-50 border border-blue-200 rounded-lg p-4;
+  @apply bg-gray-800 border border-gray-700 rounded-lg p-4;
 }
 
 .processing-header {
@@ -165,12 +166,13 @@
   @apply w-full bg-gray-200 rounded-full h-2;
 }
 
+/* Processing Jobs - Dark Theme */
 .processing-jobs {
   @apply space-y-3;
 }
 
 .processing-job {
-  @apply bg-white border border-gray-200 rounded-lg p-3;
+  @apply bg-gray-800 border border-gray-700 rounded-lg p-3;
 }
 
 .job-info {
@@ -178,15 +180,15 @@
 }
 
 .job-label {
-  @apply text-sm font-medium text-gray-900;
+  @apply text-sm font-medium text-gray-200;
 }
 
 .job-status {
-  @apply text-xs text-gray-500;
+  @apply text-xs text-gray-400;
 }
 
 .job-progress {
-  @apply w-full bg-gray-200 rounded-full h-1 mt-2;
+  @apply w-full bg-gray-700 rounded-full h-1 mt-2;
 }
 
 .processing-actions {
@@ -202,10 +204,10 @@
 }
 
 .processing-option-tag {
-  @apply inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800;
+  @apply inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary-900 text-primary-300 border border-primary-700;
 }
 
-/* Scan Card */
+/* Scan Card - Dark Theme */
 .scan-card {
-  @apply bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer transform hover:scale-105;
+  @apply bg-gray-900 border border-gray-800 rounded-lg shadow-lg hover:shadow-xl hover:border-gray-700 transition-all duration-200 cursor-pointer transform hover:scale-105;
 }
