@@ -51,7 +51,8 @@ jobs:
         with:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ env.REGION }}
-          source: . # Build from the current directory using the Dockerfile
+          source: .
+          dockerfile: Dockerfile.frontend
           # Pass the worker URL to the frontend as an environment variable
           env_vars: "NODE_ENV=production,NEXT_PUBLIC_COLMAP_WORKER_URL=${{ secrets.COLMAP_WORKER_URL }}"
           # Pass build-time arguments to the Cloud Run build process.
