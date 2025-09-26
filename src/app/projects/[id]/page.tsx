@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input"
 import { apiClient, localStorage as apiStorage, validateVideoFile, formatFileSize, isDemoMode, type Project as APIProject, type Scan as APIScan } from "@/lib/api"
 
 interface Project {
-  id: string
+    id: string
   name: string
   description: string
   location: string
@@ -32,7 +32,7 @@ interface Scan {
   projectId: string
   projectName: string
   thumbnail?: string
-  status: 'completed' | 'processing' | 'failed' | 'queued'
+  status: 'completed' | 'processing' | 'failed' | 'pending'
   location: string
   updated: string
   fileSize?: string
@@ -191,7 +191,7 @@ export default function ProjectDetailPage() {
           name: newScan.name,
           projectId,
           projectName: project?.name || "",
-          status: "queued",
+          status: "pending",
           location: project?.location || "",
           updated: new Date().toLocaleDateString('en-GB'),
           fileSize: formatFileSize(newScan.file.size)
@@ -232,7 +232,7 @@ export default function ProjectDetailPage() {
         ))
         
         // Continue polling if still processing
-        if (status.status === 'processing' || status.status === 'queued') {
+        if (status.status === 'processing' || status.status === 'pending') {
           setTimeout(pollStatus, 5000) // Poll every 5 seconds
         }
       } catch (error) {
@@ -333,10 +333,10 @@ export default function ProjectDetailPage() {
           <div className="flex items-center justify-between px-8 py-6">
             <h1 className="text-2xl font-bold text-white">
               {project.name} &gt; Scans
-            </h1>
+                </h1>
             
             <div className="flex items-center space-x-4">
-              <Button 
+              <Button
                 variant="destructive"
                 onClick={handleDeleteProject}
                 className="bg-gray-700 hover:bg-red-600 text-white"
@@ -345,7 +345,7 @@ export default function ProjectDetailPage() {
                 DELETE PROJECT
               </Button>
               
-              <Button 
+              <Button
                 onClick={() => setIsNewScanModalOpen(true)}
                 className="bg-primary-500 hover:bg-primary-600"
               >
@@ -356,7 +356,7 @@ export default function ProjectDetailPage() {
           </div>
         </header>
 
-        {/* Scans Grid */}
+          {/* Scans Grid */}
         <div className="p-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {scans.map((scan) => (
@@ -373,9 +373,9 @@ export default function ProjectDetailPage() {
                       <Camera className="w-10 h-10 text-primary-400" />
                     </div>
                   </div>
-                </div>
+                  </div>
 
-                {/* Scan Info */}
+                  {/* Scan Info */}
                 <CardContent className="p-4 bg-gray-900">
                   <div className="text-xs text-gray-400 mb-1">
                     {project.name}
@@ -392,8 +392,8 @@ export default function ProjectDetailPage() {
                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                       </svg>
                     </div>
-                    {scan.location}
-                  </div>
+                        {scan.location}
+                      </div>
                   
                   {/* Status indicator */}
                   <div className="flex items-center">
@@ -520,7 +520,7 @@ export default function ProjectDetailPage() {
             <p className="text-xs text-gray-500 mt-2">
               Only .mp4 files no larger than 500mb
             </p>
-          </div>
+      </div>
 
           {isUploading && (
             <div className="space-y-2">

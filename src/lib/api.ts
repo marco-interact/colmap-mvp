@@ -18,7 +18,7 @@ export interface Scan {
   name: string
   projectId: string
   projectName: string
-  status: 'completed' | 'processing' | 'failed' | 'queued'
+  status: 'completed' | 'processing' | 'failed' | 'pending'
   location: string
   updated: string
   thumbnail?: string

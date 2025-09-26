@@ -83,7 +83,7 @@ export function ProcessingStatus({ jobId, onComplete, className }: ProcessingSta
         return <AlertCircle className="w-5 h-5 text-red-500" />
       case 'processing':
         return <Loader2 className="w-5 h-5 animate-spin text-primary-500" />
-      case 'queued':
+      case 'pending':
         return <Clock className="w-5 h-5 text-yellow-500" />
       default:
         return <Clock className="w-5 h-5 text-gray-500" />
@@ -95,7 +95,7 @@ export function ProcessingStatus({ jobId, onComplete, className }: ProcessingSta
       case 'completed': return 'text-green-400'
       case 'failed': return 'text-red-400'
       case 'processing': return 'text-primary-400'
-      case 'queued': return 'text-yellow-400'
+      case 'pending': return 'text-yellow-400'
       default: return 'text-gray-400'
     }
   }

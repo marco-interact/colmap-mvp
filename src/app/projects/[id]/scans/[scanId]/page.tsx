@@ -94,7 +94,7 @@ function Enhanced3DViewer({ className, scan }: { className?: string, scan: Scan 
             <div className="w-32 h-32 mx-auto bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg flex items-center justify-center">
               <div className="w-16 h-16 bg-white/20 rounded-lg"></div>
             </div>
-            <p className="text-gray-400 font-medium">Queued for Processing</p>
+            <p className="text-gray-400 font-medium">Pending Processing</p>
             <p className="text-gray-500 text-sm">Waiting to start reconstruction...</p>
           </div>
         )}
