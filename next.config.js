@@ -2,8 +2,7 @@
 const nextConfig = {
   output: 'standalone',
   experimental: {
-    serverComponentsExternalPackages: ['@prisma/client'],
-    optimizeCss: true, // Enable CSS optimization
+    serverComponentsExternalPackages: ['@prisma/client']
   },
   images: {
     remotePatterns: [

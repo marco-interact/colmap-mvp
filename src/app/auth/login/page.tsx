@@ -28,15 +28,15 @@ export default function LoginPage() {
     const newErrors: {[key: string]: string} = {}
     
     if (!formData.email) {
-      newErrors.email = "El email es requerido"
+      newErrors.email = "Email is required"
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email inválido"
+      newErrors.email = "Invalid email"
     }
     
     if (!formData.password) {
-      newErrors.password = "La contraseña es requerida"
+      newErrors.password = "Password is required"
     } else if (formData.password.length < 6) {
-      newErrors.password = "La contraseña debe tener al menos 6 caracteres"
+      newErrors.password = "Password must be at least 6 characters"
     }
     
     setErrors(newErrors)
@@ -80,8 +80,7 @@ export default function LoginPage() {
           <div className="mx-auto w-16 h-16 bg-primary-500 rounded-xl flex items-center justify-center mb-6">
             <div className="w-8 h-8 bg-white rounded-md"></div>
           </div>
-          <h1 className="text-2xl font-bold text-white">Workspace</h1>
-          <p className="text-gray-400 text-sm">Accede a tu cuenta</p>
+          <h1 className="text-3xl font-bold text-primary-400">Colmap App</h1>
         </div>
 
         {/* Login Form */}
@@ -96,7 +95,7 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 autoComplete="email"
-                placeholder="tu@email.com"
+                placeholder="hello@email.com"
                 value={formData.email}
                 onChange={handleInputChange}
                 error={errors.email}
@@ -106,19 +105,27 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                Contraseña
+                Password
               </label>
               <Input
                 id="password"
                 name="password"
                 type="password"
                 autoComplete="current-password"
-                placeholder="••••••••"
+                placeholder="Password"
                 value={formData.password}
                 onChange={handleInputChange}
                 error={errors.password}
                 className="w-full"
               />
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="text-sm text-primary-400 hover:text-primary-300"
+                >
+                  Forgot your password?
+                </button>
+              </div>
             </div>
           </div>
 

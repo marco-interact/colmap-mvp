@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 const scanSchema = z.object({
-  name: z.string().min(1, 'Nombre del scan requerido'),
-  file: z.any().refine((file) => file && file.length > 0, 'Archivo requerido')
+  name: z.string().min(1, 'Scan name is required'),
+  file: z.any().refine((file) => file && file.length > 0, 'File is required')
 })
 
 type ScanFormData = z.infer<typeof scanSchema>
@@ -187,14 +187,14 @@ export function ScanModal({ isOpen, onClose, onSubmit, projectId }: ScanModalPro
                       <div className="space-y-2">
                         <Camera className="w-12 h-12 text-white mx-auto" />
                         <p className="text-white font-mono text-sm">
-                          Agregar o seleccionar archivo aquí
+                          Drag and drop media or click to browse
                         </p>
                       </div>
                     )}
                   </div>
                   
                   <p className="text-gray-400 text-xs mt-1 font-mono">
-                    ¿Qué tipos de archivos puedo utilizar?
+                    Only .mp4 files no larger than 500mb
                   </p>
                   {errors.file && (
                     <p className="text-red-400 text-xs font-mono mt-1">{String(errors.file.message || 'File is required')}</p>
@@ -207,7 +207,7 @@ export function ScanModal({ isOpen, onClose, onSubmit, projectId }: ScanModalPro
                   disabled={isLoading || !selectedFile}
                   className="w-full bg-green-500 hover:bg-green-600 text-white font-mono font-bold py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50"
                 >
-                  {isLoading ? 'GENERANDO...' : 'GENERAR SCAN'}
+                  {isLoading ? 'GENERATING...' : 'GENERATE SCAN'}
                 </Button>
               </form>
             </div>

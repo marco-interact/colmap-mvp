@@ -62,23 +62,23 @@ export function ProjectModal({ isOpen, onClose, onSubmit }: ProjectModalProps) {
     const newErrors: {[key: string]: string} = {}
     
     if (!formData.name.trim()) {
-      newErrors.name = "El nombre del proyecto es requerido"
+      newErrors.name = "Project name is required"
     }
     
     if (!formData.description.trim()) {
-      newErrors.description = "La descripción es requerida"
+      newErrors.description = "Description is required"
     }
     
     if (!formData.location.trim()) {
-      newErrors.location = "La ubicación es requerida"
+      newErrors.location = "Location is required"
     }
     
     if (!formData.spaceType) {
-      newErrors.spaceType = "Selecciona un tipo de espacio"
+      newErrors.spaceType = "Select a space type"
     }
     
     if (!formData.projectType) {
-      newErrors.projectType = "Selecciona un tipo de proyecto"
+      newErrors.projectType = "Select a project type"
     }
     
     setErrors(newErrors)
@@ -177,7 +177,7 @@ export function ProjectModal({ isOpen, onClose, onSubmit }: ProjectModalProps) {
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 id="project-location"
-                placeholder="Dirección o ubicación del proyecto"
+                placeholder="Search Location"
                 value={formData.location}
                 onChange={(e) => handleInputChange("location", e.target.value)}
                 error={errors.location}
@@ -190,12 +190,12 @@ export function ProjectModal({ isOpen, onClose, onSubmit }: ProjectModalProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Tipo de Espacio *
+                Space Type *
               </label>
               <Select
                 value={formData.spaceType}
                 onValueChange={(value) => handleInputChange("spaceType", value)}
-                placeholder="Seleccionar tipo"
+                placeholder="Select the type of space you wish to scan"
                 error={errors.spaceType}
               >
                 {spaceTypes.map((type) => (
@@ -208,12 +208,12 @@ export function ProjectModal({ isOpen, onClose, onSubmit }: ProjectModalProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Tipo de Proyecto *
+                Project Type *
               </label>
               <Select
                 value={formData.projectType}
                 onValueChange={(value) => handleInputChange("projectType", value)}
-                placeholder="Seleccionar tipo"
+                placeholder="Select the type of project you're creating"
                 error={errors.projectType}
               >
                 {projectTypes.map((type) => (
@@ -247,7 +247,7 @@ export function ProjectModal({ isOpen, onClose, onSubmit }: ProjectModalProps) {
             loading={loading}
             disabled={loading}
           >
-            {loading ? "Creando..." : "CREAR PROYECTO"}
+            {loading ? "Creating..." : "CREATE PROJECT"}
           </Button>
         </ModalFooter>
       </form>
