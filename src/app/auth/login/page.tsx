@@ -56,8 +56,9 @@ export default function LoginPage() {
       // Simulate API call - replace with actual authentication
       await new Promise(resolve => setTimeout(resolve, 1500))
       
-      // For demo purposes, accept any valid email/password
-      if (formData.email && formData.password.length >= 6) {
+      // Demo login - accept demo credentials or any valid email/password
+      if ((formData.email === 'demo@colmap.app' && formData.password === 'demo123') || 
+          (formData.email && formData.password.length >= 6)) {
         // Store user session (in production, handle this properly)
         localStorage.setItem('auth_token', 'demo_token')
         localStorage.setItem('user_email', formData.email)
@@ -74,13 +75,71 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-md space-y-6">
         {/* Logo/Title Area */}
         <div className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 bg-primary-500 rounded-xl flex items-center justify-center mb-6">
             <div className="w-8 h-8 bg-white rounded-md"></div>
           </div>
           <h1 className="text-3xl font-bold text-primary-400">Colmap App</h1>
+        </div>
+
+        {/* Demo Credentials Card */}
+        <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-300">Demo Credentials</h3>
+            <span className="text-xs text-primary-400 bg-primary-400/10 px-2 py-1 rounded">DEMO</span>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center justify-between bg-gray-800 rounded p-2">
+              <div>
+                <p className="text-xs text-gray-400">Email</p>
+                <p className="text-sm text-white font-mono">demo@colmap.app</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText('demo@colmap.app')
+                  setFormData(prev => ({ ...prev, email: 'demo@colmap.app' }))
+                }}
+                className="text-primary-400 hover:text-primary-300 text-xs px-2 py-1 rounded border border-primary-400/30 hover:border-primary-300/50"
+              >
+                Copy
+              </button>
+            </div>
+            
+            <div className="flex items-center justify-between bg-gray-800 rounded p-2">
+              <div>
+                <p className="text-xs text-gray-400">Password</p>
+                <p className="text-sm text-white font-mono">demo123</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText('demo123')
+                  setFormData(prev => ({ ...prev, password: 'demo123' }))
+                }}
+                className="text-primary-400 hover:text-primary-300 text-xs px-2 py-1 rounded border border-primary-400/30 hover:border-primary-300/50"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+          
+          <button
+            type="button"
+            onClick={() => {
+              setFormData({ email: 'demo@colmap.app', password: 'demo123' })
+            }}
+            className="w-full bg-primary-500/10 hover:bg-primary-500/20 text-primary-400 border border-primary-500/30 hover:border-primary-500/50 py-2 px-3 rounded text-xs font-medium transition-colors"
+          >
+            Fill Demo Credentials
+          </button>
+          
+          <p className="text-xs text-gray-500 text-center">
+            Click individual copy buttons or fill all at once
+          </p>
         </div>
 
         {/* Login Form */}
