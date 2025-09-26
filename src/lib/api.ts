@@ -60,8 +60,10 @@ const getWorkerUrl = () => {
   return url
 }
 
-// Check if we're in demo mode (no worker configured)
-export const isDemoMode = () => getWorkerUrl() === null
+// Check if we're in demo mode (no worker configured or worker unavailable)
+export const isDemoMode = () => {
+  return getWorkerUrl() === null || (apiClient as any).baseUrl === null
+}
 
 class APIClient {
   private baseUrl: string | null
@@ -77,19 +79,32 @@ class APIClient {
 
     const url = `${this.baseUrl}${endpoint}`
     
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    })
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+        ...options,
+      })
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`)
+      if (!response.ok) {
+        // If we get a CORS or network error, fall back to demo mode
+        if (response.status === 0 || response.status >= 400) {
+          console.warn('Worker service unavailable, falling back to demo mode')
+          this.baseUrl = null // Switch to demo mode
+          throw new Error('Worker service unavailable - switched to demo mode')
+        }
+        throw new Error(`API Error: ${response.status} ${response.statusText}`)
+      }
+
+      return response.json()
+    } catch (error) {
+      // Network errors, CORS errors, etc.
+      console.warn('Network error connecting to worker service, falling back to demo mode:', error)
+      this.baseUrl = null // Switch to demo mode
+      throw new Error('Network error - switched to demo mode')
     }
-
-    return response.json()
   }
 
   // Upload video for processing
@@ -111,17 +126,27 @@ class APIClient {
     formData.append('dense_reconstruction', 'true')
     formData.append('meshing', 'true')
 
-    const response = await fetch(`${this.baseUrl}/upload-video`, {
-      method: 'POST',
-      body: formData,
-    })
+    try {
+      const response = await fetch(`${this.baseUrl}/upload-video`, {
+        method: 'POST',
+        body: formData,
+      })
 
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status} ${response.statusText}`)
+      if (!response.ok) {
+        // Handle CORS and network errors by falling back to demo mode
+        console.warn('Upload failed, falling back to demo mode')
+        this.baseUrl = null
+        return this.uploadVideo(file, projectId, scanName) // Retry in demo mode
+      }
+
+      const result = await response.json()
+      return { jobId: result.job_id }
+    } catch (error) {
+      // Network/CORS error - fall back to demo mode
+      console.warn('Network error during upload, falling back to demo mode:', error)
+      this.baseUrl = null
+      return this.uploadVideo(file, projectId, scanName) // Retry in demo mode
     }
-
-    const result = await response.json()
-    return { jobId: result.job_id }
   }
 
   // Get processing job status
@@ -200,7 +225,12 @@ class APIClient {
       return { status: 'demo' }
     }
 
-    return this.request<{ status: string }>('/health')
+    try {
+      return await this.request<{ status: string }>('/health')
+    } catch (error) {
+      // If health check fails, we're now in demo mode
+      return { status: 'demo' }
+    }
   }
 }
 
