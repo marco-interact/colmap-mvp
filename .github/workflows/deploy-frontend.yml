@@ -46,12 +46,17 @@ jobs:
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker gcr.io
       
-      - name: Build and Deploy Frontend
-        run: |
-          gcloud builds submit \
-            --config cloudbuild-frontend.yaml \
-            --substitutions=_REGION=${{ env.REGION }},_SERVICE_NAME=${{ env.SERVICE_NAME }},_COLMAP_WORKER_URL=${{ secrets.COLMAP_WORKER_URL }} \
-            .
+      - name: Deploy Frontend to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          source: . # Build from the current directory using the Dockerfile
+          # Pass the worker URL to the frontend as an environment variable
+          env_vars: "NODE_ENV=production,NEXT_PUBLIC_COLMAP_WORKER_URL=${{ secrets.COLMAP_WORKER_URL }}"
+          # Pass build-time arguments to the Cloud Run build process.
+          # The NEXT_PUBLIC_COLMAP_WORKER_URL is used by the Next.js app.
+          build_env_vars: "NEXT_PUBLIC_COLMAP_WORKER_URL=${{ secrets.COLMAP_WORKER_URL }}"
       
       - name: Get Service URL
         id: get-url

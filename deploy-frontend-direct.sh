@@ -35,10 +35,18 @@ fi
 
 echo "🏗️  Building and deploying frontend with environment variables..."
 
-# Deploy directly from source with environment variables
+# Build with docker and deploy
+echo "🐳 Building Docker image with build args..."
+docker build -f Dockerfile.frontend \
+  --build-arg NEXT_PUBLIC_COLMAP_WORKER_URL="${COLMAP_WORKER_URL}" \
+  -t "gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest" .
+
+echo "📦 Pushing Docker image to registry..."
+docker push "gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest"
+
+echo "🚀 Deploying to Cloud Run..."
 gcloud run deploy "${SERVICE_NAME}" \
-  --source . \
-  --dockerfile "Dockerfile.frontend" \
+  --image "gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest" \
   --region "${GCP_REGION}" \
   --platform "managed" \
   --cpu "1" \
