@@ -1,8 +1,0 @@
-name: deploy-frontend-custom
-github:
-  owner: marco-interact
-  name: colmap-app
-  push:
-    branch: ^main$
-filename: cloudbuild.yaml
-description: "Deploy frontend using custom cloudbuild.yaml"
