@@ -8,101 +8,73 @@ on:
       - 'public/**'
       - 'package.json'
       - 'package-lock.json'
-      - 'Dockerfile.frontend'
       - 'next.config.js'
       - 'tailwind.config.ts'
       - 'tsconfig.json'
+      - 'Dockerfile.frontend'
+      - 'cloudbuild-frontend.yaml'
+      - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
 
 env:
-  PROJECT_ID: colmap-app
-  REGION: us-central1
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: northamerica-south1
   SERVICE_NAME: colmap-frontend
 
 jobs:
-  deploy-frontend:
+  deploy:
     runs-on: ubuntu-latest
+    
     permissions:
       contents: read
       id-token: write
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Run linting
-      run: npm run lint
-
-    - name: Build Next.js application
-      run: npm run build
-
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-        service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
-
-    - name: Setup Google Cloud CLI
-      uses: google-github-actions/setup-gcloud@v2
-
-    - name: Configure Docker to use gcloud as credential helper
-      run: gcloud auth configure-docker
-
-    - name: Build and push frontend Docker image
-      run: |
-        docker build -t gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA \
-          -t gcr.io/$PROJECT_ID/$SERVICE_NAME:latest \
-          -f Dockerfile.frontend .
-        docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
-        docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:latest
-
-    - name: Deploy to Cloud Run
-      run: |
-        gcloud run deploy $SERVICE_NAME \
-          --image gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA \
-          --region $REGION \
-          --platform managed \
-          --allow-unauthenticated \
-          --memory 2Gi \
-          --cpu 1 \
-          --port 8080 \
-          --set-env-vars NODE_ENV=production \
-          --max-instances 10 \
-          --min-instances 0 \
-          --timeout 300 \
-          --concurrency 100
-
-    - name: Get service URL
-      id: get-url
-      run: |
-        SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region $REGION --format 'value(status.url)')
-        echo "url=$SERVICE_URL" >> $GITHUB_OUTPUT
-        echo "🚀 Frontend deployed successfully!"
-        echo "📱 Service URL: $SERVICE_URL"
-
-    - name: Run health check
-      run: |
-        SERVICE_URL="${{ steps.get-url.outputs.url }}"
-        echo "⏳ Waiting for service to be ready..."
-        sleep 30
-        
-        # Simple health check
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL" || echo "000")
-        if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 404 ]; then
-          echo "✅ Health check passed! Service is responding (HTTP $HTTP_CODE)"
-        else
-          echo "❌ Health check failed! Service returned HTTP $HTTP_CODE"
-          exit 1
-        fi
-
-    outputs:
-      service-url: ${{ steps.get-url.outputs.url }}
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+      
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker gcr.io
+      
+      - name: Build and Deploy Frontend
+        run: |
+          gcloud builds submit \
+            --config cloudbuild-frontend.yaml \
+            --substitutions=_REGION=${{ env.REGION }},_SERVICE_NAME=${{ env.SERVICE_NAME }} \
+            .
+      
+      - name: Get Service URL
+        id: get-url
+        run: |
+          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --format="value(status.url)")
+          echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_OUTPUT
+      
+      - name: Test Deployment
+        run: |
+          echo "🌐 Frontend deployed to: ${{ steps.get-url.outputs.SERVICE_URL }}"
+          echo "❤️ Health check: ${{ steps.get-url.outputs.SERVICE_URL }}/api/health"
+          
+          # Wait for service to be ready
+          sleep 30
+          
+          # Test health endpoint
+          curl -f "${{ steps.get-url.outputs.SERVICE_URL }}/api/health" || exit 1
+          echo "✅ Health check passed!"
+      
+      - name: Summary
+        run: |
+          echo "🎉 Frontend Deployment Complete!"
+          echo "🌐 URL: ${{ steps.get-url.outputs.SERVICE_URL }}"
+          echo "📊 Monitor: https://console.cloud.google.com/run/detail/${{ env.REGION }}/${{ env.SERVICE_NAME }}"

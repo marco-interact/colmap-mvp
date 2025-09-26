@@ -21,6 +21,12 @@ FROM node:20-slim AS production
 
 WORKDIR /app
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create a non-root user for better security
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -31,10 +37,21 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
+# Switch to non-root user
 USER nextjs
 
-EXPOSE 8080
+# Set environment variables for Cloud Run
+ENV NODE_ENV=production
+ENV PORT=8080
+ENV HOSTNAME=0.0.0.0
 
-# The command to run when the container starts.
-CMD ["npm", "start", "--", "-p", "8080"]
+# Health check for Cloud Run
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl --fail http://localhost:8080/api/health || exit 1
+
+# Expose port (Cloud Run will inject PORT env var)
+EXPOSE $PORT
+
+# Use exec form and respect Cloud Run PORT env var
+CMD ["sh", "-c", "npm start -- -p $PORT"]
 
