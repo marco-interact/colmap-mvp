@@ -1,7 +1,52 @@
 /* Colmap App Global Styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    @apply dark;
+  }
+  
+  body {
+    @apply bg-gray-950 text-white font-sans antialiased;
+  }
+  
+  /* Dark theme scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-900;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-700 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-600;
+  }
+}
+
+@layer components {
+  /* Custom form styles for dark theme */
+  .form-input {
+    @apply bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-primary-500 focus:ring-primary-500;
+  }
+  
+  .form-textarea {
+    @apply bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-primary-500 focus:ring-primary-500;
+  }
+  
+  .form-select {
+    @apply bg-gray-800 border-gray-700 text-white focus:border-primary-500 focus:ring-primary-500;
+  }
+}
 
 :root {
   /* Colmap App Brand Colors */

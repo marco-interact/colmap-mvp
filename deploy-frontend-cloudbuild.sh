@@ -35,13 +35,13 @@ steps:
       'build',
       '-f', 'Dockerfile.frontend',
       '--build-arg', 'NEXT_PUBLIC_COLMAP_WORKER_URL=${COLMAP_WORKER_URL}',
-      '-t', 'gcr.io/\$PROJECT_ID/colmap-frontend:latest',
+      '-t', 'us-central1-docker.pkg.dev/\$PROJECT_ID/colmap-repo/colmap-frontend:latest',
       '.'
     ]
   
   # Push the frontend container
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/\$PROJECT_ID/colmap-frontend:latest']
+    args: ['push', 'us-central1-docker.pkg.dev/\$PROJECT_ID/colmap-repo/colmap-frontend:latest']
   
   # Deploy frontend to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -50,7 +50,7 @@ steps:
       - 'deploy'
       - 'colmap-frontend'
       - '--image'
-      - 'gcr.io/\$PROJECT_ID/colmap-frontend:latest'
+      - 'us-central1-docker.pkg.dev/\$PROJECT_ID/colmap-repo/colmap-frontend:latest'
       - '--region'
       - '${GCP_REGION}'
       - '--platform'

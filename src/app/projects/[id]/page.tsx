@@ -1,87 +1,186 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { ArrowLeft, Trash2, Plus, MapPin, Calendar } from 'lucide-react'
-import { Project, Scan } from '@/types'
-import { Sidebar } from '@/components/layout/sidebar'
-import { ScanModal } from '@/components/forms/scan-modal'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect } from "react"
+import { useRouter, useParams } from "next/navigation"
+import { 
+  ArrowLeft, 
+  Plus, 
+  Trash2, 
+  MapPin, 
+  Calendar, 
+  Scan,
+  Eye,
+  Download,
+  Clock,
+  CheckCircle,
+  AlertCircle
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-interface ProjectDetailsPageProps {
-  params: {
-    id: string
-  }
+interface Project {
+  id: string
+  name: string
+  description: string
+  location: string
+  spaceType: string
+  projectType: string
+  createdAt: string
+  status: 'active' | 'completed' | 'processing'
 }
 
-export default function ProjectDetailsPage({ params }: ProjectDetailsPageProps) {
-  const [project, setProject] = useState<Project | null>(null)
-  const [scans, setScans] = useState<Scan[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [showScanModal, setShowScanModal] = useState(false)
+interface ScanData {
+  id: string
+  name: string
+  projectId: string
+  thumbnail?: string
+  status: 'completed' | 'processing' | 'failed' | 'queued'
+  location: string
+  capturedAt: string
+  fileSize?: string
+  duration?: string
+  pointCount?: number
+}
+
+export default function ProjectDetailPage() {
   const router = useRouter()
+  const params = useParams()
+  const projectId = params.id as string
+  
+  const [project, setProject] = useState<Project | null>(null)
+  const [scans, setScans] = useState<ScanData[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchProjectDetails()
-  }, [params.id])
-
-  const fetchProjectDetails = async () => {
-    try {
-      const response = await fetch(`/api/projects/${params.id}`)
-      const data = await response.json()
-      setProject(data.data)
-      setScans(data.data?.scans || [])
-    } catch (error) {
-      console.error('Failed to fetch project:', error)
-    } finally {
-      setIsLoading(false)
+    // Check authentication
+    const token = localStorage.getItem('auth_token')
+    if (!token) {
+      router.push('/auth/login')
+      return
     }
-  }
 
-  const handleCreateScan = async (scanData: any) => {
+    loadProjectData()
+  }, [projectId, router])
+
+  const loadProjectData = async () => {
     try {
-      const response = await fetch(`/api/projects/${params.id}/scans`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scanData)
-      })
-
-      if (response.ok) {
-        await fetchProjectDetails()
-        setShowScanModal(false)
+      // Simulate API call - load project details
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Demo project data
+      const demoProject: Project = {
+        id: projectId,
+        name: "Inspección Edificio Central",
+        description: "Documentación 3D del edificio principal para análisis estructural y verificación de integridad",
+        location: "Ciudad de México, CDMX",
+        spaceType: "interior",
+        projectType: "inspection",
+        createdAt: "2024-01-15",
+        status: "active"
       }
+      
+      // Demo scans data
+      const demoScans: ScanData[] = [
+        {
+          id: "scan-1",
+          name: "Planta Baja - Lobby Principal",
+          projectId,
+          thumbnail: "/api/assets/sample-scan-thumbnail.jpg",
+          status: "completed",
+          location: "Planta Baja, Sector A",
+          capturedAt: "2024-01-20T10:30:00Z",
+          fileSize: "245 MB",
+          duration: "8 min",
+          pointCount: 2850000
+        },
+        {
+          id: "scan-2", 
+          name: "Segundo Piso - Oficinas",
+          projectId,
+          status: "completed",
+          location: "Segundo Piso, Sector B",
+          capturedAt: "2024-01-21T14:15:00Z",
+          fileSize: "189 MB",
+          duration: "6 min",
+          pointCount: 2100000
+        },
+        {
+          id: "scan-3",
+          name: "Azotea - Instalaciones",
+          projectId,
+          status: "processing",
+          location: "Azotea, Sector C",
+          capturedAt: "2024-01-22T09:45:00Z",
+          fileSize: "156 MB",
+          duration: "5 min"
+        },
+        {
+          id: "scan-4",
+          name: "Sótano - Estacionamiento",
+          projectId,
+          status: "queued",
+          location: "Sótano, Nivel -1",
+          capturedAt: "2024-01-22T16:20:00Z",
+        }
+      ]
+      
+      setProject(demoProject)
+      setScans(demoScans)
     } catch (error) {
-      console.error('Failed to create scan:', error)
+      console.error('Error loading project:', error)
+    } finally {
+      setLoading(false)
     }
-  }
-
-  const handleScanClick = (scanId: string) => {
-    router.push(`/projects/${params.id}/scans/${scanId}/viewer`)
   }
 
   const handleDeleteProject = async () => {
-    if (confirm('¿Estás seguro de que quieres eliminar este proyecto?')) {
-      try {
-        const response = await fetch(`/api/projects/${params.id}`, {
-          method: 'DELETE'
-        })
-
-        if (response.ok) {
-          router.push('/dashboard')
-        }
-      } catch (error) {
-        console.error('Failed to delete project:', error)
-      }
+    if (window.confirm('¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer.')) {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      router.push('/dashboard')
     }
   }
 
-  if (isLoading) {
+  const handleViewScan = (scanId: string) => {
+    router.push(`/projects/${projectId}/scans/${scanId}`)
+  }
+
+  const getStatusIcon = (status: ScanData['status']) => {
+    switch (status) {
+      case 'completed': return <CheckCircle className="w-4 h-4 text-green-500" />
+      case 'processing': return <Clock className="w-4 h-4 text-yellow-500 animate-spin" />
+      case 'failed': return <AlertCircle className="w-4 h-4 text-red-500" />
+      case 'queued': return <Clock className="w-4 h-4 text-gray-500" />
+      default: return null
+    }
+  }
+
+  const getStatusText = (status: ScanData['status']) => {
+    switch (status) {
+      case 'completed': return 'Completado'
+      case 'processing': return 'Procesando'
+      case 'failed': return 'Error'
+      case 'queued': return 'En cola'
+      default: return 'Desconocido'
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-          <p className="mt-4 text-gray-400 font-mono">Loading project...</p>
+          <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Cargando proyecto...</p>
         </div>
       </div>
     )
@@ -89,11 +188,12 @@ export default function ProjectDetailsPage({ params }: ProjectDetailsPageProps) 
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-mono font-bold text-white mb-4">Project not found</h1>
+          <h2 className="text-xl font-semibold text-white mb-2">Proyecto no encontrado</h2>
+          <p className="text-gray-400 mb-4">El proyecto que buscas no existe o no tienes permisos para verlo.</p>
           <Button onClick={() => router.push('/dashboard')}>
-            Back to Dashboard
+            Volver al Dashboard
           </Button>
         </div>
       </div>
@@ -101,142 +201,198 @@ export default function ProjectDetailsPage({ params }: ProjectDetailsPageProps) 
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex">
-      {/* Sidebar */}
-      <Sidebar activeItem="projects" />
+    <div className="min-h-screen bg-gray-950">
+      {/* Header */}
+      <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => router.push('/dashboard')}
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div>
+              <h1 className="text-xl font-bold text-white">{project.name}</h1>
+              <p className="text-sm text-gray-400">{project.location}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline"
+              onClick={() => {/* Open scan modal */}}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo Escaneo
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteProject}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Eliminar Proyecto
+            </Button>
+          </div>
+        </div>
+      </header>
 
       {/* Main Content */}
-      <div className="flex-1 bg-gray-700">
-        <div className="p-8">
-          {/* Header */}
-          <motion.div 
-            className="flex justify-between items-center mb-8"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                onClick={() => router.push('/dashboard')}
-                className="text-gray-400 hover:text-white"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <div>
-                <h1 className="text-3xl font-mono font-bold text-white">
-                  {project.name} {'>'} Scans
-                </h1>
+      <main className="p-6">
+        {/* Project Info */}
+        <div className="mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Información del Proyecto</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="flex items-center space-x-2">
+                  <MapPin className="w-4 h-4 text-gray-400" />
+                  <div>
+                    <p className="text-xs text-gray-400">Ubicación</p>
+                    <p className="text-sm text-white">{project.location}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <div>
+                    <p className="text-xs text-gray-400">Creado</p>
+                    <p className="text-sm text-white">{formatDate(project.createdAt + 'T00:00:00Z')}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Scan className="w-4 h-4 text-gray-400" />
+                  <div>
+                    <p className="text-xs text-gray-400">Total Escaneos</p>
+                    <p className="text-sm text-white">{scans.length}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-gray-400" />
+                  <div>
+                    <p className="text-xs text-gray-400">Estado</p>
+                    <p className="text-sm text-white capitalize">{project.status}</p>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                onClick={handleDeleteProject}
-                className="text-gray-400 hover:text-white border-gray-600"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                ELIMINAR PROYECTO
-              </Button>
-              <Button
-                onClick={() => setShowScanModal(true)}
-                className="bg-green-500 hover:bg-green-600 text-white font-mono font-bold px-6 py-2 rounded-lg transition-colors duration-200 flex items-center"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                + NEW SCAN
-              </Button>
-            </div>
-          </motion.div>
+              
+              <div className="mt-4 pt-4 border-t border-gray-800">
+                <p className="text-sm text-gray-300">{project.description}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Scans Section */}
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-white">Escaneos</h2>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo Escaneo
+            </Button>
+          </div>
 
           {/* Scans Grid */}
-          {scans.length === 0 ? (
-            <motion.div 
-              className="text-center py-12"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <div className="w-24 h-24 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-white mb-2 font-mono">No scans yet</h3>
-              <p className="text-gray-400 mb-6 font-mono">Create your first scan to start 3D reconstruction</p>
-              <Button
-                onClick={() => setShowScanModal(true)}
-                className="bg-green-500 hover:bg-green-600 text-white font-mono font-bold px-6 py-3 rounded-lg transition-colors duration-200"
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {scans.map((scan) => (
+              <Card 
+                key={scan.id}
+                className="cursor-pointer hover:scale-105 transition-transform duration-200"
               >
-                Create Your First Scan
-              </Button>
-            </motion.div>
-          ) : (
-            <motion.div 
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              {scans.map((scan, index) => (
-                <motion.div
-                  key={scan.id}
-                  className="bg-gray-800 rounded-lg p-6 cursor-pointer hover:bg-gray-750 transition-colors duration-200"
-                  onClick={() => handleScanClick(scan.id)}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 * index }}
-                  whileHover={{ scale: 1.02, y: -5 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {/* Scan Preview */}
-                  <div className="w-full h-48 bg-gray-600 rounded-lg mb-4 flex items-center justify-center relative overflow-hidden">
-                    <div className="w-16 h-16 bg-gray-500 rounded-full flex items-center justify-center">
-                      <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
+                {/* Thumbnail */}
+                <div className="aspect-video bg-gray-800 rounded-t-xl overflow-hidden">
+                  {scan.thumbnail ? (
+                    <img 
+                      src={scan.thumbnail} 
+                      alt={scan.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Scan className="w-8 h-8 text-gray-500" />
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-br from-gray-600 to-gray-700 opacity-50"></div>
+                  )}
+                </div>
+
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-base">{scan.name}</CardTitle>
+                    {getStatusIcon(scan.status)}
                   </div>
+                  <p className="text-xs text-gray-400">{scan.location}</p>
+                </CardHeader>
 
-                  {/* Scan Info */}
-                  <div className="space-y-3">
-                    <div className="flex items-center text-gray-400 text-sm font-mono">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Actualizado: {new Date(scan.updated_at).toLocaleDateString('es-ES')}
+                <CardContent className="pt-0">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-400">Estado</span>
+                      <span className="text-white">{getStatusText(scan.status)}</span>
                     </div>
-
-                    <h3 className="text-lg font-bold text-white font-mono">
-                      {scan.name}
-                    </h3>
-
-                    {scan.description && (
-                      <p className="text-gray-400 text-sm font-mono line-clamp-2">
-                        {scan.description}
-                      </p>
+                    
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-400">Capturado</span>
+                      <span className="text-white">{formatDate(scan.capturedAt)}</span>
+                    </div>
+                    
+                    {scan.fileSize && (
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">Tamaño</span>
+                        <span className="text-white">{scan.fileSize}</span>
+                      </div>
                     )}
-
-                    {scan.location && (
-                      <div className="flex items-center text-gray-400 text-sm">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        {scan.location}
+                    
+                    {scan.pointCount && (
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">Puntos</span>
+                        <span className="text-white">{scan.pointCount.toLocaleString()}</span>
                       </div>
                     )}
                   </div>
-                </motion.div>
-              ))}
-            </motion.div>
+                  
+                  {scan.status === 'completed' && (
+                    <div className="flex items-center space-x-2 mt-4">
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleViewScan(scan.id)}
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        Ver
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Download className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Empty State */}
+          {scans.length === 0 && (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Scan className="w-8 h-8 text-gray-500" />
+              </div>
+              <h3 className="text-lg font-medium text-white mb-2">No hay escaneos</h3>
+              <p className="text-gray-400 mb-6">
+                Crea tu primer escaneo para comenzar la reconstrucción 3D
+              </p>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Crear Escaneo
+              </Button>
+            </div>
           )}
         </div>
-      </div>
-
-      {/* Scan Modal */}
-      <ScanModal
-        isOpen={showScanModal}
-        onClose={() => setShowScanModal(false)}
-        onSubmit={handleCreateScan}
-        projectId={params.id}
-      />
+      </main>
     </div>
   )
 }

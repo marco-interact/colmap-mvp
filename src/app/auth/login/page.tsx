@@ -1,152 +1,152 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { motion } from 'framer-motion'
-
-const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(1, 'Contraseña requerida')
-})
-
-type LoginFormData = z.infer<typeof loginSchema>
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors }
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: 'test@colmap.app',
-      password: 'password'
-    }
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
   })
+  const [errors, setErrors] = useState<{[key: string]: string}>({})
+  const [loading, setLoading] = useState(false)
 
-  const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true)
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }))
+    }
+  }
 
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {}
+    
+    if (!formData.email) {
+      newErrors.email = "El email es requerido"
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Email inválido"
+    }
+    
+    if (!formData.password) {
+      newErrors.password = "La contraseña es requerida"
+    } else if (formData.password.length < 6) {
+      newErrors.password = "La contraseña debe tener al menos 6 caracteres"
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!validateForm()) {
+      return
+    }
+    
+    setLoading(true)
+    
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      })
-
-      if (response.ok) {
+      // Simulate API call - replace with actual authentication
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // For demo purposes, accept any valid email/password
+      if (formData.email && formData.password.length >= 6) {
+        // Store user session (in production, handle this properly)
+        localStorage.setItem('auth_token', 'demo_token')
+        localStorage.setItem('user_email', formData.email)
+        
+        // Redirect to dashboard
         router.push('/dashboard')
-      } else {
-        alert('Login failed')
       }
     } catch (error) {
-      alert('Login failed')
+      setErrors({ submit: "Error al iniciar sesión. Intenta nuevamente." })
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <motion.div 
-          className="text-center mb-8"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-4xl font-mono font-bold">
-            <span className="text-green-500">Colmap</span>
-            <span className="text-white"> App</span>
-          </h1>
-        </motion.div>
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+      <div className="w-full max-w-md space-y-8">
+        {/* Logo/Title Area */}
+        <div className="text-center space-y-2">
+          <div className="mx-auto w-16 h-16 bg-primary-500 rounded-xl flex items-center justify-center mb-6">
+            <div className="w-8 h-8 bg-white rounded-md"></div>
+          </div>
+          <h1 className="text-2xl font-bold text-white">Workspace</h1>
+          <p className="text-gray-400 text-sm">Accede a tu cuenta</p>
+        </div>
 
-        {/* Login Card */}
-        <motion.div 
-          className="bg-gray-800 rounded-lg p-8 shadow-2xl"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Email Field */}
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
             <div>
-              <div className="flex justify-between items-center mb-2">
-                <label htmlFor="email" className="text-white font-mono text-sm font-bold">
-                  Email
-                </label>
-                <span className="text-gray-400 text-xs font-mono">Mandatory</span>
-              </div>
-              <input
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                Email
+              </label>
+              <Input
                 id="email"
+                name="email"
                 type="email"
-                {...register('email')}
-                placeholder="hola@correo.com"
-                className="w-full bg-transparent border-b border-white text-white placeholder-gray-400 focus:outline-none focus:border-green-500 py-2 font-mono"
+                autoComplete="email"
+                placeholder="tu@email.com"
+                value={formData.email}
+                onChange={handleInputChange}
+                error={errors.email}
+                className="w-full"
               />
-              {errors.email && (
-                <p className="text-red-400 text-xs font-mono mt-1">{errors.email.message}</p>
-              )}
             </div>
 
-            {/* Password Field */}
             <div>
-              <div className="flex justify-between items-center mb-2">
-                <label htmlFor="password" className="text-white font-mono text-sm font-bold">
-                  Contraseña
-                </label>
-                <span className="text-gray-400 text-xs font-mono">Mandatory</span>
-              </div>
-              <input
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                Contraseña
+              </label>
+              <Input
                 id="password"
+                name="password"
                 type="password"
-                {...register('password')}
-                placeholder="Contraseña"
-                className="w-full bg-transparent border-b border-white text-white placeholder-gray-400 focus:outline-none focus:border-green-500 py-2 font-mono"
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleInputChange}
+                error={errors.password}
+                className="w-full"
               />
-              {errors.password && (
-                <p className="text-red-400 text-xs font-mono mt-1">{errors.password.message}</p>
-              )}
             </div>
+          </div>
 
-            {/* Forgot Password Link */}
-            <div className="text-left">
-              <a href="#" className="text-gray-400 text-sm font-mono hover:text-white transition-colors">
-                ¿Olvidaste tu contraseña?
-              </a>
+          {/* Submit Error */}
+          {errors.submit && (
+            <div className="text-red-400 text-sm text-center">
+              {errors.submit}
             </div>
+          )}
 
-            {/* Submit Button */}
-            <motion.button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-mono font-bold py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              {isLoading ? 'CONTINUANDO...' : 'CONTINUAR'}
-            </motion.button>
-          </form>
-        </motion.div>
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            loading={loading}
+            disabled={loading}
+            className="w-full"
+            size="lg"
+          >
+            {loading ? "Iniciando sesión..." : "CONTINUAR"}
+          </Button>
+        </form>
 
-        {/* Demo Credentials */}
-        <motion.div 
-          className="mt-6 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <p className="text-gray-400 text-sm font-mono">
-            Demo: test@colmap.app / password
+        {/* Footer */}
+        <div className="text-center">
+          <p className="text-xs text-gray-500">
+            ¿Necesitas ayuda? Contacta al administrador
           </p>
-        </motion.div>
+        </div>
       </div>
     </div>
   )

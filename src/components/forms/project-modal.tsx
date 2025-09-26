@@ -1,25 +1,12 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Select } from '@/components/ui/select'
-
-const projectSchema = z.object({
-  name: z.string().min(1, 'Nombre requerido'),
-  description: z.string().min(1, 'Descripción requerida'),
-  location: z.string().min(1, 'Ubicación requerida'),
-  space_type: z.string().min(1, 'Tipo de espacio requerido'),
-  project_type: z.string().min(1, 'Tipo de proyecto requerido')
-})
-
-type ProjectFormData = z.infer<typeof projectSchema>
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectItem } from "@/components/ui/select"
+import { Modal, ModalContent, ModalFooter } from "@/components/ui/modal"
+import { MapPin } from "lucide-react"
 
 interface ProjectModalProps {
   isOpen: boolean
@@ -27,183 +14,243 @@ interface ProjectModalProps {
   onSubmit: (data: ProjectFormData) => void
 }
 
+export interface ProjectFormData {
+  name: string
+  description: string
+  location: string
+  spaceType: string
+  projectType: string
+}
+
+const spaceTypes = [
+  { value: "interior", label: "Interior" },
+  { value: "exterior", label: "Exterior" },
+  { value: "mixed", label: "Mixto" },
+  { value: "industrial", label: "Industrial" },
+]
+
+const projectTypes = [
+  { value: "documentation", label: "Documentación" },
+  { value: "inspection", label: "Inspección" },
+  { value: "monitoring", label: "Monitoreo" },
+  { value: "reconstruction", label: "Reconstrucción" },
+  { value: "analysis", label: "Análisis" },
+]
+
 export function ProjectModal({ isOpen, onClose, onSubmit }: ProjectModalProps) {
-  const [isLoading, setIsLoading] = useState(false)
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset
-  } = useForm<ProjectFormData>({
-    resolver: zodResolver(projectSchema)
+  const [formData, setFormData] = useState<ProjectFormData>({
+    name: "",
+    description: "",
+    location: "",
+    spaceType: "",
+    projectType: "",
   })
+  
+  const [errors, setErrors] = useState<{[key: string]: string}>({})
+  const [loading, setLoading] = useState(false)
 
-  const handleFormSubmit = async (data: ProjectFormData) => {
-    setIsLoading(true)
+  const handleInputChange = (field: keyof ProjectFormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }))
+    }
+  }
+
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {}
+    
+    if (!formData.name.trim()) {
+      newErrors.name = "El nombre del proyecto es requerido"
+    }
+    
+    if (!formData.description.trim()) {
+      newErrors.description = "La descripción es requerida"
+    }
+    
+    if (!formData.location.trim()) {
+      newErrors.location = "La ubicación es requerida"
+    }
+    
+    if (!formData.spaceType) {
+      newErrors.spaceType = "Selecciona un tipo de espacio"
+    }
+    
+    if (!formData.projectType) {
+      newErrors.projectType = "Selecciona un tipo de proyecto"
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!validateForm()) {
+      return
+    }
+    
+    setLoading(true)
+    
     try {
-      await onSubmit(data)
-      reset()
+      await onSubmit(formData)
+      
+      // Reset form
+      setFormData({
+        name: "",
+        description: "",
+        location: "",
+        spaceType: "",
+        projectType: "",
+      })
+      setErrors({})
       onClose()
     } catch (error) {
-      console.error('Failed to create project:', error)
+      setErrors({ submit: "Error al crear el proyecto. Intenta nuevamente." })
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   const handleClose = () => {
-    reset()
-    onClose()
+    if (!loading) {
+      // Reset form when closing
+      setFormData({
+        name: "",
+        description: "",
+        location: "",
+        spaceType: "",
+        projectType: "",
+      })
+      setErrors({})
+      onClose()
+    }
   }
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-          onClick={handleClose}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <motion.div
-            className="bg-gray-800 rounded-lg shadow-2xl max-w-md w-full"
-            onClick={(e) => e.stopPropagation()}
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-white font-mono">Nuevo Proyecto</h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleClose}
-                  className="text-gray-400 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+    <Modal 
+      isOpen={isOpen} 
+      onClose={handleClose}
+      title="Nuevo Proyecto"
+      className="max-w-2xl"
+    >
+      <form onSubmit={handleSubmit}>
+        <ModalContent className="space-y-6">
+          {/* Project Name */}
+          <div>
+            <label htmlFor="project-name" className="block text-sm font-medium text-gray-300 mb-2">
+              Nombre del Proyecto *
+            </label>
+            <Input
+              id="project-name"
+              placeholder="Ej: Inspección Edificio Central"
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              error={errors.name}
+              className="w-full"
+            />
+          </div>
 
-              <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-                {/* Project Name */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-white font-mono text-sm font-bold">
-                      Nombre
-                    </label>
-                    <span className="text-gray-400 text-xs font-mono">Mandatory</span>
-                  </div>
-                  <Input
-                    {...register('name')}
-                    placeholder="Nombre del Proyecto"
-                    className="bg-transparent border-b border-white text-white placeholder-gray-400 focus:outline-none focus:border-green-500 py-2"
-                  />
-                  {errors.name && (
-                    <p className="text-red-400 text-xs font-mono mt-1">{errors.name.message}</p>
-                  )}
-                </div>
+          {/* Description */}
+          <div>
+            <label htmlFor="project-description" className="block text-sm font-medium text-gray-300 mb-2">
+              Descripción *
+            </label>
+            <Textarea
+              id="project-description"
+              placeholder="Describe el objetivo y alcance del proyecto..."
+              value={formData.description}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              error={errors.description}
+              className="w-full min-h-[100px]"
+            />
+          </div>
 
-                {/* Description */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-white font-mono text-sm font-bold">
-                      Descripción
-                    </label>
-                    <span className="text-gray-400 text-xs font-mono">Mandatory</span>
-                  </div>
-                  <Textarea
-                    {...register('description')}
-                    placeholder="Descripción del Proyecto"
-                    rows={3}
-                    className="bg-transparent border-b border-white text-white placeholder-gray-400 focus:outline-none focus:border-green-500 py-2 resize-none"
-                  />
-                  {errors.description && (
-                    <p className="text-red-400 text-xs font-mono mt-1">{errors.description.message}</p>
-                  )}
-                </div>
-
-                {/* Location */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-white font-mono text-sm font-bold">
-                      Ubicación
-                    </label>
-                    <span className="text-gray-400 text-xs font-mono">Mandatory</span>
-                  </div>
-                  <Input
-                    {...register('location')}
-                    placeholder="Buscar Ubicación"
-                    className="bg-transparent border-b border-white text-white placeholder-gray-400 focus:outline-none focus:border-green-500 py-2"
-                  />
-                  <p className="text-gray-400 text-xs mt-1 font-mono">¿No encuentras la ubicación?</p>
-                  {errors.location && (
-                    <p className="text-red-400 text-xs font-mono mt-1">{errors.location.message}</p>
-                  )}
-                </div>
-
-                {/* Space Type */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-white font-mono text-sm font-bold">
-                      Tipo de Espacio
-                    </label>
-                    <span className="text-gray-400 text-xs font-mono">Mandatory</span>
-                  </div>
-                  <Select
-                    {...register('space_type')}
-                    className="bg-transparent border-b border-white text-white focus:outline-none focus:border-green-500 py-2"
-                  >
-                    <option value="">Selecciona el tipo de espacio a escanear</option>
-                    <option value="indoor">Interior</option>
-                    <option value="outdoor">Exterior</option>
-                    <option value="mixed">Mixto</option>
-                  </Select>
-                  {errors.space_type && (
-                    <p className="text-red-400 text-xs font-mono mt-1">{errors.space_type.message}</p>
-                  )}
-                </div>
-
-                {/* Project Type */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-white font-mono text-sm font-bold">
-                      Tipo de Proyecto
-                    </label>
-                    <span className="text-gray-400 text-xs font-mono">Mandatory</span>
-                  </div>
-                  <Select
-                    {...register('project_type')}
-                    className="bg-transparent border-b border-white text-white focus:outline-none focus:border-green-500 py-2"
-                  >
-                    <option value="">Selecciona el tipo de proyecto</option>
-                    <option value="architecture">Arquitectura</option>
-                    <option value="archaeology">Arqueología</option>
-                    <option value="industrial">Industrial</option>
-                    <option value="cultural">Patrimonio Cultural</option>
-                    <option value="research">Investigación</option>
-                  </Select>
-                  {errors.project_type && (
-                    <p className="text-red-400 text-xs font-mono mt-1">{errors.project_type.message}</p>
-                  )}
-                </div>
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white font-mono font-bold py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50"
-                >
-                  {isLoading ? 'CREANDO...' : 'CREAR PROYECTO'}
-                </Button>
-              </form>
+          {/* Location */}
+          <div>
+            <label htmlFor="project-location" className="block text-sm font-medium text-gray-300 mb-2">
+              Ubicación *
+            </label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                id="project-location"
+                placeholder="Dirección o ubicación del proyecto"
+                value={formData.location}
+                onChange={(e) => handleInputChange("location", e.target.value)}
+                error={errors.location}
+                className="pl-10"
+              />
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </div>
+
+          {/* Space Type and Project Type in a grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Tipo de Espacio *
+              </label>
+              <Select
+                value={formData.spaceType}
+                onValueChange={(value) => handleInputChange("spaceType", value)}
+                placeholder="Seleccionar tipo"
+                error={errors.spaceType}
+              >
+                {spaceTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Tipo de Proyecto *
+              </label>
+              <Select
+                value={formData.projectType}
+                onValueChange={(value) => handleInputChange("projectType", value)}
+                placeholder="Seleccionar tipo"
+                error={errors.projectType}
+              >
+                {projectTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </Select>
+            </div>
+          </div>
+
+          {/* Submit Error */}
+          {errors.submit && (
+            <div className="text-red-400 text-sm">
+              {errors.submit}
+            </div>
+          )}
+        </ModalContent>
+
+        <ModalFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            disabled={loading}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            loading={loading}
+            disabled={loading}
+          >
+            {loading ? "Creando..." : "CREAR PROYECTO"}
+          </Button>
+        </ModalFooter>
+      </form>
+    </Modal>
   )
 }
