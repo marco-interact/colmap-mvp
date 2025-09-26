@@ -227,7 +227,7 @@ export default function ProjectDetailPage() {
             status: status.status === 'completed' ? 'completed' : 
                    status.status === 'failed' ? 'failed' : 'processing',
             processingTime: status.status === 'completed' ? 
-              `${Math.round((Date.now() - new Date(status.created_at).getTime()) / 60000)} minutes` : undefined
+              `${Math.round((Date.now() - new Date(status.createdAt).getTime()) / 60000)} minutes` : undefined
           } : scan
         ))
         
