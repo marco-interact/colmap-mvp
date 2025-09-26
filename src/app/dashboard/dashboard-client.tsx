@@ -175,6 +175,7 @@ export function DashboardClient() {
       {/* Project Modal */}
       {showProjectModal && (
         <ProjectModal
+          isOpen={showProjectModal}
           onClose={() => setShowProjectModal(false)}
           onSubmit={handleCreateProject}
         />

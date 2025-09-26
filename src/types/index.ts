@@ -14,12 +14,19 @@ export interface Project {
 export interface Scan {
   id: string
   name: string
+  description?: string
+  location?: string
   project_id: string
   status: 'pending' | 'processing' | 'completed' | 'failed'
   created_at: string
   updated_at: string
   model_url?: string
   thumbnail_url?: string
+  models?: {
+    point_cloud_url?: string
+    mesh_url?: string
+    texture_url?: string
+  }
   processing_jobs?: ProcessingJob[]
   processing_options?: ProcessingOptions
 }

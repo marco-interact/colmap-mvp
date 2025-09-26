@@ -126,7 +126,7 @@ export default function ProjectDetailsPage({ params }: ProjectDetailsPageProps) 
               </Button>
               <div>
                 <h1 className="text-3xl font-mono font-bold text-white">
-                  {project.name} > Scans
+                  {project.name} {'>'} Scans
                 </h1>
               </div>
             </div>

@@ -132,7 +132,7 @@ export function ProjectDetailClient() {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-mono font-bold text-white">
-                {project?.name} > Scans
+                {project?.name} {'>'} Scans
               </h1>
             </div>
             <div className="flex items-center space-x-4">
@@ -218,6 +218,7 @@ export function ProjectDetailClient() {
       {/* Scan Modal */}
       {showScanModal && (
         <ScanModal
+          isOpen={showScanModal}
           onClose={() => setShowScanModal(false)}
           onSubmit={handleCreateScan}
           projectId="1"

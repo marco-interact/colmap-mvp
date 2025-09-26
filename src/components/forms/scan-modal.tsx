@@ -197,7 +197,7 @@ export function ScanModal({ isOpen, onClose, onSubmit, projectId }: ScanModalPro
                     ¿Qué tipos de archivos puedo utilizar?
                   </p>
                   {errors.file && (
-                    <p className="text-red-400 text-xs font-mono mt-1">{errors.file.message}</p>
+                    <p className="text-red-400 text-xs font-mono mt-1">{String(errors.file.message || 'File is required')}</p>
                   )}
                 </div>
 
