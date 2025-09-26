@@ -87,7 +87,7 @@ export function Select({
             <div className="max-h-60 overflow-y-auto py-1">
               {React.Children.map(children, (child) => {
                 if (React.isValidElement<SelectItemProps>(child)) {
-                  return React.cloneElement(child, {
+                  return React.cloneElement(child as React.ReactElement<SelectItemProps & { onClick?: () => void }>, {
                     ...child.props,
                     onClick: () => handleItemSelect(child.props.value, child.props.children as string)
                   })
