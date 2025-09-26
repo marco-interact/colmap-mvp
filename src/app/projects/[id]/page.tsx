@@ -3,43 +3,37 @@
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { 
-  ArrowLeft, 
   Plus, 
   Trash2, 
-  MapPin, 
-  Calendar, 
-  Scan,
-  Eye,
-  Download,
   Clock,
-  CheckCircle,
-  AlertCircle
+  Settings,
+  HelpCircle,
+  Camera,
+  Upload
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { Modal, ModalContent, ModalFooter } from "@/components/ui/modal"
+import { Input } from "@/components/ui/input"
 
 interface Project {
   id: string
   name: string
   description: string
   location: string
-  spaceType: string
-  projectType: string
-  createdAt: string
+  updated: string
   status: 'active' | 'completed' | 'processing'
 }
 
-interface ScanData {
+interface Scan {
   id: string
   name: string
   projectId: string
+  projectName: string
   thumbnail?: string
   status: 'completed' | 'processing' | 'failed' | 'queued'
   location: string
-  capturedAt: string
-  fileSize?: string
-  duration?: string
-  pointCount?: number
+  updated: string
 }
 
 export default function ProjectDetailPage() {
@@ -48,328 +42,290 @@ export default function ProjectDetailPage() {
   const projectId = params.id as string
   
   const [project, setProject] = useState<Project | null>(null)
-  const [scans, setScans] = useState<ScanData[]>([])
-  const [loading, setLoading] = useState(true)
+  const [scans, setScans] = useState<Scan[]>([])
+  const [isNewScanModalOpen, setIsNewScanModalOpen] = useState(false)
+  const [userName, setUserName] = useState("")
+  const [newScan, setNewScan] = useState({
+    name: "",
+    file: null as File | null
+  })
+  const [dragActive, setDragActive] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
-    // Check authentication
     const token = localStorage.getItem('auth_token')
+    const email = localStorage.getItem('user_email')
+    
     if (!token) {
       router.push('/auth/login')
       return
+    }
+
+    // Extract name from email
+    if (email) {
+      const name = email.split('@')[0]
+      setUserName(name.charAt(0).toUpperCase() + name.slice(1).replace(/[._]/g, ' '))
     }
 
     loadProjectData()
   }, [projectId, router])
 
   const loadProjectData = async () => {
-    try {
-      // Simulate API call - load project details
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Demo project data
-      const demoProject: Project = {
-        id: projectId,
-        name: "Inspección Edificio Central",
-        description: "Documentación 3D del edificio principal para análisis estructural y verificación de integridad",
-        location: "Ciudad de México, CDMX",
-        spaceType: "interior",
-        projectType: "inspection",
-        createdAt: "2024-01-15",
-        status: "active"
+    // Demo project data
+    const demoProject: Project = {
+      id: projectId,
+      name: `Demo Project ${projectId}`,
+      description: "Render scan for construction site",
+      location: "Monterrey",
+      updated: "26-08-2025",
+      status: "active"
+    }
+    
+    // Demo scans data
+    const demoScans: Scan[] = [
+      {
+        id: "scan-1",
+        name: "Demo Scan 1",
+        projectId,
+        projectName: demoProject.name,
+        status: "completed",
+        location: "Monterrey",
+        updated: "26-08-2025"
       }
-      
-      // Demo scans data
-      const demoScans: ScanData[] = [
-        {
-          id: "scan-1",
-          name: "Planta Baja - Lobby Principal",
-          projectId,
-          thumbnail: "/api/assets/sample-scan-thumbnail.jpg",
-          status: "completed",
-          location: "Planta Baja, Sector A",
-          capturedAt: "2024-01-20T10:30:00Z",
-          fileSize: "245 MB",
-          duration: "8 min",
-          pointCount: 2850000
-        },
-        {
-          id: "scan-2", 
-          name: "Segundo Piso - Oficinas",
-          projectId,
-          status: "completed",
-          location: "Segundo Piso, Sector B",
-          capturedAt: "2024-01-21T14:15:00Z",
-          fileSize: "189 MB",
-          duration: "6 min",
-          pointCount: 2100000
-        },
-        {
-          id: "scan-3",
-          name: "Azotea - Instalaciones",
-          projectId,
-          status: "processing",
-          location: "Azotea, Sector C",
-          capturedAt: "2024-01-22T09:45:00Z",
-          fileSize: "156 MB",
-          duration: "5 min"
-        },
-        {
-          id: "scan-4",
-          name: "Sótano - Estacionamiento",
-          projectId,
-          status: "queued",
-          location: "Sótano, Nivel -1",
-          capturedAt: "2024-01-22T16:20:00Z",
-        }
-      ]
-      
-      setProject(demoProject)
-      setScans(demoScans)
-    } catch (error) {
-      console.error('Error loading project:', error)
-    } finally {
-      setLoading(false)
+    ]
+    
+    setProject(demoProject)
+    setScans(demoScans)
+  }
+
+  const handleFileSelect = (file: File) => {
+    // Validate file size (500MB max)
+    const maxSize = 500 * 1024 * 1024 // 500MB in bytes
+    if (file.size > maxSize) {
+      alert('File size must be under 500MB')
+      return
+    }
+
+    // Validate file type (MP4 only for MVP)
+    if (!file.type.includes('mp4') && !file.name.toLowerCase().endsWith('.mp4')) {
+      alert('Only MP4 video files are supported')
+      return
+    }
+
+    setNewScan(prev => ({ ...prev, file }))
+  }
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true)
+    } else if (e.type === "dragleave") {
+      setDragActive(false)
     }
   }
 
-  const handleDeleteProject = async () => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer.')) {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0])
+    }
+  }
+
+  const handleCreateScan = async () => {
+    if (!newScan.name.trim() || !newScan.file) return
+
+    setIsUploading(true)
+    
+    // Simulate upload progress
+    for (let i = 0; i <= 100; i += 10) {
+      setUploadProgress(i)
+      await new Promise(resolve => setTimeout(resolve, 200))
+    }
+
+    const scan: Scan = {
+      id: Date.now().toString(),
+      name: newScan.name,
+      projectId,
+      projectName: project?.name || "",
+      status: "processing",
+      location: project?.location || "",
+      updated: new Date().toLocaleDateString('en-GB')
+    }
+    
+    setScans(prev => [scan, ...prev])
+    setNewScan({ name: "", file: null })
+    setIsNewScanModalOpen(false)
+    setIsUploading(false)
+    setUploadProgress(0)
+  }
+
+  const handleDeleteProject = () => {
+    if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
       router.push('/dashboard')
     }
   }
 
-  const handleViewScan = (scanId: string) => {
-    router.push(`/projects/${projectId}/scans/${scanId}`)
-  }
-
-  const getStatusIcon = (status: ScanData['status']) => {
-    switch (status) {
-      case 'completed': return <CheckCircle className="w-4 h-4 text-green-500" />
-      case 'processing': return <Clock className="w-4 h-4 text-yellow-500 animate-spin" />
-      case 'failed': return <AlertCircle className="w-4 h-4 text-red-500" />
-      case 'queued': return <Clock className="w-4 h-4 text-gray-500" />
-      default: return null
-    }
-  }
-
-  const getStatusText = (status: ScanData['status']) => {
-    switch (status) {
-      case 'completed': return 'Completado'
-      case 'processing': return 'Procesando'
-      case 'failed': return 'Error'
-      case 'queued': return 'En cola'
-      default: return 'Desconocido'
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400">Cargando proyecto...</p>
-        </div>
-      </div>
-    )
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
   if (!project) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-white mb-2">Proyecto no encontrado</h2>
-          <p className="text-gray-400 mb-4">El proyecto que buscas no existe o no tienes permisos para verlo.</p>
-          <Button onClick={() => router.push('/dashboard')}>
-            Volver al Dashboard
-          </Button>
+          <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading project...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      {/* Header */}
-      <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => router.push('/dashboard')}
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div>
-              <h1 className="text-xl font-bold text-white">{project.name}</h1>
-              <p className="text-sm text-gray-400">{project.location}</p>
+    <div className="min-h-screen bg-gray-950 flex">
+      {/* Sidebar */}
+      <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
+        <div className="p-6">
+          <h1 className="text-xl font-bold text-primary-400">Colmap App</h1>
+        </div>
+
+        {/* User Profile */}
+        <div className="px-6 pb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-sm font-medium text-white">
+              {userName.substring(0, 2).toUpperCase() || "CM"}
             </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline"
-              onClick={() => {/* Open scan modal */}}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo Escaneo
-            </Button>
-            <Button 
-              variant="destructive"
-              onClick={handleDeleteProject}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Eliminar Proyecto
-            </Button>
+            <span className="text-sm text-gray-300">{userName || "Carlos Martinez"}</span>
           </div>
         </div>
-      </header>
+
+        {/* Navigation */}
+        <nav className="flex-1 px-6">
+          <ul className="space-y-2">
+            <li>
+              <button 
+                onClick={() => router.push('/dashboard')}
+                className="w-full flex items-center px-4 py-2 text-sm text-white bg-primary-500 rounded-lg"
+              >
+                <div className="w-4 h-4 mr-3 bg-white rounded-sm"></div>
+                My Projects
+              </button>
+            </li>
+            <li>
+              <button className="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
+                <Clock className="w-4 h-4 mr-3" />
+                Recent
+              </button>
+            </li>
+            <li>
+              <button className="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
+                <Settings className="w-4 h-4 mr-3" />
+                Settings
+              </button>
+            </li>
+            <li>
+              <button className="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
+                <HelpCircle className="w-4 h-4 mr-3" />
+                Help
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        {/* Bottom Version */}
+        <div className="p-6">
+          <span className="text-xs text-gray-500">Demo Version</span>
+        </div>
+      </aside>
 
       {/* Main Content */}
-      <main className="p-6">
-        {/* Project Info */}
-        <div className="mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Información del Proyecto</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="flex items-center space-x-2">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-400">Ubicación</p>
-                    <p className="text-sm text-white">{project.location}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-400">Creado</p>
-                    <p className="text-sm text-white">{formatDate(project.createdAt + 'T00:00:00Z')}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Scan className="w-4 h-4 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-400">Total Escaneos</p>
-                    <p className="text-sm text-white">{scans.length}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-400">Estado</p>
-                    <p className="text-sm text-white capitalize">{project.status}</p>
-                  </div>
-                </div>
-              </div>
+      <main className="flex-1">
+        {/* Header */}
+        <header className="border-b border-gray-800 bg-gray-900/50">
+          <div className="flex items-center justify-between px-8 py-6">
+            <h1 className="text-2xl font-bold text-white">
+              {project.name} &gt; Scans
+            </h1>
+            
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="destructive"
+                onClick={handleDeleteProject}
+                className="bg-gray-700 hover:bg-red-600 text-white"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                DELETE PROJECT
+              </Button>
               
-              <div className="mt-4 pt-4 border-t border-gray-800">
-                <p className="text-sm text-gray-300">{project.description}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Scans Section */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Escaneos</h2>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo Escaneo
-            </Button>
+              <Button 
+                onClick={() => setIsNewScanModalOpen(true)}
+                className="bg-primary-500 hover:bg-primary-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                NEW SCAN
+              </Button>
+            </div>
           </div>
+        </header>
 
-          {/* Scans Grid */}
+        {/* Scans Grid */}
+        <div className="p-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {scans.map((scan) => (
               <Card 
                 key={scan.id}
-                className="cursor-pointer hover:scale-105 transition-transform duration-200"
+                className="cursor-pointer hover:scale-105 transition-transform duration-200 bg-gray-900/50 border-gray-800"
+                onClick={() => router.push(`/projects/${projectId}/scans/${scan.id}`)}
               >
-                {/* Thumbnail */}
-                <div className="aspect-video bg-gray-800 rounded-t-xl overflow-hidden">
-                  {scan.thumbnail ? (
-                    <img 
-                      src={scan.thumbnail} 
-                      alt={scan.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Scan className="w-8 h-8 text-gray-500" />
+                {/* Scan Thumbnail */}
+                <div className="aspect-[4/3] bg-gray-800 rounded-t-xl overflow-hidden">
+                  <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+                    {/* 3D Model Preview */}
+                    <div className="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center">
+                      <Camera className="w-10 h-10 text-primary-400" />
                     </div>
-                  )}
+                  </div>
                 </div>
 
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-base">{scan.name}</CardTitle>
-                    {getStatusIcon(scan.status)}
+                {/* Scan Info */}
+                <CardContent className="p-4 bg-gray-900">
+                  <div className="text-xs text-gray-400 mb-1">
+                    {project.name}
                   </div>
-                  <p className="text-xs text-gray-400">{scan.location}</p>
-                </CardHeader>
-
-                <CardContent className="pt-0">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Estado</span>
-                      <span className="text-white">{getStatusText(scan.status)}</span>
+                  <div className="text-xs text-gray-400 mb-1">
+                    Updated: {scan.updated}
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-1">
+                    {scan.name}
+                  </h3>
+                  <div className="flex items-center text-xs text-gray-500 mb-2">
+                    <div className="w-3 h-3 mr-1">
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                      </svg>
                     </div>
-                    
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Capturado</span>
-                      <span className="text-white">{formatDate(scan.capturedAt)}</span>
-                    </div>
-                    
-                    {scan.fileSize && (
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-400">Tamaño</span>
-                        <span className="text-white">{scan.fileSize}</span>
-                      </div>
-                    )}
-                    
-                    {scan.pointCount && (
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-400">Puntos</span>
-                        <span className="text-white">{scan.pointCount.toLocaleString()}</span>
-                      </div>
-                    )}
+                    {scan.location}
                   </div>
                   
-                  {scan.status === 'completed' && (
-                    <div className="flex items-center space-x-2 mt-4">
-                      <Button 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleViewScan(scan.id)}
-                      >
-                        <Eye className="w-3 h-3 mr-1" />
-                        Ver
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Download className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  )}
+                  {/* Status indicator */}
+                  <div className="flex items-center">
+                    <div className={`w-2 h-2 rounded-full mr-2 ${
+                      scan.status === 'completed' ? 'bg-green-500' :
+                      scan.status === 'processing' ? 'bg-yellow-500' :
+                      scan.status === 'failed' ? 'bg-red-500' : 'bg-gray-500'
+                    }`} />
+                    <span className="text-xs text-gray-400 capitalize">
+                      {scan.status}
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -377,22 +333,141 @@ export default function ProjectDetailPage() {
 
           {/* Empty State */}
           {scans.length === 0 && (
-            <div className="text-center py-12">
+            <div className="text-center py-20">
               <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Scan className="w-8 h-8 text-gray-500" />
+                <Camera className="w-8 h-8 text-gray-500" />
               </div>
-              <h3 className="text-lg font-medium text-white mb-2">No hay escaneos</h3>
+              <h3 className="text-xl font-medium text-white mb-2">
+                No scans yet
+              </h3>
               <p className="text-gray-400 mb-6">
-                Crea tu primer escaneo para comenzar la reconstrucción 3D
+                Upload your first 360° video to start 3D reconstruction
               </p>
-              <Button>
+              <Button 
+                onClick={() => setIsNewScanModalOpen(true)}
+                className="bg-primary-500 hover:bg-primary-600"
+              >
                 <Plus className="w-4 h-4 mr-2" />
-                Crear Escaneo
+                Create Scan
               </Button>
             </div>
           )}
         </div>
       </main>
+
+      {/* New Scan Modal */}
+      <Modal 
+        isOpen={isNewScanModalOpen} 
+        onClose={() => setIsNewScanModalOpen(false)}
+        title="New Scan"
+        className="max-w-2xl"
+      >
+        <ModalContent className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Scan Name <span className="text-red-400">Mandatory</span>
+            </label>
+            <Input
+              placeholder="Scan 2"
+              value={newScan.name}
+              onChange={(e) => setNewScan(prev => ({ ...prev, name: e.target.value }))}
+              className="w-full bg-gray-800 border-gray-700"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Media Input <span className="text-red-400">Mandatory</span>
+            </label>
+            
+            {/* File Upload Area */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                dragActive 
+                  ? 'border-primary-500 bg-primary-500/10' 
+                  : 'border-gray-600 hover:border-gray-500'
+              }`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              {newScan.file ? (
+                <div className="space-y-2">
+                  <div className="w-12 h-12 mx-auto bg-primary-500 rounded-lg flex items-center justify-center">
+                    <Camera className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="text-white font-medium">{newScan.file.name}</p>
+                  <p className="text-gray-400 text-sm">
+                    {formatFileSize(newScan.file.size)} • MP4 Video
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setNewScan(prev => ({ ...prev, file: null }))}
+                  >
+                    Remove File
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="w-12 h-12 mx-auto bg-gray-700 rounded-lg flex items-center justify-center">
+                    <Upload className="w-6 h-6 text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="text-white mb-2">Agregar o seleccionar archivo aquí</p>
+                    <p className="text-gray-400 text-sm">
+                      Maximum file size: 500MB • Supported format: MP4
+                    </p>
+                  </div>
+                  <input
+                    type="file"
+                    accept=".mp4,video/mp4"
+                    onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => document.getElementById('file-upload')?.click()}
+                  >
+                    Select File
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-gray-500 mt-2">
+              ¿Qué tipos de archivos puedo utilizar?
+            </p>
+          </div>
+
+          {isUploading && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-300">Uploading...</span>
+                <span className="text-gray-300">{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div 
+                  className="bg-primary-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </ModalContent>
+
+        <ModalFooter>
+          <Button
+            onClick={handleCreateScan}
+            disabled={!newScan.name.trim() || !newScan.file || isUploading}
+            className="w-full bg-primary-500 hover:bg-primary-600 disabled:opacity-50"
+          >
+            {isUploading ? 'PROCESSING...' : 'GENERATE SCAN'}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   )
 }

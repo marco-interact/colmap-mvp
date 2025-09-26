@@ -2,34 +2,43 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Search, Filter, Grid3x3, List, User, LogOut, Settings } from "lucide-react"
+import { Plus, Search, Clock, Settings, HelpCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ProjectModal, ProjectFormData } from "@/components/forms/project-modal"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { Modal, ModalContent, ModalFooter } from "@/components/ui/modal"
 
 interface Project {
   id: string
   name: string
   description: string
+  updated: string
+  thumbnail: string
   location: string
-  spaceType: string
-  projectType: string
-  scanCount: number
-  lastUpdate: string
-  thumbnail?: string
-  status: 'active' | 'completed' | 'processing'
+}
+
+interface Scan {
+  id: string
+  projectId: string
+  name: string
+  status: 'completed' | 'processing' | 'failed'
+  updated: string
+  thumbnail: string
 }
 
 export default function DashboardPage() {
   const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [recentScans, setRecentScans] = useState<Scan[]>([])
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [userEmail, setUserEmail] = useState("")
+  const [userName, setUserName] = useState("")
+  const [newProject, setNewProject] = useState({
+    name: "",
+    description: ""
+  })
 
-  // Check authentication
+  // Check authentication and load data
   useEffect(() => {
     const token = localStorage.getItem('auth_token')
     const email = localStorage.getItem('user_email')
@@ -39,280 +48,257 @@ export default function DashboardPage() {
       return
     }
     
-    setUserEmail(email || "")
+    // Extract name from email
+    if (email) {
+      const name = email.split('@')[0]
+      setUserName(name.charAt(0).toUpperCase() + name.slice(1).replace(/[._]/g, ' '))
+    }
     
-    // Load demo projects
-    loadDemoProjects()
+    loadDashboardData()
   }, [router])
 
-  const loadDemoProjects = () => {
+  const loadDashboardData = () => {
+    // Demo projects matching the screenshots
     const demoProjects: Project[] = [
       {
         id: "1",
-        name: "Inspección Edificio Central",
-        description: "Documentación 3D del edificio principal para análisis estructural",
-        location: "Ciudad de México, CDMX",
-        spaceType: "interior",
-        projectType: "inspection",
-        scanCount: 12,
-        lastUpdate: "Hace 2 días",
-        status: "active",
-        thumbnail: "/api/assets/sample-scan-thumbnail.jpg"
+        name: "Demo Project 1",
+        description: "Render scan for construction site",
+        updated: "26-08-2025",
+        location: "Monterrey",
+        thumbnail: "/api/assets/sample-industrial.jpg" // This will be a 3D render preview
       },
       {
         id: "2", 
-        name: "Planta Industrial Norte",
-        description: "Reconstrucción 3D completa de la planta de producción",
-        location: "Monterrey, NL",
-        spaceType: "industrial",
-        projectType: "reconstruction",
-        scanCount: 8,
-        lastUpdate: "Hace 1 semana",
-        status: "processing",
-      },
-      {
-        id: "3",
-        name: "Centro Histórico",
-        description: "Monitoreo de fachadas históricas para conservación",
-        location: "Puebla, PUE",
-        spaceType: "exterior",
-        projectType: "monitoring",
-        scanCount: 24,
-        lastUpdate: "Hace 3 días",
-        status: "completed",
+        name: "Demo Project 2",
+        description: "Render scan for construction site",
+        updated: "26-08-2025",
+        location: "Monterrey",
+        thumbnail: "/api/assets/sample-industrial.jpg"
       }
     ]
     
     setProjects(demoProjects)
   }
 
-  const handleCreateProject = async (data: ProjectFormData) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    const newProject: Project = {
+  const handleCreateProject = async () => {
+    if (!newProject.name.trim()) return
+
+    const project: Project = {
       id: Date.now().toString(),
-      ...data,
-      scanCount: 0,
-      lastUpdate: "Ahora",
-      status: "active"
+      name: newProject.name,
+      description: newProject.description || "New videogrammetry project",
+      updated: new Date().toLocaleDateString('en-GB'),
+      location: "Location TBD",
+      thumbnail: "/api/assets/sample-industrial.jpg"
     }
     
-    setProjects(prev => [newProject, ...prev])
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('user_email')
-    router.push('/auth/login')
+    setProjects(prev => [project, ...prev])
+    setNewProject({ name: "", description: "" })
+    setIsNewProjectModalOpen(false)
   }
 
   const filteredProjects = projects.filter(project =>
-    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.location.toLowerCase().includes(searchQuery.toLowerCase())
+    project.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
-
-  const getStatusColor = (status: Project['status']) => {
-    switch (status) {
-      case 'active': return 'bg-primary-500'
-      case 'processing': return 'bg-yellow-500'
-      case 'completed': return 'bg-gray-500'
-      default: return 'bg-gray-500'
-    }
-  }
-
-  const getStatusText = (status: Project['status']) => {
-    switch (status) {
-      case 'active': return 'Activo'
-      case 'processing': return 'Procesando'
-      case 'completed': return 'Completado'
-      default: return 'Desconocido'
-    }
-  }
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      {/* Header */}
-      <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-              <div className="w-4 h-4 bg-white rounded-sm"></div>
+    <div className="min-h-screen bg-gray-950 flex">
+      {/* Sidebar */}
+      <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
+        <div className="p-6">
+          <h1 className="text-xl font-bold text-primary-400">Colmap App</h1>
+        </div>
+
+        {/* User Profile */}
+        <div className="px-6 pb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-sm font-medium text-white">
+              {userName.substring(0, 2).toUpperCase() || "CM"}
             </div>
-            <h1 className="text-xl font-bold text-white">COLMAP Workspace</h1>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2 text-sm text-gray-300">
-              <User className="w-4 h-4" />
-              <span>{userEmail}</span>
-            </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
-              <LogOut className="w-4 h-4" />
-            </Button>
+            <span className="text-sm text-gray-300">{userName || "Carlos Martinez"}</span>
           </div>
         </div>
-      </header>
+
+        {/* Navigation */}
+        <nav className="flex-1 px-6">
+          <ul className="space-y-2">
+            <li>
+              <button className="w-full flex items-center px-4 py-2 text-sm text-white bg-primary-500 rounded-lg">
+                <div className="w-4 h-4 mr-3 bg-white rounded-sm"></div>
+                My Projects
+              </button>
+            </li>
+            <li>
+              <button className="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
+                <Clock className="w-4 h-4 mr-3" />
+                Recent
+              </button>
+            </li>
+            <li>
+              <button className="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
+                <Settings className="w-4 h-4 mr-3" />
+                Settings
+              </button>
+            </li>
+            <li>
+              <button className="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg">
+                <HelpCircle className="w-4 h-4 mr-3" />
+                Help
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        {/* Bottom Version */}
+        <div className="p-6">
+          <span className="text-xs text-gray-500">Demo Version</span>
+        </div>
+      </aside>
 
       {/* Main Content */}
-      <main className="p-6">
-        {/* Page Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2">Proyectos</h2>
-            <p className="text-gray-400">Administra tus proyectos de reconstrucción 3D</p>
-          </div>
-          
-          <Button onClick={() => setIsCreateModalOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Proyecto
-          </Button>
-        </div>
-
-        {/* Filters and Search */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar proyectos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-80"
-              />
-            </div>
+      <main className="flex-1">
+        {/* Header */}
+        <header className="border-b border-gray-800 bg-gray-900/50">
+          <div className="flex items-center justify-between px-8 py-6">
+            <h1 className="text-2xl font-bold text-white">My Projects</h1>
             
-            <Button variant="outline" size="sm">
-              <Filter className="w-4 h-4 mr-2" />
-              Filtros
-            </Button>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search Project"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-80 bg-gray-800 border-gray-700"
+                />
+              </div>
+              
+              <Button 
+                onClick={() => setIsNewProjectModalOpen(true)}
+                className="bg-primary-500 hover:bg-primary-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                NEW PROJECT
+              </Button>
+            </div>
           </div>
-
-          <div className="flex items-center space-x-2">
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-            >
-              <Grid3x3 className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+        </header>
 
         {/* Projects Grid */}
-        <div className={viewMode === 'grid' 
-          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-          : "space-y-4"
-        }>
-          {filteredProjects.map((project) => (
-            <Card 
-              key={project.id} 
-              className="cursor-pointer hover:scale-105 transition-transform duration-200"
-              onClick={() => router.push(`/projects/${project.id}`)}
-            >
-              {/* Thumbnail */}
-              <div className="aspect-video bg-gray-800 rounded-t-xl overflow-hidden">
-                {project.thumbnail ? (
-                  <img 
-                    src={project.thumbnail} 
-                    alt={project.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center">
-                      <Grid3x3 className="w-8 h-8 text-gray-500" />
+        <div className="p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredProjects.map((project) => (
+              <Card 
+                key={project.id}
+                className="cursor-pointer hover:scale-105 transition-transform duration-200 bg-gray-900/50 border-gray-800"
+                onClick={() => router.push(`/projects/${project.id}`)}
+              >
+                {/* Project Thumbnail */}
+                <div className="aspect-[4/3] bg-gray-800 rounded-t-xl overflow-hidden">
+                  <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+                    {/* 3D Model Preview - for now showing colored background */}
+                    <div className="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 bg-primary-400 rounded transform rotate-45"></div>
                     </div>
                   </div>
-                )}
-              </div>
-
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-lg">{project.name}</CardTitle>
-                  <div className={cn(
-                    "w-2 h-2 rounded-full",
-                    getStatusColor(project.status)
-                  )} />
                 </div>
-                <p className="text-sm text-gray-400 line-clamp-2">
-                  {project.description}
-                </p>
-              </CardHeader>
 
-              <CardContent className="pt-0">
-                <div className="space-y-2">
+                {/* Project Info */}
+                <CardContent className="p-4 bg-gray-900">
+                  <div className="text-xs text-gray-400 mb-1">
+                    Updated: {project.updated}
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-1">
+                    {project.name}
+                  </h3>
+                  <p className="text-sm text-gray-400 mb-2">
+                    {project.description}
+                  </p>
                   <div className="flex items-center text-xs text-gray-500">
-                    <span>{project.location}</span>
+                    <div className="w-3 h-3 mr-1">
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                      </svg>
+                    </div>
+                    {project.location}
                   </div>
-                  
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-400">
-                      {project.scanCount} escaneos
-                    </span>
-                    <span className="text-gray-400">
-                      {project.lastUpdate}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center text-xs">
-                    <span className={cn(
-                      "px-2 py-1 rounded-full",
-                      getStatusColor(project.status),
-                      "text-white"
-                    )}>
-                      {getStatusText(project.status)}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filteredProjects.length === 0 && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Grid3x3 className="w-8 h-8 text-gray-500" />
-            </div>
-            <h3 className="text-lg font-medium text-white mb-2">
-              {searchQuery ? "No se encontraron proyectos" : "No hay proyectos"}
-            </h3>
-            <p className="text-gray-400 mb-6">
-              {searchQuery 
-                ? "Intenta con otros términos de búsqueda" 
-                : "Crea tu primer proyecto para comenzar"
-              }
-            </p>
-            {!searchQuery && (
-              <Button onClick={() => setIsCreateModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Crear Proyecto
-              </Button>
-            )}
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        )}
+
+          {/* Empty State */}
+          {filteredProjects.length === 0 && (
+            <div className="text-center py-20">
+              <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Plus className="w-8 h-8 text-gray-500" />
+              </div>
+              <h3 className="text-xl font-medium text-white mb-2">
+                {searchQuery ? "No projects found" : "Create your first project"}
+              </h3>
+              <p className="text-gray-400 mb-6">
+                {searchQuery 
+                  ? "Try different search terms" 
+                  : "Start your videogrammetry journey by creating a new project"
+                }
+              </p>
+              {!searchQuery && (
+                <Button 
+                  onClick={() => setIsNewProjectModalOpen(true)}
+                  className="bg-primary-500 hover:bg-primary-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Project
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       </main>
 
-      {/* Project Creation Modal */}
-      <ProjectModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={handleCreateProject}
-      />
+      {/* New Project Modal */}
+      <Modal 
+        isOpen={isNewProjectModalOpen} 
+        onClose={() => setIsNewProjectModalOpen(false)}
+        title="New Project"
+      >
+        <ModalContent className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Name <span className="text-red-400">Mandatory</span>
+            </label>
+            <Input
+              placeholder="Project's name or title"
+              value={newProject.name}
+              onChange={(e) => setNewProject(prev => ({ ...prev, name: e.target.value }))}
+              className="w-full bg-gray-800 border-gray-700"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Description <span className="text-red-400">Mandatory</span>
+            </label>
+            <textarea
+              placeholder="Project's short description"
+              value={newProject.description}
+              onChange={(e) => setNewProject(prev => ({ ...prev, description: e.target.value }))}
+              className="w-full h-24 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder:text-gray-400 focus:border-primary-500 focus:outline-none resize-none"
+            />
+          </div>
+        </ModalContent>
+
+        <ModalFooter>
+          <Button
+            onClick={handleCreateProject}
+            disabled={!newProject.name.trim()}
+            className="w-full bg-primary-500 hover:bg-primary-600 disabled:opacity-50"
+          >
+            CREATE PROJECT
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   )
-}
-
-// Utility function for className concatenation
-function cn(...classes: (string | undefined)[]) {
-  return classes.filter(Boolean).join(' ')
 }
