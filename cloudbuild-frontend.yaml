@@ -40,7 +40,7 @@ steps:
       - '--timeout'
       - '300'
       - '--set-env-vars'
-      - 'NODE_ENV=production,COLMAP_WORKER_URL=https://colmap-app-525587424361.northamerica-south1.run.app'
+      - 'NODE_ENV=production,NEXT_PUBLIC_COLMAP_WORKER_URL=${_COLMAP_WORKER_URL}'
       - '--execution-environment'
       - 'gen2'
 
@@ -56,3 +56,4 @@ timeout: '1200s'
 substitutions:
   _REGION: 'us-central1'
   _SERVICE_NAME: 'colmap-frontend'
+  _COLMAP_WORKER_URL: 'https://colmap-app-64102061337.us-central1.run.app'
