@@ -9,7 +9,7 @@ echo "🚀 Starting COLMAP Frontend Deployment to Cloud Run..."
 
 # Configuration
 PROJECT_ID=$(gcloud config get-value project)
-REGION="northamerica-south1"
+REGION="us-central1"
 SERVICE_NAME="colmap-frontend"
 IMAGE_NAME="gcr.io/$PROJECT_ID/colmap-frontend"
 

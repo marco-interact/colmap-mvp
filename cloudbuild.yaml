@@ -22,7 +22,7 @@ steps:
       - '--image'
       - 'gcr.io/$PROJECT_ID/colmap-worker:$COMMIT_SHA'
       - '--region'
-      - 'northamerica-south1'
+      - 'us-central1'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
@@ -53,5 +53,5 @@ options:
 timeout: '1800s'  # Extended timeout for complex builds
 
 substitutions:
-  _REGION: 'northamerica-south1'
+  _REGION: 'us-central1'
   _SERVICE_NAME: 'colmap-app'

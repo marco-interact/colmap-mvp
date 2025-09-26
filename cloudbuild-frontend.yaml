@@ -23,7 +23,7 @@ steps:
       - '--image'
       - 'gcr.io/$PROJECT_ID/colmap-frontend:$COMMIT_SHA'
       - '--region'
-      - 'northamerica-south1'
+      - 'us-central1'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
@@ -54,5 +54,5 @@ options:
 timeout: '1200s'
 
 substitutions:
-  _REGION: 'northamerica-south1'
+  _REGION: 'us-central1'
   _SERVICE_NAME: 'colmap-frontend'

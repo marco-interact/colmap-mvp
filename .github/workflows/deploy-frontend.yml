@@ -18,7 +18,7 @@ on:
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REGION: northamerica-south1
+  REGION: us-central1
   SERVICE_NAME: colmap-frontend
 
 jobs:
