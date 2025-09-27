@@ -183,8 +183,9 @@ export default function ProjectDetailPage() {
         // Start processing status tracking
         trackProcessingStatus(scan.id, jobId)
       } else {
-        // Real API upload
-        const result = await apiClient.uploadVideo(newScan.file, projectId, newScan.name)
+        // Real API upload with user email
+        const userEmail = localStorage.getItem('user_email') || 'demo@colmap.app'
+        const result = await apiClient.uploadVideo(newScan.file, projectId, newScan.name, userEmail)
         
         const scan: Scan = {
           id: result.jobId,

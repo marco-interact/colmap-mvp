@@ -107,13 +107,14 @@ class APIClient {
     }
   }
 
-  // Upload video for processing
-  async uploadVideo(file: File, projectId: string, scanName: string): Promise<{ jobId: string }> {
+  // Upload video for processing 
+  async uploadVideo(file: File, projectId: string, scanName: string, userEmail: string = 'demo@colmap.app'): Promise<{ jobId: string; scanId: string }> {
     if (!this.baseUrl) {
       // Demo mode - simulate upload
       return new Promise((resolve) => {
         setTimeout(() => {
-          resolve({ jobId: `demo-job-${Date.now()}` })
+          const jobId = `demo-job-${Date.now()}`
+          resolve({ jobId, scanId: jobId })
         }, 1000)
       })
     }
@@ -123,8 +124,7 @@ class APIClient {
     formData.append('project_id', projectId)
     formData.append('scan_name', scanName)
     formData.append('quality', 'medium')
-    formData.append('dense_reconstruction', 'true')
-    formData.append('meshing', 'true')
+    formData.append('user_email', userEmail)
 
     try {
       const response = await fetch(`${this.baseUrl}/upload-video`, {
@@ -140,7 +140,7 @@ class APIClient {
       }
 
       const result = await response.json()
-      return { jobId: result.job_id }
+      return { jobId: result.job_id, scanId: result.scan_id }
     } catch (error) {
       // Network/CORS error - fall back to demo mode
       console.warn('Network error during upload, falling back to demo mode:', error)
@@ -283,6 +283,77 @@ class APIClient {
       console.warn('Failed to get scan details from API, using demo data:', error)
       // Fallback to demo data
       return this.getScanDetails(scanId)
+    }
+  }
+
+  // Create a new project
+  async createProject(userEmail: string, name: string, description: string = '', location: string = '', spaceType: string = '', projectType: string = ''): Promise<{ projectId: string }> {
+    if (!this.baseUrl) {
+      // Demo mode - simulate project creation
+      const projectId = `demo-project-${Date.now()}`
+      return { projectId }
+    }
+
+    try {
+      const params = new URLSearchParams({
+        user_email: userEmail,
+        name,
+        description,
+        location,
+        space_type: spaceType,
+        project_type: projectType
+      })
+      
+      const response = await fetch(`${this.baseUrl}/projects`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params
+      })
+
+      if (!response.ok) {
+        throw new Error(`Project creation failed: ${response.status}`)
+      }
+
+      const result = await response.json()
+      return { projectId: result.project_id }
+    } catch (error) {
+      console.warn('Project creation failed, using demo mode:', error)
+      const projectId = `demo-project-${Date.now()}`
+      return { projectId }
+    }
+  }
+
+  // Get user projects
+  async getUserProjects(userEmail: string): Promise<Project[]> {
+    if (!this.baseUrl) {
+      // Demo mode - return localStorage projects
+      return localStorage.getProjects()
+    }
+
+    try {
+      const response = await this.request<Project[]>(`/users/${encodeURIComponent(userEmail)}/projects`)
+      return response
+    } catch (error) {
+      console.warn('Failed to get projects from API, using demo data:', error)
+      return localStorage.getProjects()
+    }
+  }
+
+  // Get project scans
+  async getProjectScans(projectId: string): Promise<Scan[]> {
+    if (!this.baseUrl) {
+      // Demo mode - return localStorage scans
+      return localStorage.getScans().filter(scan => scan.projectId === projectId)
+    }
+
+    try {
+      const response = await this.request<Scan[]>(`/projects/${projectId}/scans`)
+      return response
+    } catch (error) {
+      console.warn('Failed to get scans from API, using demo data:', error)
+      return localStorage.getScans().filter(scan => scan.projectId === projectId)
     }
   }
 
