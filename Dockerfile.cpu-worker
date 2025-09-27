@@ -61,6 +61,7 @@ RUN pip3 install --no-cache-dir --upgrade pip && \
 
 # Copy application
 COPY main.py .
+COPY database.py .
 
 # Create necessary directories and set permissions
 RUN mkdir -p /tmp /app/uploads /app/results && \
