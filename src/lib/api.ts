@@ -53,10 +53,13 @@ export interface ProcessingJob {
 // Get the COLMAP worker URL from environment
 const getWorkerUrl = () => {
   const url = process.env.NEXT_PUBLIC_COLMAP_WORKER_URL
+  console.log('🔍 Worker URL Configuration:', { url, env: process.env.NODE_ENV })
   if (!url) {
-    console.warn('NEXT_PUBLIC_COLMAP_WORKER_URL not configured, using demo mode')
+    console.warn('❌ NEXT_PUBLIC_COLMAP_WORKER_URL not configured, using demo mode')
+    console.warn('Available env vars:', Object.keys(process.env).filter(k => k.includes('COLMAP')))
     return null
   }
+  console.log('✅ Worker URL configured:', url)
   return url
 }
 
@@ -89,11 +92,12 @@ class APIClient {
       })
 
       if (!response.ok) {
-        // If we get a CORS or network error, fall back to demo mode
-        if (response.status === 0 || response.status >= 400) {
-          console.warn('Worker service unavailable, falling back to demo mode')
-          this.baseUrl = null // Switch to demo mode
-          throw new Error('Worker service unavailable - switched to demo mode')
+        // Log the error but don't permanently switch to demo mode
+        console.error(`❌ API Error: ${response.status} ${response.statusText}`)
+        console.error(`Request URL: ${url}`)
+        if (response.status === 0 || response.status >= 500) {
+          console.warn('⚠️ Worker service temporarily unavailable')
+          throw new Error(`Worker service error: ${response.status}`)
         }
         throw new Error(`API Error: ${response.status} ${response.statusText}`)
       }
@@ -101,9 +105,9 @@ class APIClient {
       return response.json()
     } catch (error) {
       // Network errors, CORS errors, etc.
-      console.warn('Network error connecting to worker service, falling back to demo mode:', error)
-      this.baseUrl = null // Switch to demo mode
-      throw new Error('Network error - switched to demo mode')
+      console.error('❌ Network error connecting to worker service:', error)
+      console.error(`Request URL: ${url}`)
+      throw new Error(`Network error: ${error.message}`)
     }
   }
 
@@ -133,19 +137,17 @@ class APIClient {
       })
 
       if (!response.ok) {
-        // Handle CORS and network errors by falling back to demo mode
-        console.warn('Upload failed, falling back to demo mode')
-        this.baseUrl = null
-        return this.uploadVideo(file, projectId, scanName) // Retry in demo mode
+        // Handle CORS and network errors
+        console.error(`❌ Upload failed: ${response.status} ${response.statusText}`)
+        throw new Error(`Upload failed: ${response.status}`)
       }
 
       const result = await response.json()
       return { jobId: result.job_id, scanId: result.scan_id }
     } catch (error) {
-      // Network/CORS error - fall back to demo mode
-      console.warn('Network error during upload, falling back to demo mode:', error)
-      this.baseUrl = null
-      return this.uploadVideo(file, projectId, scanName) // Retry in demo mode
+      // Network/CORS error
+      console.error('❌ Network error during upload:', error)
+      throw error
     }
   }
 
