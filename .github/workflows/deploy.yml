@@ -41,17 +41,18 @@ jobs:
         docker build -t gcr.io/$PROJECT_ID/$WORKER_SERVICE ./gcp-deployment/colmap-worker
         docker push gcr.io/$PROJECT_ID/$WORKER_SERVICE
 
-    - name: Deploy COLMAP worker to Cloud Run
+    - name: Deploy COLMAP worker to Cloud Run with GPU
       run: |
         gcloud run deploy $WORKER_SERVICE \
           --image gcr.io/$PROJECT_ID/$WORKER_SERVICE \
           --region $REGION \
           --platform managed \
           --allow-unauthenticated \
-          --memory 4Gi \
-          --cpu 2 \
+          --memory 8Gi \
+          --cpu 4 \
+          --gpu type=nvidia-tesla-t4,count=1 \
           --timeout 3600 \
-          --max-instances 10 \
+          --max-instances 3 \
           --min-instances 0
 
   deploy-frontend:

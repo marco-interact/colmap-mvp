@@ -56,17 +56,18 @@ jobs:
         docker push gcr.io/$PROJECT_ID/$WORKER_SERVICE:$GITHUB_SHA
         docker push gcr.io/$PROJECT_ID/$WORKER_SERVICE:latest
 
-    - name: Deploy worker to Cloud Run
+    - name: Deploy worker to Cloud Run with GPU
       run: |
         gcloud run deploy $WORKER_SERVICE \
           --image gcr.io/$PROJECT_ID/$WORKER_SERVICE:$GITHUB_SHA \
           --region $REGION \
           --platform managed \
           --allow-unauthenticated \
-          --memory 4Gi \
-          --cpu 2 \
+          --memory 8Gi \
+          --cpu 4 \
+          --gpu type=nvidia-tesla-t4,count=1 \
           --timeout 3600 \
-          --max-instances 5 \
+          --max-instances 3 \
           --min-instances 0
 
     - name: Get worker URL
