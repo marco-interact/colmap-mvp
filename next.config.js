@@ -39,7 +39,10 @@ const nextConfig = {
   compress: true,
   generateBuildId: async () => {
     return 'build-' + Date.now()
-  }
+  },
+  // Ensure proper HTML standards mode
+  poweredByHeader: false,
+  generateEtags: false
 };
 
 module.exports = nextConfig;
