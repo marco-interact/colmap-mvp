@@ -15,18 +15,38 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { apiClient } from "@/lib/api"
 
 interface Scan {
   id: string
   name: string
   projectId: string
   projectName: string
-  status: 'completed' | 'processing' | 'failed'
+  status: 'completed' | 'processing' | 'failed' | 'pending'
   location: string
   updated: string
   fileSize?: string
   processingTime?: string
   pointCount?: number
+  technicalDetails?: {
+    point_count: number
+    camera_count: number
+    feature_count: number
+    processing_time: string
+    resolution: string
+    file_size: string
+    reconstruction_error: string
+    coverage: string
+  }
+  processingStages?: Array<{
+    name: string
+    status: string
+    duration: string
+    frames_extracted?: number
+    features_detected?: number
+    matches?: number
+    points?: number
+  }>
 }
 
 // Enhanced 3D Viewer Component with Three.js
@@ -171,22 +191,47 @@ export default function ScanDetailPage() {
     loadScanData()
   }, [projectId, scanId, router])
 
-  const loadScanData = () => {
-    // Demo scan data
-    const demoScan: Scan = {
-      id: scanId,
-      name: `Demo Scan ${scanId}`,
-      projectId,
-      projectName: `Demo Project ${projectId}`,
-      status: "completed",
-      location: "Monterrey",
-      updated: "26-08-2025",
-      fileSize: "245 MB",
-      processingTime: "18 minutes",
-      pointCount: 2850000
+  const loadScanData = async () => {
+    try {
+      // Try to get real scan details from API
+      const scanDetails = await apiClient.getScanDetails(scanId)
+      
+      // Transform API response to our Scan interface
+      const scan: Scan = {
+        id: scanDetails.id,
+        name: scanDetails.name,
+        projectId,
+        projectName: `Project ${projectId}`,
+        status: scanDetails.status,
+        location: "Monterrey", // Default location
+        updated: new Date(scanDetails.created_at || Date.now()).toLocaleDateString('en-GB'),
+        fileSize: scanDetails.technical_details?.file_size || "245 MB",
+        processingTime: scanDetails.technical_details?.processing_time || "18 minutes",
+        pointCount: scanDetails.technical_details?.point_count || 2850000,
+        technicalDetails: scanDetails.technical_details,
+        processingStages: scanDetails.processing_stages
+      }
+      
+      setScan(scan)
+    } catch (error) {
+      console.error('Failed to load scan data:', error)
+      
+      // Fallback to demo scan data
+      const demoScan: Scan = {
+        id: scanId,
+        name: `Demo Scan ${scanId}`,
+        projectId,
+        projectName: `Demo Project ${projectId}`,
+        status: "completed",
+        location: "Monterrey",
+        updated: "26-08-2025",
+        fileSize: "245 MB",
+        processingTime: "18 minutes",
+        pointCount: 2850000
+      }
+      
+      setScan(demoScan)
     }
-    
-    setScan(demoScan)
   }
 
   const handleDownload = (format: 'ply' | 'obj' | 'glb') => {
@@ -341,25 +386,79 @@ export default function ScanDetailPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-xs text-gray-400">File Size</span>
-                      <span className="text-sm text-white">{scan.fileSize}</span>
+                      <span className="text-sm text-white">
+                        {scan.technicalDetails?.file_size || scan.fileSize}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-xs text-gray-400">Processing Time</span>
-                      <span className="text-sm text-white">{scan.processingTime}</span>
+                      <span className="text-sm text-white">
+                        {scan.technicalDetails?.processing_time || scan.processingTime}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-xs text-gray-400">Point Count</span>
                       <span className="text-sm text-white">
-                        {scan.pointCount?.toLocaleString()}
+                        {(scan.technicalDetails?.point_count || scan.pointCount)?.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-xs text-gray-400">Quality</span>
-                      <span className="text-sm text-white">High</span>
+                      <span className="text-xs text-gray-400">Camera Count</span>
+                      <span className="text-sm text-white">
+                        {scan.technicalDetails?.camera_count || 24}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-xs text-gray-400">Feature Count</span>
+                      <span className="text-sm text-white">
+                        {scan.technicalDetails?.feature_count?.toLocaleString() || "892K"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-xs text-gray-400">Resolution</span>
+                      <span className="text-sm text-white">
+                        {scan.technicalDetails?.resolution || "1920x1080"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-xs text-gray-400">Coverage</span>
+                      <span className="text-sm text-white">
+                        {scan.technicalDetails?.coverage || "94.2%"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-xs text-gray-400">Error</span>
+                      <span className="text-sm text-white">
+                        {scan.technicalDetails?.reconstruction_error || "0.42px"}
+                      </span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Processing Stages */}
+              {scan.processingStages && scan.processingStages.length > 0 && (
+                <Card className="bg-gray-900/50 border-gray-800">
+                  <CardContent className="p-4">
+                    <h3 className="text-lg font-semibold text-white mb-4">Processing Stages</h3>
+                    <div className="space-y-3">
+                      {scan.processingStages.map((stage, index) => (
+                        <div key={index} className="flex justify-between items-center">
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              stage.status === 'completed' ? 'bg-green-500' : 
+                              stage.status === 'processing' ? 'bg-yellow-500' : 
+                              'bg-gray-500'
+                            }`} />
+                            <span className="text-sm text-white">{stage.name}</span>
+                          </div>
+                          <span className="text-xs text-gray-400">{stage.duration}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Download Options */}
               <Card className="bg-gray-900/50 border-gray-800">

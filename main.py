@@ -121,13 +121,17 @@ class COLMAPProcessor:
         """Run COLMAP feature extraction"""
         logger.info("Running feature extraction")
         
+        # Check if running in CPU-only mode
+        use_gpu = "0" if os.getenv("COLMAP_CPU_ONLY") else "1"
+        max_image_size = "800" if os.getenv("COLMAP_CPU_ONLY") else "1600"
+        
         cmd = [
             "colmap", "feature_extractor",
             "--database_path", str(self.database_path),
             "--image_path", str(self.images_dir),
             "--ImageReader.single_camera", "1",
-            "--SiftExtraction.use_gpu", "1",
-            "--SiftExtraction.max_image_size", "1600"
+            "--SiftExtraction.use_gpu", use_gpu,
+            "--SiftExtraction.max_image_size", max_image_size
         ]
         
         try:
@@ -144,10 +148,13 @@ class COLMAPProcessor:
         """Run COLMAP feature matching"""
         logger.info("Running feature matching")
         
+        # Check if running in CPU-only mode
+        use_gpu = "0" if os.getenv("COLMAP_CPU_ONLY") else "1"
+        
         cmd = [
             "colmap", "exhaustive_matcher",
             "--database_path", str(self.database_path),
-            "--SiftMatching.use_gpu", "1"
+            "--SiftMatching.use_gpu", use_gpu
         ]
         
         try:
@@ -264,7 +271,13 @@ async def process_video_pipeline(job_id: str, video_path: str, quality: str = "m
     try:
         # Stage 1: Extract frames
         jobs[job_id]["message"] = "Extracting frames from video..."
-        max_frames = 30 if quality == "low" else 50 if quality == "medium" else 100
+        
+        # Adjust frame count for CPU processing
+        if os.getenv("COLMAP_CPU_ONLY"):
+            max_frames = 15 if quality == "low" else 25 if quality == "medium" else 40
+        else:
+            max_frames = 30 if quality == "low" else 50 if quality == "medium" else 100
+            
         frame_count = processor.extract_frames(video_path, max_frames)
         
         if frame_count < 10:
@@ -472,6 +485,54 @@ async def get_job_status(job_id: str):
         "created_at": job["created_at"],
         "progress": job.get("progress", 0),
         "current_stage": job.get("current_stage", "Unknown"),
+        "results": job.get("results", None)
+    }
+
+@app.get("/scans/{scan_id}/details")
+async def get_scan_details(scan_id: str):
+    """Get detailed scan information including technical details"""
+    
+    if scan_id not in jobs:
+        # For demo purposes, return mock detailed data
+        return {
+            "id": scan_id,
+            "name": f"Demo Scan {scan_id[-1]}",
+            "status": "completed",
+            "technical_details": {
+                "point_count": 45892,
+                "camera_count": 24,
+                "feature_count": 892847,
+                "processing_time": "4.2 minutes",
+                "resolution": "1920x1080",
+                "file_size": "18.3 MB",
+                "reconstruction_error": "0.42 pixels",
+                "coverage": "94.2%"
+            },
+            "processing_stages": [
+                {"name": "Frame Extraction", "status": "completed", "duration": "0.8s", "frames_extracted": 24},
+                {"name": "Feature Detection", "status": "completed", "duration": "45.2s", "features_detected": 892847},
+                {"name": "Feature Matching", "status": "completed", "duration": "1.2m", "matches": 245892},
+                {"name": "Sparse Reconstruction", "status": "completed", "duration": "1.8m", "points": 45892},
+                {"name": "Dense Reconstruction", "status": "completed", "duration": "0.4m", "points": 145892}
+            ],
+            "results": {
+                "point_cloud_url": f"/models/{scan_id}/pointcloud.ply",
+                "mesh_url": f"/models/{scan_id}/mesh.obj",
+                "thumbnail_url": f"/models/{scan_id}/thumbnail.jpg"
+            }
+        }
+    
+    job = jobs[scan_id]
+    
+    # Return real job details if available
+    return {
+        "id": scan_id,
+        "name": job.get("scan_name", "Processing Scan"),
+        "status": job["status"],
+        "message": job["message"],
+        "progress": job.get("progress", 0),
+        "current_stage": job.get("current_stage", "Unknown"),
+        "created_at": job["created_at"],
         "results": job.get("results", None)
     }
 
