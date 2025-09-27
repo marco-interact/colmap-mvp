@@ -97,7 +97,16 @@ class APIClient {
       })
 
       if (!response.ok) {
-        // Log the error but don't permanently switch to demo mode
+        // Handle rate limiting and quota errors
+        if (response.status === 429) {
+          console.warn('⚠️ Rate limit exceeded - too many requests')
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+        }
+        if (response.status === 503) {
+          console.warn('⚠️ Service temporarily unavailable - GPU quota exceeded')
+          throw new Error('GPU processing queue is full. Please try again in a few minutes.')
+        }
+        
         console.error(`❌ API Error: ${response.status} ${response.statusText}`)
         console.error(`Request URL: ${url}`)
         if (response.status === 0 || response.status >= 500) {

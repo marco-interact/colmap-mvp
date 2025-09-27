@@ -5,13 +5,16 @@ Optimized for cloud deployment with proper health checks and logging
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel
 import uvicorn
 import os
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
+import asyncio
+from collections import defaultdict
 
 # Configure logging for Cloud Run
 logging.basicConfig(
@@ -39,6 +42,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Rate limiting storage
+rate_limit_storage = defaultdict(list)
+MAX_REQUESTS_PER_MINUTE = 10  # Adjust based on your GPU capacity
+GPU_JOBS_LIMIT = 2  # Maximum concurrent GPU jobs
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """Rate limiting middleware to prevent quota exceeded errors"""
+    client_ip = request.client.host
+    current_time = datetime.now()
+    
+    # Clean old requests (older than 1 minute)
+    rate_limit_storage[client_ip] = [
+        req_time for req_time in rate_limit_storage[client_ip]
+        if current_time - req_time < timedelta(minutes=1)
+    ]
+    
+    # Check rate limit
+    if len(rate_limit_storage[client_ip]) >= MAX_REQUESTS_PER_MINUTE:
+        logger.warning(f"Rate limit exceeded for client {client_ip}")
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded. Maximum {MAX_REQUESTS_PER_MINUTE} requests per minute. Please try again later."
+        )
+    
+    # Add current request
+    rate_limit_storage[client_ip].append(current_time)
+    
+    response = await call_next(request)
+    return response
+
 class ProcessingRequest(BaseModel):
     project_id: str
     video_url: str
@@ -54,6 +88,7 @@ class ProcessingResponse(BaseModel):
 
 # In-memory job storage (in production, use a database)
 jobs = {}
+active_gpu_jobs = 0  # Track active GPU jobs
 
 @app.get("/")
 async def root():
@@ -75,6 +110,9 @@ async def health_check():
         "service": "colmap-worker",
         "version": "2.0.0",
         "gpu_status": _check_gpu_availability(),
+        "active_gpu_jobs": active_gpu_jobs,
+        "max_gpu_jobs": GPU_JOBS_LIMIT,
+        "rate_limit_per_minute": MAX_REQUESTS_PER_MINUTE,
         "timestamp": datetime.now().isoformat(),
         "memory_usage": _get_memory_usage()
     }
@@ -103,6 +141,16 @@ def _get_memory_usage():
 @app.post("/upload-video", response_model=ProcessingResponse)
 async def upload_video(request: ProcessingRequest):
     """Process video upload for GPU-accelerated 3D reconstruction"""
+    global active_gpu_jobs
+    
+    # Check GPU job limits
+    if active_gpu_jobs >= GPU_JOBS_LIMIT:
+        logger.warning(f"GPU job limit reached: {active_gpu_jobs}/{GPU_JOBS_LIMIT}")
+        raise HTTPException(
+            status_code=429,
+            detail=f"GPU processing queue is full. Maximum {GPU_JOBS_LIMIT} concurrent jobs. Please try again later."
+        )
+    
     job_id = f"job_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     
     logger.info(f"New GPU job created: {job_id} for project: {request.project_id}")
@@ -114,15 +162,17 @@ async def upload_video(request: ProcessingRequest):
         "quality": request.quality,
         "gpu_enabled": _check_gpu_availability(),
         "created_at": datetime.now().isoformat(),
-        "message": "Video uploaded successfully. GPU-accelerated processing will begin shortly."
+        "message": "Video uploaded successfully. GPU-accelerated processing will begin shortly.",
+        "active_jobs": active_gpu_jobs + 1
     }
     
-    logger.info(f"Job {job_id} queued for GPU processing")
+    active_gpu_jobs += 1
+    logger.info(f"Job {job_id} queued for GPU processing. Active jobs: {active_gpu_jobs}")
     
     return ProcessingResponse(
         job_id=job_id,
         status="queued",
-        message="Video uploaded successfully. GPU-accelerated processing will begin shortly.",
+        message=f"Video uploaded successfully. GPU-accelerated processing will begin shortly. Queue position: {active_gpu_jobs}/{GPU_JOBS_LIMIT}",
         created_at=jobs[job_id]["created_at"]
     )
 
