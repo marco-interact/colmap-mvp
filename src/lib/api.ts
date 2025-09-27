@@ -53,7 +53,7 @@ export interface ProcessingJob {
 // Get the COLMAP worker URL from environment
 const getWorkerUrl = () => {
   const url = process.env.NEXT_PUBLIC_COLMAP_WORKER_URL
-  console.log('🔍 Worker URL Configuration:', { 
+  console.log('🔍 Worker URL Configuration (v2.1):', { 
     url, 
     env: process.env.NODE_ENV,
     isClient: typeof window !== 'undefined',
