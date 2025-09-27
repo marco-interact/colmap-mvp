@@ -495,12 +495,12 @@ async def upload_video(
         )
         
         # Create job entry (in-memory for processing)
-    jobs[job_id] = {
+        jobs[job_id] = {
             "job_id": job_id,
             "scan_id": scan_id,
             "status": "pending",
             "message": "Video uploaded, processing queued",
-        "created_at": datetime.now().isoformat(),
+            "created_at": datetime.now().isoformat(),
             "project_id": project_id,
             "scan_name": scan_name,
             "quality": quality,
