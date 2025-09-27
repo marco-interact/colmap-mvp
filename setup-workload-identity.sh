@@ -21,6 +21,33 @@ gcloud config set project $PROJECT_ID
 echo "📡 Enabling required APIs..."
 gcloud services enable iamcredentials.googleapis.com
 gcloud services enable sts.googleapis.com
+gcloud services enable cloudbuild.googleapis.com
+gcloud services enable run.googleapis.com
+gcloud services enable containerregistry.googleapis.com
+
+# Create service account if it doesn't exist
+echo "👤 Creating service account..."
+gcloud iam service-accounts create $SERVICE_ACCOUNT_NAME \
+    --description="Service account for GitHub Actions deployment" \
+    --display-name="GitHub Actions Deployer" || echo "Service account might already exist"
+
+# Grant necessary roles to service account
+echo "🔐 Granting IAM roles..."
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:$SERVICE_ACCOUNT_EMAIL" \
+    --role="roles/cloudbuild.builds.editor"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:$SERVICE_ACCOUNT_EMAIL" \
+    --role="roles/run.admin"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:$SERVICE_ACCOUNT_EMAIL" \
+    --role="roles/storage.admin"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:$SERVICE_ACCOUNT_EMAIL" \
+    --role="roles/iam.serviceAccountUser"
 
 # Create Workload Identity Pool
 echo "🔐 Creating Workload Identity Pool..."
