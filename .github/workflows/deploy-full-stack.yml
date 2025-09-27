@@ -118,7 +118,7 @@ jobs:
       run: |
         docker build -t gcr.io/$PROJECT_ID/$FRONTEND_SERVICE:$GITHUB_SHA \
           -t gcr.io/$PROJECT_ID/$FRONTEND_SERVICE:latest \
-          --build-arg NEXT_PUBLIC_COLMAP_WORKER_URL="${WORKER_URL:-https://colmap-worker-default.run.app}" \
+          --build-arg NEXT_PUBLIC_COLMAP_WORKER_URL="${WORKER_URL}" \
           -f Dockerfile.frontend .
         docker push gcr.io/$PROJECT_ID/$FRONTEND_SERVICE:$GITHUB_SHA
         docker push gcr.io/$PROJECT_ID/$FRONTEND_SERVICE:latest
@@ -135,7 +135,7 @@ jobs:
           --memory 2Gi \
           --cpu 1 \
           --port 8080 \
-          --set-env-vars NODE_ENV=production,NEXT_PUBLIC_COLMAP_WORKER_URL="${WORKER_URL:-https://colmap-worker-default.run.app}" \
+          --set-env-vars NODE_ENV=production,NEXT_PUBLIC_COLMAP_WORKER_URL="${WORKER_URL}" \
           --max-instances 10 \
           --min-instances 0
 
