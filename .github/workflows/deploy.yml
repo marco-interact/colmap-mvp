@@ -112,7 +112,7 @@ jobs:
           --allow-unauthenticated \
           --memory 2Gi \
           --cpu 1 \
-          --port 3000 \
+          --port 8080 \
           --set-env-vars NODE_ENV=production,NEXT_PUBLIC_COLMAP_WORKER_URL=${{ steps.get_worker_url.outputs.worker_url }} \
           --max-instances 10 \
           --min-instances 0
