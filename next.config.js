@@ -4,6 +4,10 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client']
   },
+  // Optimize static assets and fonts
+  assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
+  generateEtags: false,
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       {
@@ -32,8 +36,6 @@ const nextConfig = {
   },
   // Google Cloud Run specific configuration
   trailingSlash: false,
-  generateEtags: false,
-  poweredByHeader: false,
   compress: true,
   generateBuildId: async () => {
     return 'build-' + Date.now()
