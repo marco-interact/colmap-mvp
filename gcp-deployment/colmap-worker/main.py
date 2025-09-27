@@ -44,8 +44,8 @@ app.add_middleware(
 
 # Rate limiting storage
 rate_limit_storage = defaultdict(list)
-MAX_REQUESTS_PER_MINUTE = 10  # Adjust based on your GPU capacity
-GPU_JOBS_LIMIT = 2  # Maximum concurrent GPU jobs
+MAX_REQUESTS_PER_MINUTE = 20  # Increased with higher CPU quota
+GPU_JOBS_LIMIT = 4  # Maximum concurrent GPU jobs (increased with 8 CPU cores)
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):

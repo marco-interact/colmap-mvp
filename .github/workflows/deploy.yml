@@ -48,11 +48,11 @@ jobs:
           --region $REGION \
           --platform managed \
           --allow-unauthenticated \
-          --memory 8Gi \
-          --cpu 4 \
+          --memory 16Gi \
+          --cpu 8 \
           --gpu type=nvidia-tesla-t4,count=1 \
           --timeout 3600 \
-          --max-instances 3 \
+          --max-instances 5 \
           --min-instances 0
 
   deploy-frontend:
