@@ -136,11 +136,11 @@ export function ProcessingStatus({ jobId, onComplete, className }: ProcessingSta
           </div>
         )}
 
-        {/* Estimated Time */}
-        {job.estimated_time && job.status === 'processing' && (
+        {/* Processing Stage Progress */}
+        {job.status === 'processing' && (
           <div>
-            <p className="text-sm text-gray-400 mb-1">Estimated Time</p>
-            <p className="text-white">{job.estimated_time}</p>
+            <p className="text-sm text-gray-400 mb-1">Processing</p>
+            <p className="text-white">Please wait...</p>
           </div>
         )}
 
