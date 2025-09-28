@@ -107,8 +107,20 @@ jobs:
           -f Dockerfile.frontend .
         docker push gcr.io/$PROJECT_ID/$FRONTEND_SERVICE
 
+    - name: Delete old frontend service (if exists)
+      run: |
+        echo "🗑️ Checking if old frontend service exists..."
+        if gcloud run services describe $FRONTEND_SERVICE --region $REGION --quiet 2>/dev/null; then
+          echo "🗑️ Deleting old frontend service to ensure clean deployment..."
+          gcloud run services delete $FRONTEND_SERVICE --region $REGION --quiet
+          echo "✅ Old frontend service deleted"
+        else
+          echo "ℹ️ No existing frontend service found"
+        fi
+
     - name: Deploy frontend to Cloud Run
       run: |
+        echo "🚀 Deploying fresh frontend service with correct worker URL..."
         gcloud run deploy $FRONTEND_SERVICE \
           --image gcr.io/$PROJECT_ID/$FRONTEND_SERVICE \
           --region $REGION \
