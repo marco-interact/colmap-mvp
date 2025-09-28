@@ -41,18 +41,18 @@ jobs:
         docker build -t gcr.io/$PROJECT_ID/$WORKER_SERVICE ./gcp-deployment/colmap-worker
         docker push gcr.io/$PROJECT_ID/$WORKER_SERVICE
 
-    - name: Deploy COLMAP worker to Cloud Run with GPU
+    - name: Deploy COLMAP worker to Cloud Run (CPU-only for now)
       run: |
+        echo "🚀 Deploying worker service without GPU (will add GPU later)"
         gcloud run deploy $WORKER_SERVICE \
           --image gcr.io/$PROJECT_ID/$WORKER_SERVICE \
           --region $REGION \
           --platform managed \
           --allow-unauthenticated \
-          --memory 16Gi \
-          --cpu 8 \
-          --gpu type=nvidia-tesla-t4,count=1 \
+          --memory 8Gi \
+          --cpu 4 \
           --timeout 3600 \
-          --max-instances 5 \
+          --max-instances 3 \
           --min-instances 0
 
   deploy-frontend:
