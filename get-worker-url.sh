@@ -22,23 +22,28 @@ echo ""
 echo "🧪 Testing Current Known URLs..."
 echo ""
 
-# Test the existing URL from documentation
-EXISTING_URL="https://colmap-app-525587424361.us-central1.run.app"
-echo "Testing existing URL: $EXISTING_URL"
+# Get current worker URL dynamically
+echo "🔍 Getting current worker URL from Cloud Run..."
+CURRENT_URL=$(gcloud run services describe colmap-worker --region us-central1 --format 'value(status.url)' 2>/dev/null)
 
-if curl -f -s "$EXISTING_URL/health" > /dev/null 2>&1; then
-    echo "✅ Current worker is ACTIVE at: $EXISTING_URL"
+if [ -n "$CURRENT_URL" ]; then
+    echo "✅ Current worker URL: $CURRENT_URL"
     echo ""
-    echo "📝 You can use this URL for the GitHub secret:"
-    echo "   gh secret set COLMAP_WORKER_URL -b \"$EXISTING_URL\""
-    echo ""
+    echo "🧪 Testing worker service..."
     
-    # Get health info
-    echo "🏥 Health Check Response:"
-    curl -s "$EXISTING_URL/health" | jq . 2>/dev/null || curl -s "$EXISTING_URL/health"
-    echo ""
+    if curl -f -s "$CURRENT_URL/health" > /dev/null 2>&1; then
+        echo "✅ Worker service is ACTIVE and responding"
+        echo ""
+        echo "🏥 Health Check Response:"
+        curl -s "$CURRENT_URL/health" | jq . 2>/dev/null || curl -s "$CURRENT_URL/health"
+        echo ""
+    else
+        echo "❌ Worker service not responding - may be starting up"
+        echo ""
+    fi
 else
-    echo "❌ Existing URL not responding - check GitHub Actions for new deployment URL"
+    echo "❌ Could not get worker URL - service may not be deployed yet"
+    echo "   Check GitHub Actions: https://github.com/marco-interact/colmap-app/actions"
     echo ""
 fi
 
