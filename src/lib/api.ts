@@ -53,15 +53,17 @@ export interface ProcessingJob {
 // Get the COLMAP worker URL from environment
 const getWorkerUrl = () => {
   const url = process.env.NEXT_PUBLIC_COLMAP_WORKER_URL
-  console.log('🔍 Worker URL Configuration (v2.1):', { 
+  console.log('🔍 Worker URL Configuration (v2.2 - FORCE REBUILD):', { 
     url, 
     env: process.env.NODE_ENV,
     isClient: typeof window !== 'undefined',
+    timestamp: new Date().toISOString(),
     allColmapVars: Object.keys(process.env).filter(k => k.includes('COLMAP'))
   })
   if (!url) {
     console.warn('❌ NEXT_PUBLIC_COLMAP_WORKER_URL not configured, using demo mode')
     console.warn('This means the frontend was not deployed with the correct worker URL')
+    console.warn('Expected: Dynamic worker URL from GitHub Actions deployment')
     return null
   }
   console.log('✅ Worker URL configured:', url)
