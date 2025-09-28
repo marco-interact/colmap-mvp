@@ -8,6 +8,9 @@ WORKDIR /app
 ARG NEXT_PUBLIC_COLMAP_WORKER_URL
 ENV NEXT_PUBLIC_COLMAP_WORKER_URL=$NEXT_PUBLIC_COLMAP_WORKER_URL
 
+# Debug: Print the worker URL being used
+RUN echo "🔍 Building with worker URL: $NEXT_PUBLIC_COLMAP_WORKER_URL"
+
 # Copy package files and install all dependencies
 COPY package.json package-lock.json ./
 RUN npm install

@@ -95,6 +95,7 @@ jobs:
       id: get_worker_url
       run: |
         WORKER_URL=$(gcloud run services describe $WORKER_SERVICE --region $REGION --format 'value(status.url)')
+        echo "🔍 Worker URL found: $WORKER_URL"
         echo "worker_url=$WORKER_URL" >> $GITHUB_OUTPUT
 
     - name: Build and push frontend image
