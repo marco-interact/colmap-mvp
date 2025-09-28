@@ -123,6 +123,12 @@ class APIClient {
       // Network errors, CORS errors, etc.
       console.error('❌ Network error connecting to worker service:', error)
       console.error(`Request URL: ${url}`)
+      console.error(`Worker URL: ${this.baseUrl}`)
+      console.error(`Error details:`, {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      })
       throw new Error(`Network error: ${error.message}`)
     }
   }
@@ -299,8 +305,34 @@ class APIClient {
       return await this.request<any>(`/scans/${scanId}/details`)
     } catch (error) {
       console.warn('Failed to get scan details from API, using demo data:', error)
-      // Fallback to demo data
-      return this.getScanDetails(scanId)
+      // Return demo data directly to avoid infinite recursion
+      return {
+        id: scanId,
+        name: `Demo Scan ${scanId.slice(-1)}`,
+        status: "completed",
+        technical_details: {
+          point_count: 45892,
+          camera_count: 24,
+          feature_count: 892847,
+          processing_time: "4.2 minutes",
+          resolution: "1920x1080",
+          file_size: "18.3 MB",
+          reconstruction_error: "0.42 pixels",
+          coverage: "94.2%"
+        },
+        processing_stages: [
+          { name: "Frame Extraction", status: "completed", duration: "0.8s", frames_extracted: 24 },
+          { name: "Feature Detection", status: "completed", duration: "45.2s", features_detected: 892847 },
+          { name: "Feature Matching", status: "completed", duration: "1.2m", matches: 245892 },
+          { name: "Sparse Reconstruction", status: "completed", duration: "1.8m", points: 45892 },
+          { name: "Dense Reconstruction", status: "completed", duration: "0.4m", points: 145892 }
+        ],
+        results: {
+          point_cloud_url: `/models/${scanId}/pointcloud.ply`,
+          mesh_url: `/models/${scanId}/mesh.obj`,
+          thumbnail_url: `/models/${scanId}/thumbnail.jpg`
+        }
+      }
     }
   }
 
