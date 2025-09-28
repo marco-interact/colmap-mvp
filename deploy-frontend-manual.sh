@@ -26,17 +26,27 @@ echo "  Region: $REGION"
 echo "  Service: $SERVICE_NAME"
 echo ""
 
+# Try to get worker URL
+echo "🔍 Checking for worker service..."
+WORKER_URL=$(gcloud run services describe colmap-worker --region $REGION --format 'value(status.url)' 2>/dev/null || echo "")
+if [ -n "$WORKER_URL" ]; then
+  echo "✅ Worker service found: $WORKER_URL"
+else
+  echo "⚠️ Worker service not found, will use demo mode"
+  WORKER_URL=""
+fi
+
 # Build and push image
-echo "🔨 Building frontend image..."
+echo "🔨 Building frontend image with worker URL: $WORKER_URL"
 docker build -t gcr.io/$PROJECT_ID/$SERVICE_NAME \
-  --build-arg NEXT_PUBLIC_COLMAP_WORKER_URL="" \
+  --build-arg NEXT_PUBLIC_COLMAP_WORKER_URL="$WORKER_URL" \
   -f Dockerfile.frontend .
 
 echo "📤 Pushing image to registry..."
 docker push gcr.io/$PROJECT_ID/$SERVICE_NAME
 
 # Deploy to Cloud Run
-echo "🚀 Deploying to Cloud Run..."
+echo "🚀 Deploying to Cloud Run with worker URL: $WORKER_URL"
 gcloud run deploy $SERVICE_NAME \
   --image gcr.io/$PROJECT_ID/$SERVICE_NAME \
   --region $REGION \
@@ -45,7 +55,7 @@ gcloud run deploy $SERVICE_NAME \
   --memory 2Gi \
   --cpu 1 \
   --port 8080 \
-  --set-env-vars NODE_ENV=production \
+  --set-env-vars NODE_ENV=production,NEXT_PUBLIC_COLMAP_WORKER_URL="$WORKER_URL" \
   --max-instances 10 \
   --min-instances 0
 
