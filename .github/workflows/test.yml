@@ -1,0 +1,15 @@
+name: Simple Test
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Simple test
+      run: |
+        echo "Hello from GitHub Actions!"
+        echo "This is a simple test to verify Actions are working"
+        echo "Current time: $(date)"
