@@ -15,7 +15,8 @@ if [ -z "$PROJECT_ID" ]; then
 fi
 
 # Get COLMAP Worker URL
-COLMAP_WORKER_URL=${1:-"https://colmap-app-64102061337.us-central1.run.app"}
+# Get worker URL dynamically from Cloud Run
+COLMAP_WORKER_URL=${1:-$(gcloud run services describe colmap-worker --region us-central1 --format 'value(status.url)')}
 
 echo "🚀 COLMAP Frontend Cloud Build Deployment"
 echo "=========================================="

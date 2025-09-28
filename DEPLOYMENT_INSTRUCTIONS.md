@@ -2,7 +2,7 @@
 
 ## ✅ Current Status
 
-- **COLMAP Worker**: ✅ Running at [https://colmap-app-64102061337.us-central1.run.app](https://colmap-app-64102061337.us-central1.run.app)
+- **COLMAP Worker**: ✅ Running at dynamically deployed URL
 - **Frontend Code**: ✅ Ready and pushed to GitHub
 - **Configuration**: ✅ Connected to COLMAP worker
 - **Deployment Files**: ✅ All configuration files created
@@ -36,7 +36,7 @@ Since we're having authentication issues with the automated scripts, here are th
 
 5. **Set Environment Variables**
    - `NODE_ENV`: `production`
-   - `COLMAP_WORKER_URL`: `https://colmap-app-64102061337.us-central1.run.app`
+   - `COLMAP_WORKER_URL`: Dynamically set from deployed worker service
 
 6. **Deploy**
    - Click "Deploy"
@@ -60,7 +60,7 @@ gcloud run deploy colmap-frontend \
   --memory 1Gi \
   --cpu 1 \
   --port 3000 \
-  --set-env-vars NODE_ENV=production,COLMAP_WORKER_URL=https://colmap-app-64102061337.us-central1.run.app \
+  --set-env-vars NODE_ENV=production,COLMAP_WORKER_URL=$(gcloud run services describe colmap-worker --region us-central1 --format 'value(status.url)') \
   --max-instances 10 \
   --min-instances 0
 ```

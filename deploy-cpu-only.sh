@@ -37,7 +37,7 @@ gcloud run deploy $SERVICE_NAME \
   --memory 1Gi \
   --cpu 1 \
   --port 3000 \
-  --set-env-vars NODE_ENV=production,COLMAP_WORKER_URL=https://colmap-app-64102061337.us-central1.run.app \
+  --set-env-vars NODE_ENV=production,COLMAP_WORKER_URL=$(gcloud run services describe colmap-worker --region us-central1 --format 'value(status.url)') \
   --max-instances 10 \
   --min-instances 0
 
