@@ -18,6 +18,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Set build-time environment variables
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_API_URL=https://p01--colmap-worker-gpu--xf7lzhrl47hj.code.run
+
 # Build Next.js application
 RUN npm run build
 
