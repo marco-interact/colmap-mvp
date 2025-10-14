@@ -3,8 +3,9 @@
 # Following Northflank GPU workload best practices
 # Reference: https://northflank.com/docs/v1/application/gpu-workloads/configure-and-optimise-workloads-for-gpus
 
-# Use CUDA 12.2 for optimal T4/L4 compatibility (T4: CUDA 10.0-12.2, L4: CUDA 12.0+)
-FROM nvidia/cuda:12.2.0-cudnn8-devel-ubuntu22.04
+# Use CUDA 12.2 for optimal A100/T4/L4 compatibility
+# A100: CUDA 11.0-12.4, T4: CUDA 10.0-12.2, L4: CUDA 12.0+
+FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
 
 # Prevent interactive prompts during build
 ENV DEBIAN_FRONTEND=noninteractive
