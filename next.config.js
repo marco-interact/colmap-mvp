@@ -32,9 +32,9 @@ const nextConfig = {
   },
   // Environment variables for build
   env: {
-    NEXT_PUBLIC_COLMAP_WORKER_URL: process.env.NEXT_PUBLIC_COLMAP_WORKER_URL || null,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
   },
-  // Google Cloud Run specific configuration
+  // Northflank optimization
   trailingSlash: false,
   compress: true,
   generateBuildId: async () => {
