@@ -1,5 +1,5 @@
 """
-COLMAP Worker for Google Cloud Run
+COLMAP Worker for Northflank GPU Instances
 GPU-Accelerated 3D Reconstruction Service
 Optimized for cloud deployment with proper health checks and logging
 """
@@ -23,10 +23,9 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 import uuid
 import zipfile
-from google.cloud import storage
 from database import db
 
-# Configure logging for Cloud Run
+# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='{"timestamp": "%(asctime)s", "level": "%(levelname)s", "message": "%(message)s"}',
@@ -34,16 +33,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize FastAPI with Cloud Run optimizations
+# Initialize FastAPI
 app = FastAPI(
     title="COLMAP Worker",
     version="1.0.0",
-    description="3D Reconstruction Service using COLMAP",
+    description="GPU-Accelerated 3D Reconstruction Service using COLMAP",
     docs_url="/docs",
     redoc_url="/redoc"
 )
 
-# Add CORS middleware for Cloud Run
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Configure appropriately for production
@@ -68,9 +67,9 @@ class ProcessingResponse(BaseModel):
 # In-memory job storage (in production, use a database)
 jobs = {}
 
-# Cloud Storage client
-storage_client = storage.Client()
-BUCKET_NAME = os.getenv("STORAGE_BUCKET", "colmap-processing-bucket")
+# Local storage configuration
+STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "/app/data/results"))
+STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 class COLMAPProcessor:
     """Handles COLMAP 3D reconstruction pipeline"""
@@ -370,53 +369,100 @@ async def process_video_pipeline(job_id: str, video_path: str, quality: str = "m
             shutil.rmtree(work_dir)
 
 async def upload_results_to_storage(job_id: str, processor: COLMAPProcessor) -> Dict[str, str]:
-    """Upload results to Google Cloud Storage"""
+    """Save results to local storage"""
     results = {}
     
     try:
-        bucket = storage_client.bucket(BUCKET_NAME)
+        # Create job-specific storage directory
+        job_storage_dir = STORAGE_DIR / job_id
+        job_storage_dir.mkdir(parents=True, exist_ok=True)
         
-        # Upload point cloud if exists
+        # Copy point cloud if exists
         ply_files = list(processor.dense_dir.glob("*.ply"))
         if ply_files:
             ply_path = ply_files[0]
-            blob_name = f"results/{job_id}/point_cloud.ply"
-            blob = bucket.blob(blob_name)
-            blob.upload_from_filename(str(ply_path))
-            results["point_cloud_url"] = f"gs://{BUCKET_NAME}/{blob_name}"
+            dest_path = job_storage_dir / "point_cloud.ply"
+            shutil.copy2(ply_path, dest_path)
+            results["point_cloud_url"] = f"/results/{job_id}/point_cloud.ply"
+            logger.info(f"Saved point cloud to {dest_path}")
         
-        # Create and upload sparse model zip
+        # Create and save sparse model zip
         sparse_models = list(processor.sparse_dir.glob("*/"))
         if sparse_models:
-            zip_path = processor.work_dir / "sparse_model.zip"
+            zip_path = job_storage_dir / "sparse_model.zip"
             with zipfile.ZipFile(zip_path, 'w') as zipf:
                 for model_dir in sparse_models:
                     for file in model_dir.iterdir():
                         if file.is_file():
                             zipf.write(file, f"sparse/{model_dir.name}/{file.name}")
-            
-            blob_name = f"results/{job_id}/sparse_model.zip"
-            blob = bucket.blob(blob_name)
-            blob.upload_from_filename(str(zip_path))
-            results["sparse_model_url"] = f"gs://{BUCKET_NAME}/{blob_name}"
+            results["sparse_model_url"] = f"/results/{job_id}/sparse_model.zip"
+            logger.info(f"Saved sparse model to {zip_path}")
+        
+        # Copy sample images
+        sample_images = list(processor.images_dir.glob("*.jpg"))[:5]
+        if sample_images:
+            images_dir = job_storage_dir / "images"
+            images_dir.mkdir(exist_ok=True)
+            for img in sample_images:
+                shutil.copy2(img, images_dir / img.name)
+            results["sample_images_dir"] = f"/results/{job_id}/images/"
         
     except Exception as e:
-        logger.error(f"Failed to upload results: {e}")
-        # Return local paths as fallback
-        results["error"] = "Upload failed - results available locally"
+        logger.error(f"Failed to save results: {e}")
+        results["error"] = f"Storage failed: {str(e)}"
     
     return results
 
 @app.get("/")
 async def root():
-    """Root endpoint for Cloud Run health checks"""
+    """Root endpoint for health checks"""
     logger.info("Root endpoint accessed")
+    gpu_available = _check_gpu_availability()
     return {
         "message": "COLMAP Worker API", 
         "status": "running",
         "version": "1.0.0",
+        "gpu_enabled": gpu_available,
         "timestamp": datetime.now().isoformat()
     }
+
+def _check_gpu_availability():
+    """
+    Check if GPU is available following Northflank guidelines
+    Reference: https://northflank.com/docs/v1/application/gpu-workloads/configure-and-optimise-workloads-for-gpus
+    """
+    try:
+        # Method 1: Try PyTorch (if installed)
+        import torch
+        if torch.cuda.is_available():
+            device_count = torch.cuda.device_count()
+            device_name = torch.cuda.get_device_name(0) if device_count > 0 else "Unknown"
+            logger.info(f"GPU detected via PyTorch: {device_name} (Count: {device_count})")
+            return True
+    except ImportError:
+        pass
+    
+    # Method 2: Check via nvidia-smi
+    try:
+        result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=gpu_name,driver_version,memory.total', '--format=csv,noheader'],
+            capture_output=True, 
+            timeout=5,
+            text=True
+        )
+        if result.returncode == 0:
+            logger.info(f"GPU detected via nvidia-smi: {result.stdout.strip()}")
+            return True
+    except Exception as e:
+        logger.warning(f"nvidia-smi check failed: {e}")
+    
+    # Method 3: Check CUDA environment variables
+    if os.getenv("NVIDIA_VISIBLE_DEVICES") and os.getenv("CUDA_VISIBLE_DEVICES") is not None:
+        logger.info("GPU environment variables detected")
+        return True
+    
+    logger.warning("No GPU detected - running in CPU mode")
+    return False
 
 @app.get("/health")
 async def health_check():
@@ -424,14 +470,20 @@ async def health_check():
     return {
         "status": "healthy", 
         "service": "colmap-worker",
+        "gpu_available": _check_gpu_availability(),
         "timestamp": datetime.now().isoformat(),
-        "memory_usage": _get_memory_usage()
+        "memory_usage": _get_memory_usage(),
+        "active_jobs": len([j for j in jobs.values() if j["status"] == "processing"])
     }
 
 @app.get("/readiness")
 async def readiness_check():
-    """Cloud Run readiness probe"""
-    return {"status": "ready", "timestamp": datetime.now().isoformat()}
+    """Readiness probe"""
+    return {
+        "status": "ready", 
+        "timestamp": datetime.now().isoformat(),
+        "gpu_ready": _check_gpu_availability()
+    }
 
 def _get_memory_usage():
     """Get basic memory usage info for monitoring"""
@@ -702,22 +754,45 @@ async def get_project_scans(project_id: str):
     
     return formatted_scans
 
+@app.get("/results/{job_id}/{filename:path}")
+async def download_result(job_id: str, filename: str):
+    """Download processed result files"""
+    file_path = STORAGE_DIR / job_id / filename
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    if not file_path.is_file():
+        raise HTTPException(status_code=400, detail="Not a file")
+    
+    # Check if path is within allowed directory (security check)
+    try:
+        file_path.resolve().relative_to(STORAGE_DIR.resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return FileResponse(
+        path=str(file_path),
+        filename=file_path.name,
+        media_type='application/octet-stream'
+    )
+
 @app.get("/download/{project_id}/{file_type}")
 async def download_file(project_id: str, file_type: str):
-    """Download processed 3D model files"""
-    # In production, this would serve actual files from storage
+    """Legacy download endpoint for backward compatibility"""
     return {
         "message": f"Download endpoint for {file_type} in project {project_id}",
         "file_type": file_type,
         "project_id": project_id,
-        "note": "This is a mock endpoint. In production, this would serve actual 3D model files."
+        "note": "Use /results/{job_id}/{filename} endpoint instead"
     }
 
 if __name__ == "__main__":
-    # Cloud Run provides PORT environment variable
     port = int(os.getenv("PORT", 8080))
     
     logger.info(f"Starting COLMAP Worker on port {port}")
+    logger.info(f"GPU Available: {_check_gpu_availability()}")
+    logger.info(f"Storage Directory: {STORAGE_DIR}")
     
     uvicorn.run(
         app, 

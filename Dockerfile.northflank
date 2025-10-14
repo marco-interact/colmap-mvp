@@ -1,13 +1,16 @@
 # Northflank GPU-Optimized COLMAP Worker
-# Optimized for NVIDIA GPU instances on Northflank
+# Optimized for NVIDIA T4/L4/A10G GPU instances on Northflank
+# Following Northflank GPU workload best practices
+# Reference: https://northflank.com/docs/v1/application/gpu-workloads/configure-and-optimise-workloads-for-gpus
 
-FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+# Use CUDA 12.2 for optimal T4/L4 compatibility (T4: CUDA 10.0-12.2, L4: CUDA 12.0+)
+FROM nvidia/cuda:12.2.0-cudnn8-devel-ubuntu22.04
 
 # Prevent interactive prompts during build
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV NVIDIA_VISIBLE_DEVICES=all
-ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
 WORKDIR /app
 
@@ -110,19 +113,25 @@ COPY main.py .
 COPY database.py .
 
 # Create necessary directories with proper permissions
-RUN mkdir -p /tmp /app/data /app/logs && \
-    chmod -R 777 /tmp
+# Following Northflank best practices for persistent storage
+RUN mkdir -p /tmp /app/data /app/logs /app/cache && \
+    chmod -R 777 /tmp && \
+    chmod -R 755 /app/data /app/logs /app/cache
 
 # Create non-root user for security (Northflank requirement)
 RUN groupadd --system --gid 1000 appgroup && \
     useradd --system --uid 1000 --gid 1000 --create-home --shell /bin/bash appuser && \
     chown -R appuser:appgroup /app
 
-# Set environment variables
+# Set environment variables for Northflank deployment
 ENV PORT=8080
-ENV STORAGE_BUCKET=colmap-processing-bucket
 ENV DATABASE_PATH=/app/data/colmap_app.db
+ENV STORAGE_DIR=/app/data/results
+ENV CACHE_DIR=/app/cache
 ENV COLMAP_CPU_ONLY=false
+# GPU configuration
+ENV CUDA_VISIBLE_DEVICES=0
+ENV NVIDIA_VISIBLE_DEVICES=all
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
