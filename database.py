@@ -6,6 +6,7 @@ Stores users, projects, scans, and technical details
 import sqlite3
 import json
 import logging
+import os
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -16,8 +17,13 @@ logger = logging.getLogger(__name__)
 class Database:
     """Simple SQLite database for storing COLMAP app data"""
     
-    def __init__(self, db_path: str = "/tmp/colmap_app.db"):
+    def __init__(self, db_path: str = None):
+        if db_path is None:
+            db_path = os.getenv("DATABASE_PATH", "/tmp/colmap_app.db")
         self.db_path = db_path
+        # Ensure directory exists
+        db_dir = Path(db_path).parent
+        db_dir.mkdir(parents=True, exist_ok=True)
         self.init_database()
     
     def get_connection(self):

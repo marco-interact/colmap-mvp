@@ -42,6 +42,21 @@ next-env.d.ts
 /colmap-worker/outputs
 /colmap-worker/temp
 
+# Database files
+*.db
+*.db-journal
+/data/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
 # IDE
 .vscode/
 .idea/

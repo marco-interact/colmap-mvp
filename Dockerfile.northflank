@@ -1,0 +1,145 @@
+# Northflank GPU-Optimized COLMAP Worker
+# Optimized for NVIDIA GPU instances on Northflank
+
+FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+
+# Prevent interactive prompts during build
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    --no-install-recommends \
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    python3.11-venv \
+    cmake \
+    ninja-build \
+    build-essential \
+    git \
+    wget \
+    curl \
+    ca-certificates \
+    libboost-program-options1.74.0 \
+    libboost-filesystem1.74.0 \
+    libboost-graph1.74.0 \
+    libboost-system1.74.0 \
+    libboost-program-options-dev \
+    libboost-filesystem-dev \
+    libboost-graph-dev \
+    libboost-system-dev \
+    libeigen3-dev \
+    libflann-dev \
+    libfreeimage3 \
+    libfreeimage-dev \
+    libmetis-dev \
+    libgoogle-glog0v5 \
+    libgoogle-glog-dev \
+    libgflags2.2 \
+    libgflags-dev \
+    libglew2.2 \
+    libglew-dev \
+    libsqlite3-dev \
+    qtbase5-dev \
+    libqt5opengl5-dev \
+    libcgal-dev \
+    libatlas-base-dev \
+    libsuitesparse-dev \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libglib2.0-0 \
+    libgl1-mesa-glx \
+    procps \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Update alternatives to use python3.11 as default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
+    && update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
+
+# Install Ceres Solver (required for COLMAP)
+RUN cd /tmp && \
+    git clone https://github.com/ceres-solver/ceres-solver.git && \
+    cd ceres-solver && \
+    git checkout 2.1.0 && \
+    mkdir build && cd build && \
+    cmake .. -DBUILD_TESTING=OFF \
+             -DBUILD_EXAMPLES=OFF \
+             -DCMAKE_BUILD_TYPE=Release && \
+    make -j$(nproc) && \
+    make install && \
+    cd / && rm -rf /tmp/ceres-solver
+
+# Install COLMAP with GPU support
+RUN cd /tmp && \
+    git clone https://github.com/colmap/colmap.git && \
+    cd colmap && \
+    git checkout 3.9.1 && \
+    mkdir build && cd build && \
+    cmake .. \
+        -GNinja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_CUDA_ARCHITECTURES=native \
+        -DCUDA_ENABLED=ON \
+        -DGUI_ENABLED=OFF \
+        -DCGAL_ENABLED=ON \
+        -DOPENGL_ENABLED=OFF && \
+    ninja && \
+    ninja install && \
+    cd / && rm -rf /tmp/colmap
+
+# Verify COLMAP installation
+RUN colmap --version
+
+# Upgrade pip and install Python dependencies
+RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+
+# Copy application files
+COPY main.py .
+COPY database.py .
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /tmp /app/data /app/logs && \
+    chmod -R 777 /tmp
+
+# Create non-root user for security (Northflank requirement)
+RUN groupadd --system --gid 1000 appgroup && \
+    useradd --system --uid 1000 --gid 1000 --create-home --shell /bin/bash appuser && \
+    chown -R appuser:appgroup /app
+
+# Set environment variables
+ENV PORT=8080
+ENV STORAGE_BUCKET=colmap-processing-bucket
+ENV DATABASE_PATH=/app/data/colmap_app.db
+ENV COLMAP_CPU_ONLY=false
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/health || exit 1
+
+# Expose port
+EXPOSE $PORT
+
+# Switch to non-root user
+USER appuser
+
+# Run application with optimized settings for Northflank
+CMD ["python3", "-m", "uvicorn", "main:app", \
+     "--host", "0.0.0.0", \
+     "--port", "8080", \
+     "--workers", "1", \
+     "--timeout-keep-alive", "300", \
+     "--limit-concurrency", "100", \
+     "--limit-max-requests", "1000"]
+

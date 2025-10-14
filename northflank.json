@@ -1,0 +1,87 @@
+{
+  "name": "colmap-mvp",
+  "description": "GPU-Accelerated 3D Reconstruction Service using COLMAP",
+  "version": "1.0.0",
+  "spec": {
+    "buildConfig": {
+      "dockerfile": {
+        "buildEngine": "kaniko",
+        "dockerfilePath": "/Dockerfile.northflank",
+        "dockerWorkDir": "/app",
+        "useCache": true
+      }
+    },
+    "runtimeConfig": {
+      "runtime": "gpu",
+      "gpu": {
+        "type": "nvidia",
+        "count": 1,
+        "model": "T4"
+      },
+      "resources": {
+        "cpu": {
+          "min": 2000,
+          "max": 4000
+        },
+        "memory": {
+          "min": 4096,
+          "max": 8192
+        },
+        "storage": {
+          "ephemeral": 10240
+        }
+      },
+      "replicas": {
+        "min": 1,
+        "max": 3
+      },
+      "autoscaling": {
+        "enabled": true,
+        "targetCPU": 80,
+        "targetMemory": 80
+      }
+    },
+    "networking": {
+      "port": 8080,
+      "protocol": "http",
+      "healthCheck": {
+        "path": "/health",
+        "interval": 30,
+        "timeout": 10,
+        "successThreshold": 1,
+        "failureThreshold": 3
+      }
+    },
+    "environment": [
+      {
+        "name": "PORT",
+        "value": "8080"
+      },
+      {
+        "name": "COLMAP_CPU_ONLY",
+        "value": "false"
+      },
+      {
+        "name": "CUDA_VISIBLE_DEVICES",
+        "value": "0"
+      },
+      {
+        "name": "NVIDIA_VISIBLE_DEVICES",
+        "value": "all"
+      },
+      {
+        "name": "STORAGE_BUCKET",
+        "value": "colmap-processing-bucket"
+      },
+      {
+        "name": "DATABASE_PATH",
+        "value": "/app/data/colmap_app.db"
+      },
+      {
+        "name": "MAX_CONCURRENT_JOBS",
+        "value": "4"
+      }
+    ]
+  }
+}
+
