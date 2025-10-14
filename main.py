@@ -473,7 +473,9 @@ async def health_check():
         "gpu_available": _check_gpu_availability(),
         "timestamp": datetime.now().isoformat(),
         "memory_usage": _get_memory_usage(),
-        "active_jobs": len([j for j in jobs.values() if j["status"] == "processing"])
+        "active_jobs": len([j for j in jobs.values() if j["status"] == "processing"]),
+        "database_path": db.db_path,
+        "database_exists": Path(db.db_path).exists()
     }
 
 @app.get("/readiness")
@@ -484,6 +486,83 @@ async def readiness_check():
         "timestamp": datetime.now().isoformat(),
         "gpu_ready": _check_gpu_availability()
     }
+
+@app.get("/database/status")
+async def database_status():
+    """Check database status and connectivity"""
+    try:
+        # Test connection
+        conn = db.get_connection()
+        
+        # Count records in each table
+        cursor = conn.cursor()
+        
+        users_count = cursor.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+        projects_count = cursor.execute('SELECT COUNT(*) FROM projects').fetchone()[0]
+        scans_count = cursor.execute('SELECT COUNT(*) FROM scans').fetchone()[0]
+        jobs_count = cursor.execute('SELECT COUNT(*) FROM processing_jobs').fetchone()[0]
+        
+        conn.close()
+        
+        db_size = Path(db.db_path).stat().st_size / (1024**2) if Path(db.db_path).exists() else 0
+        
+        return {
+            "status": "connected",
+            "database_path": db.db_path,
+            "database_size_mb": round(db_size, 2),
+            "database_exists": Path(db.db_path).exists(),
+            "tables": {
+                "users": users_count,
+                "projects": projects_count,
+                "scans": scans_count,
+                "processing_jobs": jobs_count
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Database status check failed: {e}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "database_path": db.db_path,
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.post("/database/init-test-data")
+async def init_test_data():
+    """Initialize test data for development (creates demo user and project)"""
+    try:
+        # Create test user
+        test_email = "test@colmap.app"
+        user = db.get_user_by_email(test_email)
+        
+        if not user:
+            user_id = db.create_user(test_email, "Test User")
+            logger.info(f"Created test user: {test_email}")
+        else:
+            user_id = user["id"]
+            logger.info(f"Test user already exists: {test_email}")
+        
+        # Create test project
+        project_id = db.create_project(
+            user_id=user_id,
+            name="Demo Project",
+            description="Test project for COLMAP reconstruction",
+            location="Demo Location",
+            space_type="indoor",
+            project_type="architecture"
+        )
+        
+        return {
+            "status": "success",
+            "message": "Test data initialized",
+            "user_id": user_id,
+            "project_id": project_id,
+            "test_email": test_email
+        }
+    except Exception as e:
+        logger.error(f"Failed to initialize test data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 def _get_memory_usage():
     """Get basic memory usage info for monitoring"""
