@@ -1,0 +1,79 @@
+{
+  "name": "colmap-frontend",
+  "description": "COLMAP Frontend - Next.js 14 Application",
+  "spec": {
+    "kind": "Deployment",
+    "type": "Service",
+    "buildSettings": {
+      "dockerfile": {
+        "buildEngine": "kaniko",
+        "dockerfilePath": "/Dockerfile.frontend",
+        "dockerWorkDir": "/app",
+        "useCache": true
+      }
+    },
+    "runtimeSettings": {
+      "resources": {
+        "replicas": {
+          "min": 1,
+          "max": 5
+        },
+        "vCPU": {
+          "value": 1
+        },
+        "memory": {
+          "value": 2048
+        },
+        "storage": {
+          "ephemeralStorage": {
+            "value": 2048
+          }
+        }
+      },
+      "ports": [
+        {
+          "name": "http",
+          "internalPort": 3000,
+          "public": true,
+          "protocol": "HTTP",
+          "security": {
+            "policies": []
+          }
+        }
+      ],
+      "healthChecks": {
+        "livenessProbe": {
+          "path": "/",
+          "port": 3000,
+          "initialDelaySeconds": 30,
+          "periodSeconds": 30,
+          "timeoutSeconds": 10,
+          "failureThreshold": 3
+        },
+        "readinessProbe": {
+          "path": "/",
+          "port": 3000,
+          "initialDelaySeconds": 10,
+          "periodSeconds": 10,
+          "timeoutSeconds": 5,
+          "failureThreshold": 3
+        }
+      }
+    },
+    "environmentVariables": [
+      {
+        "key": "PORT",
+        "value": "3000"
+      },
+      {
+        "key": "NODE_ENV",
+        "value": "production"
+      },
+      {
+        "key": "NEXT_PUBLIC_API_URL",
+        "value": "https://YOUR_BACKEND_URL.northflank.app"
+      }
+    ]
+  }
+}
+
