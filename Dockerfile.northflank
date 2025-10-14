@@ -97,10 +97,12 @@ RUN cd /tmp && \
         -DOPENGL_ENABLED=OFF && \
     ninja && \
     ninja install && \
+    ldconfig && \
     cd / && rm -rf /tmp/colmap
 
-# Verify COLMAP installation
-RUN colmap --version
+# Verify COLMAP installation and add to PATH
+ENV PATH="/usr/local/bin:${PATH}"
+RUN ldconfig && colmap --version
 
 # Upgrade pip and install Python dependencies
 RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
