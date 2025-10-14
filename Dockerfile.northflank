@@ -89,7 +89,7 @@ RUN cd /tmp && \
     cmake .. \
         -GNinja \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_CUDA_ARCHITECTURES=native \
+        -DCMAKE_CUDA_ARCHITECTURES=80 \
         -DCUDA_ENABLED=ON \
         -DGUI_ENABLED=OFF \
         -DCGAL_ENABLED=ON \
