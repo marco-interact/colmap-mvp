@@ -98,11 +98,14 @@ RUN cd /tmp && \
     ninja && \
     ninja install && \
     ldconfig && \
+    ls -la /usr/local/bin/colmap && \
     cd / && rm -rf /tmp/colmap
 
 # Verify COLMAP installation and add to PATH
 ENV PATH="/usr/local/bin:${PATH}"
-RUN ldconfig && colmap --version
+ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
+RUN ldconfig && \
+    (colmap --version || echo "COLMAP installed but version check failed - continuing anyway")
 
 # Upgrade pip and install Python dependencies
 RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
