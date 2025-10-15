@@ -2,6 +2,36 @@
 
 A GPU-accelerated 3D reconstruction platform using COLMAP for photogrammetry and 3D model generation. Optimized for deployment on Northflank GPU instances.
 
+**Reference**: [Official COLMAP Documentation](https://colmap.github.io/)
+
+## 🚀 Quick Links
+
+- **Backend**: https://p01--colmap-worker-gpu--xf7lzhrl47hj.code.run ([API Docs](https://p01--colmap-worker-gpu--xf7lzhrl47hj.code.run/docs))
+- **Frontend**: https://p01--colmap-frontend--xf7lzhrl47hj.code.run
+- **GitHub**: https://github.com/marco-interact/colmap-mvp
+
+## 📚 Documentation Hub
+
+| Document | Description |
+|----------|-------------|
+| **[STATUS_SUMMARY.md](STATUS_SUMMARY.md)** | 📋 Current status, roadmap & next steps |
+| **[API_REFERENCE.md](API_REFERENCE.md)** | 🔌 Complete API endpoint documentation |
+| **[DATABASE_SETUP.md](DATABASE_SETUP.md)** | 🗄️ Database schema, configuration & testing |
+| **[INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)** | 🔄 Full pipeline integration steps |
+| **[NORTHFLANK_REBUILD.md](NORTHFLANK_REBUILD.md)** | 🔧 How to deploy code changes |
+| **[DEPLOY_TO_NORTHFLANK.md](DEPLOY_TO_NORTHFLANK.md)** | 🚀 Initial deployment guide |
+
+## 🎯 Current Status (80% Complete)
+
+✅ Backend deployed with GPU (A100 40GB)  
+✅ Frontend deployed and online  
+✅ Database fully implemented  
+✅ COLMAP compiled and ready  
+⏳ Database endpoints awaiting deployment  
+⏳ Frontend → Backend integration pending  
+
+**Next Step**: Deploy database endpoints on Northflank (see [NORTHFLANK_REBUILD.md](NORTHFLANK_REBUILD.md))
+
 ![Architecture](colmap-app-architecture.png)
 
 ## 🚀 Features
