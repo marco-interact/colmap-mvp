@@ -53,10 +53,17 @@ export interface ProcessingJob {
 // Get the COLMAP worker URL from environment or use default
 const getWorkerUrl = () => {
   // Use environment variable if set, otherwise use the deployed backend URL
-  const url = process.env.NEXT_PUBLIC_API_URL || 'https://p01--colmap-worker-gpu--xf7lzhrl47hj.code.run'
+  let url = process.env.NEXT_PUBLIC_API_URL || 'https://p01--colmap-worker-gpu--xf7lzhrl47hj.code.run'
+  
+  // FORCE HTTPS (fix mixed content errors)
+  if (url && url.startsWith('http://')) {
+    url = url.replace('http://', 'https://')
+    console.warn('⚠️ Forced HTTP → HTTPS for security')
+  }
   
   console.log('🔍 Worker URL Configuration:', { 
     url, 
+    originalEnv: process.env.NEXT_PUBLIC_API_URL,
     env: process.env.NODE_ENV,
     isClient: typeof window !== 'undefined',
     timestamp: new Date().toISOString()
