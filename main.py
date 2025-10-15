@@ -487,6 +487,62 @@ async def readiness_check():
         "gpu_ready": _check_gpu_availability()
     }
 
+@app.get("/colmap/check")
+async def check_colmap():
+    """Check if COLMAP is installed and working"""
+    try:
+        # Try to run colmap --version
+        result = subprocess.run(
+            ['colmap', '--version'],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        colmap_available = result.returncode == 0
+        colmap_version = result.stdout.strip() if colmap_available else result.stderr.strip()
+        
+        # Check for GPU support
+        gpu_check = subprocess.run(
+            ['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        gpu_name = gpu_check.stdout.strip() if gpu_check.returncode == 0 else "No GPU detected"
+        
+        # Check OpenCV
+        try:
+            import cv2
+            opencv_version = cv2.__version__
+            opencv_available = True
+        except Exception as e:
+            opencv_version = f"Error: {str(e)}"
+            opencv_available = False
+        
+        return {
+            "colmap_installed": colmap_available,
+            "colmap_version": colmap_version,
+            "opencv_installed": opencv_available,
+            "opencv_version": opencv_version,
+            "gpu_name": gpu_name,
+            "gpu_available": _check_gpu_availability(),
+            "python_packages": {
+                "fastapi": True,
+                "uvicorn": True,
+                "opencv": opencv_available
+            },
+            "status": "ready" if (colmap_available and opencv_available) else "incomplete",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"COLMAP check failed: {e}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
 @app.get("/database/status")
 async def database_status():
     """Check database status and connectivity"""

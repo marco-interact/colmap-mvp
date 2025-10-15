@@ -71,7 +71,7 @@
       },
       {
         "key": "NEXT_PUBLIC_API_URL",
-        "value": "https://YOUR_BACKEND_URL.northflank.app"
+        "value": "https://p01--colmap-worker-gpu--xf7lzhrl47hj.code.run"
       }
     ]
   }
