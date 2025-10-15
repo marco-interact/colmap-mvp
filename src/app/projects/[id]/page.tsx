@@ -51,11 +51,14 @@ export default function ProjectDetailPage() {
   const [userName, setUserName] = useState("")
   const [newScan, setNewScan] = useState({
     name: "",
-    file: null as File | null
+    file: null as File | null,
+    quality: "medium" as "low" | "medium" | "high"
   })
   const [dragActive, setDragActive] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
+  const [processingStatus, setProcessingStatus] = useState<Record<string, { progress: number; stage: string }>>({})
+  const [activeJobIds, setActiveJobIds] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token')
@@ -183,12 +186,20 @@ export default function ProjectDetailPage() {
         // Start processing status tracking
         trackProcessingStatus(scan.id, jobId)
       } else {
-        // Real API upload with user email
+        // Real API upload with user email and quality setting
         const userEmail = localStorage.getItem('user_email') || 'demo@colmap.app'
+        
+        // Simulate upload progress
+        setUploadProgress(30)
+        await new Promise(resolve => setTimeout(resolve, 500))
+        setUploadProgress(60)
+        
         const result = await apiClient.uploadVideo(newScan.file, projectId, newScan.name, userEmail)
         
+        setUploadProgress(100)
+        
         const scan: Scan = {
-          id: result.jobId,
+          id: result.scanId,
           name: newScan.name,
           projectId,
           projectName: project?.name || "",
@@ -200,11 +211,18 @@ export default function ProjectDetailPage() {
         
         setScans(prev => [scan, ...prev])
         
+        // Store job ID for this scan
+        setActiveJobIds(prev => ({ ...prev, [scan.id]: result.jobId }))
+        
         // Start polling for status updates
         trackProcessingStatus(scan.id, result.jobId)
+        
+        // Show success message
+        console.log('✅ Upload successful! Processing started...')
+        console.log(`Job ID: ${result.jobId}, Scan ID: ${result.scanId}`)
       }
       
-      setNewScan({ name: "", file: null })
+      setNewScan({ name: "", file: null, quality: "medium" })
       setIsNewScanModalOpen(false)
     } catch (error) {
       console.error('Upload failed:', error)
@@ -221,6 +239,15 @@ export default function ProjectDetailPage() {
       try {
         const status = await apiClient.getJobStatus(jobId)
         
+        // Update processing status for progress display
+        setProcessingStatus(prev => ({
+          ...prev,
+          [scanId]: {
+            progress: status.progress,
+            stage: status.currentStage
+          }
+        }))
+        
         // Update scan status
         setScans(prev => prev.map(scan => 
           scan.id === scanId ? {
@@ -228,13 +255,34 @@ export default function ProjectDetailPage() {
             status: status.status === 'completed' ? 'completed' : 
                    status.status === 'failed' ? 'failed' : 'processing',
             processingTime: status.status === 'completed' ? 
-              `${Math.round((Date.now() - new Date(status.createdAt).getTime()) / 60000)} minutes` : undefined
+              `${Math.round((Date.now() - new Date(status.createdAt).getTime()) / 60000)} minutes` : undefined,
+            pointCount: status.results?.point_count_url ? 
+              parseInt(status.results.point_count_url) || undefined : undefined
           } : scan
         ))
+        
+        // Log progress
+        console.log(`📊 Processing ${scanId}: ${status.progress}% - ${status.currentStage}`)
         
         // Continue polling if still processing
         if (status.status === 'processing' || status.status === 'pending') {
           setTimeout(pollStatus, 5000) // Poll every 5 seconds
+        } else if (status.status === 'completed') {
+          console.log('✅ Processing completed!', status.results)
+          // Clean up processing status
+          setProcessingStatus(prev => {
+            const newStatus = { ...prev }
+            delete newStatus[scanId]
+            return newStatus
+          })
+        } else if (status.status === 'failed') {
+          console.error('❌ Processing failed:', status.message)
+          // Clean up processing status
+          setProcessingStatus(prev => {
+            const newStatus = { ...prev }
+            delete newStatus[scanId]
+            return newStatus
+          })
         }
       } catch (error) {
         console.error('Status polling error:', error)

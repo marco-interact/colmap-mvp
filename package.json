@@ -24,6 +24,7 @@
     "react-hook-form": "^7.48.2",
     "tailwind-merge": "^2.2.0",
     "three": "^0.159.0",
+    "three-stdlib": "^2.36.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

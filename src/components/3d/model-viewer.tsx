@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from "react"
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { OrbitControls, Environment, useGLTF, Html, Text } from "@react-three/drei"
+import { PLYLoader } from "three-stdlib"
 import { 
   Maximize2, 
   Minimize2, 
@@ -30,6 +31,72 @@ interface ModelViewerProps {
 interface MeasurementPoint {
   position: THREE.Vector3
   id: string
+}
+
+// PLY Point Cloud Loader Component
+function PLYModel({ url }: { url: string }) {
+  const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!url) return
+
+    setLoading(true)
+    setError(null)
+
+    const loader = new PLYLoader()
+    loader.load(
+      url,
+      (geometry) => {
+        geometry.computeVertexNormals()
+        setGeometry(geometry)
+        setLoading(false)
+        console.log('✅ PLY file loaded successfully:', {
+          vertices: geometry.attributes.position?.count,
+          hasColors: !!geometry.attributes.color
+        })
+      },
+      (progress) => {
+        const percent = (progress.loaded / progress.total) * 100
+        console.log(`Loading PLY: ${percent.toFixed(1)}%`)
+      },
+      (error) => {
+        console.error('❌ Error loading PLY file:', error)
+        setError('Failed to load 3D model')
+        setLoading(false)
+      }
+    )
+  }, [url])
+
+  if (loading) {
+    return (
+      <Html center>
+        <div className="text-white text-sm">Loading 3D model...</div>
+      </Html>
+    )
+  }
+
+  if (error || !geometry) {
+    return (
+      <Html center>
+        <div className="text-red-400 text-sm">{error || 'Model not available'}</div>
+      </Html>
+    )
+  }
+
+  return (
+    <points>
+      <bufferGeometry attach="geometry" {...geometry} />
+      <pointsMaterial
+        size={0.01}
+        vertexColors
+        sizeAttenuation
+        transparent
+        opacity={0.8}
+      />
+    </points>
+  )
 }
 
 interface ViewerControlsProps {
@@ -389,19 +456,28 @@ export function ModelViewer({
         {/* Environment for better reflections */}
         <Environment preset="studio" />
         
-        {/* Demo cube since we don't have actual models */}
-        <mesh>
-          <boxGeometry args={[2, 2, 2]} />
-          <meshStandardMaterial 
-            color="#4a90e2" 
-            wireframe={wireframe}
-            metalness={0.3}
-            roughness={0.4}
-          />
-        </mesh>
-        
-        {/* Point cloud */}
-        <PointCloud points={demoPointCloud} visible={showPointCloud} />
+        {/* Load real PLY model if URL provided, otherwise show demo cube */}
+        {pointCloudUrl ? (
+          <PLYModel url={pointCloudUrl} />
+        ) : modelUrl ? (
+          <PLYModel url={modelUrl} />
+        ) : (
+          <>
+            {/* Demo cube since we don't have actual models */}
+            <mesh>
+              <boxGeometry args={[2, 2, 2]} />
+              <meshStandardMaterial 
+                color="#4a90e2" 
+                wireframe={wireframe}
+                metalness={0.3}
+                roughness={0.4}
+              />
+            </mesh>
+            
+            {/* Point cloud */}
+            <PointCloud points={demoPointCloud} visible={showPointCloud} />
+          </>
+        )}
         
         {/* Measurement tool */}
         <MeasurementTool 

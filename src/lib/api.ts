@@ -50,26 +50,24 @@ export interface ProcessingJob {
   }
 }
 
-// Get the COLMAP worker URL from environment
+// Get the COLMAP worker URL from environment or use default
 const getWorkerUrl = () => {
-  const url = process.env.NEXT_PUBLIC_COLMAP_WORKER_URL
-  console.log('🔍 Worker URL Configuration (v3.0 - FINAL REBUILD):', { 
+  // Use environment variable if set, otherwise use the deployed backend URL
+  const url = process.env.NEXT_PUBLIC_API_URL || 'https://p01--colmap-worker-gpu--xf7lzhrl47hj.code.run'
+  
+  console.log('🔍 Worker URL Configuration:', { 
     url, 
     env: process.env.NODE_ENV,
     isClient: typeof window !== 'undefined',
-    timestamp: new Date().toISOString(),
-    buildId: 'final-rebuild-' + Date.now(),
-    allColmapVars: Object.keys(process.env).filter(k => k.includes('COLMAP'))
+    timestamp: new Date().toISOString()
   })
+  
   if (!url) {
-    console.warn('❌ NEXT_PUBLIC_COLMAP_WORKER_URL not configured, using demo mode')
-    console.warn('This means the frontend was not deployed with the correct worker URL')
-    console.warn('Expected: Dynamic worker URL from GitHub Actions deployment')
-    console.warn('Current deployment should fix this issue')
+    console.warn('❌ Backend URL not configured, using demo mode')
     return null
   }
+  
   console.log('✅ Worker URL configured:', url)
-  console.log('🎯 This should be the new dynamic worker URL, not the old hardcoded one')
   return url
 }
 
@@ -269,6 +267,30 @@ class APIClient {
     }
 
     return response.blob()
+  }
+
+  // Download result file from job
+  async downloadResult(jobId: string, filename: string): Promise<Blob> {
+    if (!this.baseUrl) {
+      // Demo mode - return empty blob
+      return new Blob(['Demo PLY content'], { type: 'application/octet-stream' })
+    }
+
+    const response = await fetch(`${this.baseUrl}/results/${jobId}/${filename}`)
+    
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.status} ${response.statusText}`)
+    }
+
+    return response.blob()
+  }
+
+  // Get result URL for direct loading in viewer
+  getResultUrl(jobId: string, filename: string): string | null {
+    if (!this.baseUrl) {
+      return null
+    }
+    return `${this.baseUrl}/results/${jobId}/${filename}`
   }
 
   // Get detailed scan information
