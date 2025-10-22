@@ -1,193 +1,219 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { apiClient, isDemoMode, type ProcessingJob } from '@/lib/api'
+import { useState, useEffect } from "react"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { 
+  Play, 
+  Pause, 
+  Square, 
+  RotateCcw, 
+  CheckCircle, 
+  XCircle, 
+  Clock,
+  Zap
+} from "lucide-react"
 
 interface ProcessingStatusProps {
-  jobId: string
-  onComplete?: (results: ProcessingJob['results']) => void
+  scanId: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  progress: number
+  message: string
+  onCancel?: () => void
+  onRetry?: () => void
   className?: string
 }
 
-export function ProcessingStatus({ jobId, onComplete, className }: ProcessingStatusProps) {
-  const [job, setJob] = useState<ProcessingJob | null>(null)
-  const [loading, setLoading] = useState(true)
+export function ProcessingStatus({
+  scanId,
+  status,
+  progress,
+  message,
+  onCancel,
+  onRetry,
+  className = ""
+}: ProcessingStatusProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [elapsedTime, setElapsedTime] = useState(0)
 
+  // Calculate elapsed time
   useEffect(() => {
-    let pollInterval: NodeJS.Timeout
-
-    const pollStatus = async () => {
-      try {
-        const status = await apiClient.getJobStatus(jobId)
-        setJob(status)
-        setLoading(false)
-
-        // Call onComplete when job finishes
-        if (status.status === 'completed' && onComplete && status.results) {
-          onComplete(status.results)
-        }
-
-        // Stop polling when job is done
-        if (status.status === 'completed' || status.status === 'failed') {
-          clearInterval(pollInterval)
-        }
-      } catch (error) {
-        console.error('Failed to fetch job status:', error)
-        setLoading(false)
-      }
+    if (status === 'processing') {
+      const interval = setInterval(() => {
+        setElapsedTime(prev => prev + 1)
+      }, 1000)
+      return () => clearInterval(interval)
+    } else {
+      setElapsedTime(0)
     }
+  }, [status])
 
-    // Initial fetch
-    pollStatus()
-
-    // Poll every 5 seconds if still processing
-    pollInterval = setInterval(pollStatus, 5000)
-
-    return () => clearInterval(pollInterval)
-  }, [jobId, onComplete])
-
-  if (loading) {
-    return (
-      <Card className={`bg-gray-900/50 border-gray-800 ${className}`}>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
-            <span className="ml-2 text-gray-300">Loading status...</span>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (!job) {
-    return (
-      <Card className={`bg-gray-900/50 border-gray-800 ${className}`}>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center text-red-400">
-            <AlertCircle className="w-5 h-5 mr-2" />
-            <span>Unable to load processing status</span>
-          </div>
-        </CardContent>
-      </Card>
-    )
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   const getStatusIcon = () => {
-    switch (job.status) {
-      case 'completed':
-        return <CheckCircle className="w-5 h-5 text-green-500" />
-      case 'failed':
-        return <AlertCircle className="w-5 h-5 text-red-500" />
-      case 'processing':
-        return <Loader2 className="w-5 h-5 animate-spin text-primary-500" />
+    switch (status) {
       case 'pending':
-        return <Clock className="w-5 h-5 text-yellow-500" />
+        return <Clock className="w-4 h-4 text-yellow-500" />
+      case 'processing':
+        return <Zap className="w-4 h-4 text-blue-500 animate-pulse" />
+      case 'completed':
+        return <CheckCircle className="w-4 h-4 text-green-500" />
+      case 'failed':
+        return <XCircle className="w-4 h-4 text-red-500" />
       default:
-        return <Clock className="w-5 h-5 text-gray-500" />
+        return <Clock className="w-4 h-4 text-gray-500" />
     }
   }
 
   const getStatusColor = () => {
-    switch (job.status) {
-      case 'completed': return 'text-green-400'
-      case 'failed': return 'text-red-400'
-      case 'processing': return 'text-primary-400'
-      case 'pending': return 'text-yellow-400'
-      default: return 'text-gray-400'
+    switch (status) {
+      case 'pending':
+        return 'border-yellow-500/20 bg-yellow-500/5'
+      case 'processing':
+        return 'border-blue-500/20 bg-blue-500/5'
+      case 'completed':
+        return 'border-green-500/20 bg-green-500/5'
+      case 'failed':
+        return 'border-red-500/20 bg-red-500/5'
+      default:
+        return 'border-gray-500/20 bg-gray-500/5'
+    }
+  }
+
+  const getProgressColor = () => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-500'
+      case 'processing':
+        return 'bg-blue-500'
+      case 'completed':
+        return 'bg-green-500'
+      case 'failed':
+        return 'bg-red-500'
+      default:
+        return 'bg-gray-500'
     }
   }
 
   return (
-    <Card className={`bg-gray-900/50 border-gray-800 ${className}`}>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center text-lg">
+    <Card className={`p-4 ${getStatusColor()} ${className}`}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center space-x-2">
           {getStatusIcon()}
-          <span className={`ml-2 ${getStatusColor()}`}>
-            Processing Status
+          <span className="font-medium text-sm">
+            {status === 'pending' && 'Waiting to start'}
+            {status === 'processing' && 'Processing...'}
+            {status === 'completed' && 'Completed'}
+            {status === 'failed' && 'Failed'}
           </span>
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {/* Current Stage */}
-        {job.currentStage && (
-          <div>
-            <p className="text-sm text-gray-400 mb-1">Current Stage</p>
-            <p className="text-white font-medium">{job.currentStage}</p>
-          </div>
-        )}
-
-        {/* Progress Bar */}
-        {job.progress !== undefined && job.status === 'processing' && (
-          <div>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-400">Progress</span>
-              <span className="text-white">{job.progress}%</span>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-2">
-              <div 
-                className="bg-primary-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${job.progress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Processing Stage Progress */}
-        {job.status === 'processing' && (
-          <div>
-            <p className="text-sm text-gray-400 mb-1">Processing</p>
-            <p className="text-white">Please wait...</p>
-          </div>
-        )}
-
-        {/* Status Message */}
-        <div>
-          <p className="text-sm text-gray-400 mb-1">Status</p>
-          <p className={`${getStatusColor()}`}>{job.message}</p>
         </div>
+        
+        <div className="flex items-center space-x-2">
+          {status === 'processing' && (
+            <span className="text-xs text-gray-500">
+              {formatTime(elapsedTime)}
+            </span>
+          )}
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-xs"
+          >
+            {isExpanded ? 'Hide' : 'Details'}
+          </Button>
+        </div>
+      </div>
 
-        {/* Demo Mode Indicator */}
-        {isDemoMode() && (
-          <div className="mt-4 p-3 bg-blue-900/30 border border-blue-700/50 rounded-lg">
-            <p className="text-blue-300 text-sm">
-              📋 <strong>Demo Mode:</strong> This is a simulated processing job. 
-              In production, this would show real COLMAP processing progress.
-            </p>
-          </div>
-        )}
+      {/* Progress Bar */}
+      <div className="mb-3">
+        <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+          <span>Progress</span>
+          <span>{Math.round(progress)}%</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div 
+            className={`h-2 rounded-full transition-all duration-300 ${getProgressColor()}`}
+            style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+          />
+        </div>
+      </div>
 
-        {/* Results (when completed) */}
-        {job.status === 'completed' && job.results && (
-          <div className="mt-4 p-4 bg-green-900/30 border border-green-700/50 rounded-lg">
-            <p className="text-green-300 font-medium mb-2">✅ Processing Complete!</p>
-            <div className="space-y-2 text-sm">
-              {job.results.point_cloud_url && (
-                <p className="text-gray-300">• Point cloud generated</p>
-              )}
-              {job.results.mesh_url && (
-                <p className="text-gray-300">• 3D mesh created</p>
-              )}
-              {job.results.thumbnail_url && (
-                <p className="text-gray-300">• Preview thumbnail ready</p>
-              )}
+      {/* Status Message */}
+      <div className="text-sm text-gray-600 mb-3">
+        {message}
+      </div>
+
+      {/* Expanded Details */}
+      {isExpanded && (
+        <div className="space-y-3 pt-3 border-t border-gray-200">
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div>
+              <span className="text-gray-500">Scan ID:</span>
+              <span className="ml-2 font-mono">{scanId}</span>
             </div>
+            <div>
+              <span className="text-gray-500">Status:</span>
+              <span className="ml-2 capitalize">{status}</span>
+            </div>
+            {status === 'processing' && (
+              <>
+                <div>
+                  <span className="text-gray-500">Elapsed:</span>
+                  <span className="ml-2">{formatTime(elapsedTime)}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Progress:</span>
+                  <span className="ml-2">{Math.round(progress)}%</span>
+                </div>
+              </>
+            )}
           </div>
-        )}
 
-        {/* Error (when failed) */}
-        {job.status === 'failed' && (
-          <div className="mt-4 p-4 bg-red-900/30 border border-red-700/50 rounded-lg">
-            <p className="text-red-300 font-medium">❌ Processing Failed</p>
-            <p className="text-gray-300 text-sm mt-1">
-              Please try uploading your video again or contact support if the issue persists.
-            </p>
+          {/* Action Buttons */}
+          <div className="flex space-x-2">
+            {status === 'processing' && onCancel && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onCancel}
+                className="text-xs"
+              >
+                <Square className="w-3 h-3 mr-1" />
+                Cancel
+              </Button>
+            )}
+            
+            {status === 'failed' && onRetry && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRetry}
+                className="text-xs"
+              >
+                <RotateCcw className="w-3 h-3 mr-1" />
+                Retry
+              </Button>
+            )}
+            
+            {status === 'completed' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                <CheckCircle className="w-3 h-3 mr-1" />
+                View Results
+              </Button>
+            )}
           </div>
-        )}
-      </CardContent>
+        </div>
+      )}
     </Card>
   )
 }

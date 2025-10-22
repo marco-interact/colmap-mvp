@@ -1,50 +1,72 @@
-# Git
-.git
-.gitignore
-.github
+# Don't copy these to Docker image
 
-# Python
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-.Python
-venv/
-env/
-ENV/
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-
-# Node
+# Node modules
 node_modules/
 npm-debug.log*
-.next/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+venv-local/
+env/
+ENV/
+
+# Data directories (these should use volumes)
+data/
+demo-resources/
+
+# Logs
+*.log
+backend.log
+frontend.log
+
+# Database (use volume or external DB)
+*.db
+database.db
+colmap.db
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Documentation
-*.md
-!README.md
+# Git
+.git/
+.gitignore
 
-# Environment files
+# Documentation
+docs/
+README.md
+*.md
+
+# Scripts
+scripts/
+*.sh
+
+# Config files not needed in container
 .env
 .env.local
+*.config.js
+tsconfig.json
 
-# Database
-*.db
-*.db-journal
+# Frontend files (separate container)
+src/
+public/
+package.json
+package-lock.json
+next-env.d.ts
+tailwind.config.ts
+postcss.config.js
 
-# Build artifacts
-dist/
-build/
-*.egg
-
+# Fonts
+JetBrains_Mono/

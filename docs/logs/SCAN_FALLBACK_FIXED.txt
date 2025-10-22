@@ -1,0 +1,60 @@
+================================================================================
+SCAN FALLBACK ISSUE - FIXED
+================================================================================
+
+PROBLEM:
+--------
+"Scan Test Video 1" was showing Dollhouse demo model instead of the actual 
+"Demo Garage 20s.mp4" reconstruction results.
+
+ROOT CAUSE:
+-----------
+1. Frontend was hardcoded to ONLY show demo models based on scan name
+2. The scan's reconstruction didn't include point_cloud_url in results
+3. Scan was processed before PLY export feature was implemented
+4. Scan ID (e377234c-...) pointed to results from different job (97fba131-...)
+   which only had sparse_model.zip, no point_cloud.ply file
+
+SOLUTION IMPLEMENTED:
+--------------------
+✅ Updated frontend scanId/page.tsx:
+   - Added getModelUrl() function with priority chain:
+     1. Use scan.results.pointCloudUrl (actual reconstruction)
+     2. Use technical_details.results.point_cloud_url (fallback)
+     3. Use demo models based on scan name (if no real results)
+     4. Default to Dollhouse demo (last resort)
+   
+✅ Added console logging to track which model is being loaded
+
+✅ Added visual warning banner when showing demo fallback:
+   "⚠️ Showing demo model - Re-upload to generate actual 3D reconstruction"
+
+✅ Updated loadScanData() to properly pass results from API:
+   - Extracts point_cloud_url, mesh_url, thumbnail_url
+   - Includes results in technical_details for backward compatibility
+
+TESTING:
+--------
+Current Behavior for "Scan Test Video 1":
+- Will show Dollhouse demo (no PLY in results)
+- Warning banner will appear explaining it's a demo
+- Console will show: "⚠️ No reconstruction PLY found, using demo fallback"
+
+Future Uploads:
+- Will automatically export PLY during reconstruction
+- Will display actual reconstruction results
+- No warning banner will appear
+
+RECOMMENDATION:
+---------------
+User should re-upload "Demo Garage 20s.mp4" to get the actual 3D model.
+The new reconstruction will:
+1. Extract frames
+2. Run COLMAP sparse reconstruction
+3. Export sparse model as PLY (NEW!)
+4. Display actual garage reconstruction in 3D viewer
+
+================================================================================
+Status: ✅ FIXED - Frontend now prioritizes real reconstruction over demos
+Time: 2025-10-21
+================================================================================

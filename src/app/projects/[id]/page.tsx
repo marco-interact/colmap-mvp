@@ -9,12 +9,14 @@ import {
   Settings,
   HelpCircle,
   Camera,
-  Upload
+  Upload,
+  RotateCcw
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Modal, ModalContent, ModalFooter } from "@/components/ui/modal"
 import { Input } from "@/components/ui/input"
+import { Progress } from "@/components/ui/progress"
 import { apiClient, localStorage as apiStorage, validateVideoFile, formatFileSize, isDemoMode, type Project as APIProject, type Scan as APIScan } from "@/lib/api"
 
 interface Project {
@@ -76,34 +78,67 @@ export default function ProjectDetailPage() {
     }
 
     loadProjectData()
+
+    // Reload data when page becomes visible (fixes disappearing scans)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadProjectData()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [projectId, router])
 
   const loadProjectData = async () => {
-    // Demo project data
-    const demoProject: Project = {
-      id: projectId,
-      name: `Demo Project ${projectId}`,
-      description: "Render scan for construction site",
-      location: "Monterrey",
-      updated: "26-08-2025",
-      status: "active"
-    }
-    
-    // Demo scans data
-    const demoScans: Scan[] = [
-      {
-        id: "scan-1",
-        name: "Demo Scan 1",
-        projectId,
-        projectName: demoProject.name,
-        status: "completed",
-        location: "Monterrey",
-        updated: "26-08-2025"
+    try {
+      // Load project from API
+      const projectData = await apiClient.getProject(projectId)
+      if (projectData) {
+        setProject({
+          id: projectData.id,
+          name: projectData.name,
+          description: projectData.description || "",
+          location: projectData.location || "",
+          updated: new Date(projectData.updated_at || projectData.created_at).toLocaleDateString(),
+          status: projectData.status as 'active' | 'completed' | 'processing'
+        })
       }
-    ]
-    
-    setProject(demoProject)
-    setScans(demoScans)
+      
+      // Load scans from API
+      const scansData = await apiClient.getScans(projectId)
+      if (scansData && scansData.scans) {
+        const formattedScans: Scan[] = scansData.scans.map((scan: any) => ({
+          id: scan.id,
+          name: scan.name,
+          projectId: scan.project_id,
+          projectName: projectData?.name || "",
+          thumbnail: `/api/backend/api/scans/${scan.id}/thumbnail.jpg`,
+          status: scan.status as 'completed' | 'processing' | 'failed' | 'pending',
+          location: projectData?.location || "",
+          updated: new Date(scan.updated_at || scan.created_at).toLocaleDateString(),
+          fileSize: scan.video_size ? formatFileSize(scan.video_size) : undefined,
+          processingTime: scan.processing_time_seconds ? `${scan.processing_time_seconds}s` : undefined,
+          pointCount: scan.point_count
+        }))
+        setScans(formattedScans)
+
+        // Resume polling for any processing scans
+        formattedScans.forEach(scan => {
+          if (scan.status === 'processing' || scan.status === 'pending') {
+            // Check if we have a job ID for this scan
+            const jobId = activeJobIds[scan.id] || scan.id // Use scan ID as fallback
+            console.log(`🔄 Resuming polling for scan ${scan.name} (${scan.id})`)
+            trackProcessingStatus(scan.id, jobId)
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Error loading project data:', error)
+    }
   }
 
   const handleFileSelect = (file: File) => {
@@ -293,6 +328,42 @@ export default function ProjectDetailPage() {
     setTimeout(pollStatus, 2000)
   }
 
+  const handleRetryScan = async (scan: Scan) => {
+    if (!scan.videoFilename || !newScan.file) {
+      alert('Cannot retry: Original video file not found. Please re-upload the video.')
+      return
+    }
+
+    try {
+      console.log(`🔄 Retrying processing for scan: ${scan.name}`)
+      
+      // Update scan status to pending
+      setScans(prev => prev.map(s => 
+        s.id === scan.id ? { ...s, status: 'pending' as const } : s
+      ))
+
+      // Re-trigger the upload/processing
+      const userEmail = localStorage.getItem('user_email') || 'demo@colmap.app'
+      const result = await apiClient.uploadVideo(newScan.file, projectId, scan.name, userEmail)
+      
+      // Update job ID
+      setActiveJobIds(prev => ({ ...prev, [scan.id]: result.jobId }))
+      
+      // Start polling for status updates
+      trackProcessingStatus(scan.id, result.jobId)
+      
+      console.log('✅ Retry initiated successfully')
+    } catch (error) {
+      console.error('Retry failed:', error)
+      alert('Failed to retry processing. Please upload the video again.')
+      
+      // Revert status back to failed
+      setScans(prev => prev.map(s => 
+        s.id === scan.id ? { ...s, status: 'failed' as const } : s
+      ))
+    }
+  }
+
   const handleDeleteProject = () => {
     if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
       router.push('/dashboard')
@@ -321,9 +392,9 @@ export default function ProjectDetailPage() {
   return (
     <div className="min-h-screen bg-gray-950 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
+      <aside className="w-64 bg-[#000] border-r border-gray-700/30 flex flex-col">
         <div className="p-6">
-          <h1 className="text-xl font-bold text-primary-400">Colmap App</h1>
+          <h1 className="text-xl font-bold text-primary-400 font-mono">Colmap App</h1>
         </div>
 
         {/* User Profile */}
@@ -378,9 +449,9 @@ export default function ProjectDetailPage() {
       {/* Main Content */}
       <main className="flex-1">
         {/* Header */}
-        <header className="border-b border-gray-800 bg-gray-900/50">
+        <header className="border-b border-gray-700/30 bg-[#000]">
           <div className="flex items-center justify-between px-8 py-6">
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-2xl font-bold text-white font-mono">
               {project.name} &gt; Scans
                 </h1>
             
@@ -416,12 +487,28 @@ export default function ProjectDetailPage() {
               >
                 {/* Scan Thumbnail */}
                 <div className="aspect-[4/3] bg-gray-800 rounded-t-xl overflow-hidden">
-                  <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
-                    {/* 3D Model Preview */}
-                    <div className="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center">
-                      <Camera className="w-10 h-10 text-primary-400" />
+                  {scan.thumbnail ? (
+                    <img 
+                      src={scan.thumbnail} 
+                      alt={scan.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to placeholder if image fails to load
+                        e.currentTarget.style.display = 'none'
+                        const parent = e.currentTarget.parentElement
+                        if (parent) {
+                          parent.innerHTML = '<div class="w-full h-full bg-gray-800 flex items-center justify-center"><div class="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center"><svg class="w-10 h-10 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></div></div>'
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                      {/* 3D Model Preview */}
+                      <div className="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center">
+                        <Camera className="w-10 h-10 text-primary-400" />
+                      </div>
                     </div>
-                  </div>
+                  )}
                   </div>
 
                   {/* Scan Info */}
@@ -430,9 +517,9 @@ export default function ProjectDetailPage() {
                     {project.name}
                   </div>
                   <div className="text-xs text-gray-400 mb-1">
-                    Updated: {scan.updated}
+                    Updated: <span className="font-mono">{scan.updated}</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-1">
+                  <h3 className="text-lg font-semibold text-white mb-1 font-mono">
                     {scan.name}
                   </h3>
                   <div className="flex items-center text-xs text-gray-500 mb-2">
@@ -445,7 +532,7 @@ export default function ProjectDetailPage() {
                       </div>
                   
                   {/* Status indicator */}
-                  <div className="flex items-center">
+                  <div className="flex items-center mb-2">
                     <div className={`w-2 h-2 rounded-full mr-2 ${
                       scan.status === 'completed' ? 'bg-green-500' :
                       scan.status === 'processing' ? 'bg-yellow-500' :
@@ -455,6 +542,41 @@ export default function ProjectDetailPage() {
                       {scan.status}
                     </span>
                   </div>
+
+                  {/* Progress bar for processing scans */}
+                  {scan.status === 'processing' && (
+                    <div className="mt-2">
+                      <Progress 
+                        value={processingStatus[scan.id]?.progress || 0} 
+                        indicatorColor="bg-yellow-500"
+                        className="h-1.5"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {processingStatus[scan.id]?.stage || 'Initializing...'}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Retry button for failed scans */}
+                  {scan.status === 'failed' && (
+                    <div className="mt-3 pt-3 border-t border-gray-800">
+                      <p className="text-xs text-red-400 mb-2">
+                        Processing failed. Please re-upload your video.
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setIsNewScanModalOpen(true)
+                        }}
+                        className="w-full text-xs"
+                      >
+                        <RotateCcw className="w-3 h-3 mr-1" />
+                        Re-upload Video
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

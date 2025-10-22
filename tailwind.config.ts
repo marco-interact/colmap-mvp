@@ -10,18 +10,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Colmap App Brand Colors (migrated from LESS)
+        // Grayscale + Blue Accent Color Palette
         primary: {
-          50: '#ecfdf5',
-          100: '#d1fae5',
-          200: '#a7f3d0',
-          300: '#6ee7b7',
-          400: '#34d399',
-          500: '#10b981', // Main green from screenshots
-          600: '#059669',
-          700: '#047857',
-          800: '#065f46',
-          900: '#064e3b',
+          50: '#e6f4f9',
+          100: '#cce9f3',
+          200: '#99d3e7',
+          300: '#66bddb',
+          400: '#3E93C9', // Main blue accent
+          500: '#357eb0',
+          600: '#2c6997',
+          700: '#23547e',
+          800: '#1a3f65',
+          900: '#112a4c',
         },
         secondary: {
           50: '#f8fafc',
@@ -49,7 +49,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       spacing: {

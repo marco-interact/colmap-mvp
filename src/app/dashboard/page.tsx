@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Modal, ModalContent, ModalFooter } from "@/components/ui/modal"
 import { ServiceStatus } from "@/components/service-status"
+import { Progress } from "@/components/ui/progress"
+import { apiClient } from "@/lib/api"
 
 interface Project {
   id: string
@@ -16,13 +18,17 @@ interface Project {
   updated: string
   thumbnail: string
   location: string
+  status?: 'active' | 'processing' | 'completed'
+  activeScans?: number
+  totalScans?: number
+  processingProgress?: number
 }
 
 interface Scan {
   id: string
   projectId: string
   name: string
-  status: 'completed' | 'processing' | 'failed'
+  status: 'completed' | 'processing' | 'failed' | 'pending'
   updated: string
   thumbnail: string
 }
@@ -61,28 +67,70 @@ export default function DashboardPage() {
     loadDashboardData()
   }, [router])
 
-  const loadDashboardData = () => {
-    // Demo projects matching the screenshots
-    const demoProjects: Project[] = [
-      {
-        id: "1",
-        name: "Demo Project 1",
-        description: "Render scan for construction site",
-        updated: "26-08-2025",
-        location: "Monterrey",
-        thumbnail: "/api/assets/sample-industrial.jpg" // This will be a 3D render preview
-      },
-      {
-        id: "2", 
-        name: "Demo Project 2",
-        description: "Render scan for construction site",
-        updated: "26-08-2025",
-        location: "Monterrey",
-        thumbnail: "/api/assets/sample-industrial.jpg"
+  const loadDashboardData = async () => {
+    try {
+      // Load projects from API
+      const response = await apiClient.getAllProjects()
+      if (response && response.projects) {
+        // Load scans for each project to calculate processing status
+        const projectsWithStatus = await Promise.all(
+          response.projects.map(async (project: any) => {
+            try {
+              const scansData = await apiClient.getScans(project.id)
+              const scans = scansData?.scans || []
+              
+              const totalScans = scans.length
+              const processingScans = scans.filter((s: any) => s.status === 'processing' || s.status === 'pending').length
+              const completedScans = scans.filter((s: any) => s.status === 'completed').length
+              
+              // Calculate progress: (completed / total) * 100
+              const progress = totalScans > 0 ? Math.round((completedScans / totalScans) * 100) : 100
+              
+              // Use project thumbnail API (shows first scan's first frame)
+              // Next.js rewrites /api/backend/* to http://localhost:8000/*
+              // Backend route: /api/projects/{id}/thumbnail.jpg
+              const thumbnailUrl = `/api/backend/api/projects/${project.id}/thumbnail.jpg`
+              
+              return {
+                id: project.id,
+                name: project.name,
+                description: project.description || "COLMAP 3D reconstruction project",
+                updated: new Date(project.updated_at || project.created_at).toLocaleDateString('en-GB'),
+                location: project.location || "Location TBD",
+                thumbnail: thumbnailUrl,
+                status: processingScans > 0 ? 'processing' as const : 
+                        completedScans > 0 ? 'completed' as const : 'active' as const,
+                activeScans: processingScans,
+                totalScans,
+                processingProgress: progress
+              }
+            } catch (error) {
+              // If scan loading fails, return project without scan info
+              return {
+                id: project.id,
+                name: project.name,
+                description: project.description || "COLMAP 3D reconstruction project",
+                updated: new Date(project.updated_at || project.created_at).toLocaleDateString('en-GB'),
+                location: project.location || "Location TBD",
+                thumbnail: "/api/assets/sample-industrial.jpg",
+                status: 'active' as const,
+                activeScans: 0,
+                totalScans: 0,
+                processingProgress: 100
+              }
+            }
+          })
+        )
+        
+        setProjects(projectsWithStatus)
+      } else {
+        // Fallback to empty if API fails
+        setProjects([])
       }
-    ]
-    
-    setProjects(demoProjects)
+    } catch (error) {
+      console.error('Error loading dashboard data:', error)
+      setProjects([])
+    }
   }
 
   const handleCreateProject = async () => {
@@ -109,9 +157,9 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-950 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
+      <aside className="w-64 bg-[#000] border-r border-gray-700/30 flex flex-col">
         <div className="p-6">
-          <h1 className="text-xl font-bold text-primary-400">Colmap App</h1>
+          <h1 className="text-xl font-bold text-primary-400 font-mono">Colmap App</h1>
         </div>
 
         {/* User Profile */}
@@ -166,9 +214,9 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="flex-1">
         {/* Header */}
-        <header className="border-b border-gray-800 bg-gray-900/50">
+        <header className="border-b border-gray-700/30 bg-[#000]">
           <div className="flex items-center justify-between px-8 py-6">
-            <h1 className="text-2xl font-bold text-white">My Projects</h1>
+            <h1 className="text-2xl font-bold text-white font-mono">My Projects</h1>
             
             <div className="flex items-center space-x-4">
               <div className="relative">
@@ -203,26 +251,33 @@ export default function DashboardPage() {
               >
                 {/* Project Thumbnail */}
                 <div className="aspect-[4/3] bg-gray-800 rounded-t-xl overflow-hidden">
-                  <div className="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
-                    {/* 3D Model Preview - for now showing colored background */}
-                    <div className="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center">
-                      <div className="w-10 h-10 bg-primary-400 rounded transform rotate-45"></div>
-                    </div>
-                  </div>
+                  <img 
+                    src={project.thumbnail} 
+                    alt={project.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to gradient if image fails to load
+                      e.currentTarget.style.display = 'none'
+                      const parent = e.currentTarget.parentElement
+                      if (parent) {
+                        parent.innerHTML = '<div class="w-full h-full bg-gray-800 flex items-center justify-center"><div class="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center"><div class="w-10 h-10 bg-primary-400 rounded transform rotate-45"></div></div></div>'
+                      }
+                    }}
+                  />
                 </div>
 
                 {/* Project Info */}
                 <CardContent className="p-4 bg-gray-900">
                   <div className="text-xs text-gray-400 mb-1">
-                    Updated: {project.updated}
+                    Updated: <span className="font-mono">{project.updated}</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-1">
+                  <h3 className="text-lg font-semibold text-white mb-1 font-mono">
                     {project.name}
                   </h3>
-                  <p className="text-sm text-gray-400 mb-2">
+                  <p className="text-sm text-gray-400 mb-2 font-mono">
                     {project.description}
                   </p>
-                  <div className="flex items-center text-xs text-gray-500">
+                  <div className="flex items-center text-xs text-gray-500 mb-3">
                     <div className="w-3 h-3 mr-1">
                       <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
@@ -230,6 +285,37 @@ export default function DashboardPage() {
                     </div>
                     {project.location}
                   </div>
+
+                  {/* Progress bar for projects with processing scans */}
+                  {project.status === 'processing' && project.activeScans && project.activeScans > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-800">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-yellow-500">
+                          {project.activeScans} scan{project.activeScans > 1 ? 's' : ''} processing
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {project.processingProgress}%
+                        </span>
+                      </div>
+                      <Progress 
+                        value={project.processingProgress || 0} 
+                        indicatorColor="bg-yellow-500"
+                        className="h-1.5"
+                      />
+                    </div>
+                  )}
+
+                  {/* Status indicator for completed projects */}
+                  {project.status === 'completed' && project.totalScans && project.totalScans > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-800">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-green-500 flex items-center">
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></div>
+                          {project.totalScans} scan{project.totalScans > 1 ? 's' : ''} completed
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

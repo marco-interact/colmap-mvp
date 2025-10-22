@@ -1,108 +1,125 @@
 {
-  "name": "colmap-mvp",
-  "description": "GPU-Accelerated 3D Reconstruction Service using COLMAP - Optimized for Northflank",
-  "version": "1.0.0",
-  "reference": "https://northflank.com/docs/v1/application/gpu-workloads/configure-and-optimise-workloads-for-gpus",
+  "name": "colmap-mvp-backend",
+  "description": "COLMAP 3D Reconstruction Backend (CPU-optimized)",
   "spec": {
-    "buildConfig": {
+    "kind": "Deployment",
+    "name": "colmap-backend",
+    "billing": {
+      "deploymentPlan": "nf-compute-50"
+    },
+    "deployment": {
+      "instances": 1,
+      "storage": {
+        "ephemeralStorage": {
+          "storageSize": 10240
+        }
+      },
+      "docker": {
+        "configType": "default"
+      }
+    },
+    "runtimeEnvironment": {
+      "resources": {
+        "cpus": "2.0",
+        "memory": "4096"
+      },
+      "runtimeFiles": [
+        {
+          "name": "requirements.txt",
+          "path": "/app/requirements.txt",
+          "type": "file"
+        },
+        {
+          "name": "main.py",
+          "path": "/app/main.py",
+          "type": "file"
+        },
+        {
+          "name": "database.py",
+          "path": "/app/database.py",
+          "type": "file"
+        }
+      ]
+    },
+    "ports": [
+      {
+        "name": "http",
+        "internalPort": 8000,
+        "protocol": "HTTP",
+        "public": true,
+        "domains": []
+      }
+    ],
+    "buildSettings": {
       "dockerfile": {
         "buildEngine": "kaniko",
-        "dockerfilePath": "/Dockerfile.northflank",
+        "dockerfilePath": "/Dockerfile",
         "dockerWorkDir": "/app",
         "useCache": true
       }
     },
-    "runtimeConfig": {
-      "runtime": "gpu",
-      "gpu": {
-        "type": "nvidia",
-        "count": 1,
-        "model": "T4",
-        "notes": "T4: CUDA 10.0-12.2 | L4: CUDA 12.0+ | A10G: CUDA 11.1-12.3"
-      },
-      "resources": {
-        "cpu": {
-          "min": 2000,
-          "max": 4000,
-          "notes": "Right-sized for GPU workload data handling"
-        },
-        "memory": {
-          "min": 4096,
-          "max": 8192,
-          "notes": "Sufficient for large datasets and AI models"
-        },
-        "storage": {
-          "ephemeral": 10240,
-          "notes": "10GB for temporary processing; use persistent volumes for models"
-        }
-      },
-      "volumes": {
-        "persistent": [
-          {
-            "name": "data-volume",
-            "mountPath": "/app/data",
-            "size": 20480,
-            "notes": "20GB for database and results persistence"
-          },
-          {
-            "name": "cache-volume",
-            "mountPath": "/app/cache",
-            "size": 10240,
-            "notes": "10GB for COLMAP model cache"
-          }
-        ]
-      },
-      "replicas": {
-        "min": 1,
-        "max": 3
-      },
-      "autoscaling": {
-        "enabled": true,
-        "targetCPU": 80,
-        "targetMemory": 80
-      }
+    "buildArguments": {},
+    "vcsData": {
+      "projectUrl": "https://github.com/marco-interact/colmap-mvp",
+      "projectType": "github",
+      "accountLogin": "marco-interact",
+      "projectId": "colmap-mvp"
     },
-    "networking": {
-      "port": 8080,
-      "protocol": "http",
-      "healthCheck": {
-        "path": "/health",
-        "interval": 30,
-        "timeout": 10,
+    "buildConfiguration": {
+      "pathIgnoreRules": [
+        "node_modules/**",
+        "src/**",
+        "public/**",
+        "docs/**",
+        "scripts/**"
+      ]
+    },
+    "environmentVariables": [
+      {
+        "key": "COLMAP_CPU_ONLY",
+        "value": "1"
+      },
+      {
+        "key": "PORT",
+        "value": "8000"
+      },
+      {
+        "key": "STORAGE_DIR",
+        "value": "/app/data/results"
+      },
+      {
+        "key": "CACHE_DIR",
+        "value": "/app/data/cache"
+      },
+      {
+        "key": "PYTHONUNBUFFERED",
+        "value": "1"
+      }
+    ],
+    "healthCheck": {
+      "livenessProbe": {
+        "httpGet": {
+          "path": "/health",
+          "port": 8000
+        },
+        "initialDelaySeconds": 40,
+        "periodSeconds": 30,
+        "timeoutSeconds": 10,
+        "successThreshold": 1,
+        "failureThreshold": 3
+      },
+      "readinessProbe": {
+        "httpGet": {
+          "path": "/readiness",
+          "port": 8000
+        },
+        "initialDelaySeconds": 30,
+        "periodSeconds": 10,
+        "timeoutSeconds": 5,
         "successThreshold": 1,
         "failureThreshold": 3
       }
-    },
-    "environment": [
-      {
-        "name": "PORT",
-        "value": "8080"
-      },
-      {
-        "name": "COLMAP_CPU_ONLY",
-        "value": "false"
-      },
-      {
-        "name": "CUDA_VISIBLE_DEVICES",
-        "value": "0"
-      },
-      {
-        "name": "NVIDIA_VISIBLE_DEVICES",
-        "value": "all"
-      },
-      {
-        "name": "STORAGE_BUCKET",
-        "value": "colmap-processing-bucket"
-      },
-      {
-        "name": "DATABASE_PATH",
-        "value": "/app/data/colmap_app.db"
-      },
-      {
-        "name": "MAX_CONCURRENT_JOBS",
-        "value": "4"
-      }
-    ]
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import './globals.css'
 
 const inter = Inter({ 
@@ -10,13 +10,7 @@ const inter = Inter({
   preload: true
 })
 
-const jetbrainsMono = JetBrains_Mono({ 
-  subsets: ['latin'],
-  variable: '--font-jetbrains-mono',
-  display: 'swap',
-  fallback: ['monospace'],
-  preload: true
-})
+// JetBrains Mono loaded via @font-face in globals.css
 
 export const metadata: Metadata = {
   title: 'COLMAP Workspace - 3D Reconstruction Platform',
@@ -36,7 +30,7 @@ export default function RootLayout({
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans bg-gray-950 text-white antialiased`}>
+      <body className={`${inter.variable} font-sans bg-gray-950 text-white antialiased`}>
         {children}
       </body>
     </html>

@@ -1,5 +1,7 @@
 /* Colmap App Global Styles */
-/* Fonts loaded via Next.js font optimization in layout.tsx */
+
+/* JetBrains Mono - Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -45,12 +47,26 @@
   .form-select {
     @apply bg-gray-800 border-gray-700 text-white focus:border-primary-500 focus:ring-primary-500;
   }
+
+  /* Technical/numerical data styling */
+  .data-value {
+    @apply font-mono text-white;
+  }
+
+  .data-label {
+    @apply text-gray-400 text-sm;
+  }
+
+  /* Timestamp/duration styling */
+  .timestamp {
+    @apply font-mono text-gray-400 text-xs;
+  }
 }
 
 :root {
   /* Colmap App Brand Colors - Synchronized with tailwind.config.ts */
-  --primary: #10b981;          /* Matches tailwind primary-500 */
-  --primary-dark: #059669;     /* Matches tailwind primary-600 */
+  --primary: #3E93C9;          /* Matches tailwind primary-400 */
+  --primary-dark: #2c6997;     /* Matches tailwind primary-600 */
   --secondary: #64748b;        /* Matches tailwind secondary-500 */
   --accent: #0ea5e9;          /* Matches tailwind accent-500 */
   --background-dark: #030712;  /* gray-950 */

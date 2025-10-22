@@ -1,471 +1,180 @@
-# COLMAP 3D Reconstruction Platform
+# COLMAP MVP - 3D Reconstruction Platform
 
-A GPU-accelerated 3D reconstruction platform using COLMAP for photogrammetry and 3D model generation. Optimized for deployment on Northflank GPU instances.
-
-**Reference**: [Official COLMAP Documentation](https://colmap.github.io/)
-
-## 🚀 Quick Links
-
-- **Backend**: https://p01--colmap-worker-gpu--xf7lzhrl47hj.code.run ([API Docs](https://p01--colmap-worker-gpu--xf7lzhrl47hj.code.run/docs))
-- **Frontend**: https://p01--colmap-frontend--xf7lzhrl47hj.code.run
-- **GitHub**: https://github.com/marco-interact/colmap-mvp
-
-## 📚 Documentation Hub
-
-| Document | Description |
-|----------|-------------|
-| **[STATUS_SUMMARY.md](STATUS_SUMMARY.md)** | 📋 Current status, roadmap & next steps |
-| **[API_REFERENCE.md](API_REFERENCE.md)** | 🔌 Complete API endpoint documentation |
-| **[DATABASE_SETUP.md](DATABASE_SETUP.md)** | 🗄️ Database schema, configuration & testing |
-| **[INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)** | 🔄 Full pipeline integration steps |
-| **[NORTHFLANK_REBUILD.md](NORTHFLANK_REBUILD.md)** | 🔧 How to deploy code changes |
-| **[DEPLOY_TO_NORTHFLANK.md](DEPLOY_TO_NORTHFLANK.md)** | 🚀 Initial deployment guide |
-
-## 🎯 Current Status (80% Complete)
-
-✅ Backend deployed with GPU (A100 40GB)  
-✅ Frontend deployed and online  
-✅ Database fully implemented  
-✅ COLMAP compiled and ready  
-⏳ Database endpoints awaiting deployment  
-⏳ Frontend → Backend integration pending  
-
-**Next Step**: Deploy database endpoints on Northflank (see [NORTHFLANK_REBUILD.md](NORTHFLANK_REBUILD.md))
-
-![Architecture](colmap-app-architecture.png)
-
-## 🚀 Features
-
-- **GPU-Accelerated Processing**: Utilizes NVIDIA CUDA for fast 3D reconstruction
-- **COLMAP Pipeline**: Industry-standard photogrammetry with Structure-from-Motion (SfM)
-- **Video-to-3D**: Upload videos and automatically extract frames for reconstruction
-- **Multiple Quality Levels**: Low, medium, and high-quality reconstruction options
-- **RESTful API**: FastAPI-based backend with comprehensive endpoints
-- **Cloud Storage**: Integrated Google Cloud Storage support
-- **Real-time Progress**: Track reconstruction progress with detailed stage information
-- **Auto-scaling**: Scales based on demand with rate limiting and job queueing
-
-## 🏗️ Architecture
-
-### Backend Stack
-- **Framework**: FastAPI (Python 3.11)
-- **3D Processing**: COLMAP 3.9.1 with GPU support
-- **Database**: SQLite for project/scan management
-- **Storage**: Google Cloud Storage integration
-- **Containerization**: Docker with NVIDIA CUDA support
-
-### Frontend Stack
-- **Framework**: Next.js 14 (TypeScript)
-- **3D Rendering**: Three.js with React Three Fiber
-- **UI Components**: Tailwind CSS + Radix UI
-- **State Management**: React Hooks
-
-## 📋 Prerequisites
-
-### For Development
-- Docker Desktop with GPU support (for local testing)
-- Python 3.11+
-- Node.js 18+ (for frontend)
-- NVIDIA GPU with CUDA 11.8+ support
-
-### For Northflank Deployment
-- Northflank account with GPU instance access
-- GitHub repository connected to Northflank
-- Google Cloud Storage bucket (optional, for file storage)
+A videogrammetry platform using COLMAP for 3D reconstruction from video files.
 
 ## 🚀 Quick Start
 
-### 1. Clone Repository
+### One-Command Startup
 
 ```bash
-git clone https://github.com/marco-interact/colmap-mvp.git
-cd colmap-mvp
+./start-local.sh
 ```
 
-### 2. Configure Environment
+Then open your browser to: **http://localhost:3000**
 
-Copy the example environment file:
+That's it! Everything runs through port 3000.
+
+### Login
+
+Use the demo account:
+- Email: `demo@colmap.app`
+
+## 🏗️ Architecture
+
+- **Frontend**: Next.js on port 3000 (User-facing)
+- **Backend**: FastAPI on port 8080 (Internal API, proxied through Next.js)
+- **Database**: SQLite (Local file storage)
+
+**You only need to remember: `http://localhost:3000`**
+
+The Next.js frontend automatically proxies all backend API calls internally.
+
+## 📦 Demo Data
+
+The app includes 2 pre-configured demo scans:
+1. **Dollhouse Scan** - Interior residential space
+2. **Fachada Scan** - Building facade
+
+## 🛑 Stop Services
 
 ```bash
-cp .env.example .env
+lsof -ti:8080 | xargs kill -9
+lsof -ti:3000 | xargs kill -9
 ```
-
-Edit `.env` with your configuration:
-
-```env
-PORT=8080
-COLMAP_CPU_ONLY=false
-STORAGE_BUCKET=your-bucket-name
-DATABASE_PATH=/app/data/colmap_app.db
-```
-
-### 3. Local Development with Docker
-
-Build and run the GPU-enabled worker:
-
-```bash
-# Build Docker image
-docker build -f Dockerfile.northflank -t colmap-worker-gpu .
-
-# Run with GPU support
-docker run --gpus all -p 8080:8080 \
-  -e PORT=8080 \
-  -e COLMAP_CPU_ONLY=false \
-  colmap-worker-gpu
-```
-
-### 4. Test the API
-
-```bash
-# Health check
-curl http://localhost:8080/health
-
-# Check GPU availability
-curl http://localhost:8080/ | jq .gpu_enabled
-```
-
-## 🌐 Northflank Deployment
-
-### Step 1: Connect GitHub Repository
-
-1. Go to Northflank dashboard
-2. Create new service → Deploy from Git
-3. Connect your GitHub account
-4. Select `marco-interact/colmap-mvp` repository
-
-### Step 2: Configure Build Settings
-
-- **Build Type**: Dockerfile
-- **Dockerfile Path**: `Dockerfile.northflank`
-- **Build Context**: `/`
-
-### Step 3: Configure Runtime Settings
-
-#### GPU Configuration
-- **Instance Type**: GPU Instance
-- **GPU Type**: NVIDIA T4 or A10G
-- **GPU Count**: 1
-
-#### Resources
-- **CPU**: 2-4 vCPUs
-- **Memory**: 4-8 GB RAM
-- **Storage**: 10 GB ephemeral
-
-#### Environment Variables
-Set these in Northflank console:
-
-```
-PORT=8080
-COLMAP_CPU_ONLY=false
-CUDA_VISIBLE_DEVICES=0
-NVIDIA_VISIBLE_DEVICES=all
-STORAGE_BUCKET=colmap-processing-bucket
-DATABASE_PATH=/app/data/colmap_app.db
-MAX_CONCURRENT_JOBS=4
-```
-
-### Step 4: Configure Networking
-
-- **Port**: 8080
-- **Protocol**: HTTP
-- **Health Check Path**: `/health`
-- **Health Check Interval**: 30s
-
-### Step 5: Deploy
-
-Click **Deploy** and monitor the build logs. First deployment may take 15-20 minutes due to COLMAP compilation.
-
-## 📡 API Endpoints
-
-### Health & Status
-
-```bash
-# Basic health check
-GET /health
-
-# Service information
-GET /
-
-# Readiness probe
-GET /readiness
-```
-
-### Video Processing
-
-```bash
-# Upload video for processing
-POST /upload-video
-Content-Type: multipart/form-data
-
-Fields:
-- video: video file (MP4, MOV, AVI)
-- project_id: project UUID
-- scan_name: name for the scan
-- quality: "low" | "medium" | "high"
-- user_email: user email address
-
-Response:
-{
-  "job_id": "uuid",
-  "scan_id": "uuid",
-  "status": "pending",
-  "message": "Video uploaded successfully"
-}
-```
-
-### Job Status
-
-```bash
-# Check processing status
-GET /jobs/{job_id}
-
-Response:
-{
-  "job_id": "uuid",
-  "status": "processing",
-  "progress": 60,
-  "current_stage": "Feature Matching",
-  "message": "Matching features between images...",
-  "results": null
-}
-```
-
-### Scan Details
-
-```bash
-# Get detailed scan information
-GET /scans/{scan_id}/details
-
-Response:
-{
-  "id": "scan_id",
-  "name": "My Scan",
-  "status": "completed",
-  "technical_details": {
-    "point_count": 45892,
-    "camera_count": 24,
-    "processing_time": "4.2 minutes"
-  },
-  "processing_stages": [...]
-}
-```
-
-### Project Management
-
-```bash
-# Create user
-POST /users?email=user@example.com&name=John Doe
-
-# Get user projects
-GET /users/{email}/projects
-
-# Create project
-POST /projects
-{
-  "user_email": "user@example.com",
-  "name": "My Project",
-  "description": "Project description",
-  "location": "Building A"
-}
-
-# Get project scans
-GET /projects/{project_id}/scans
-```
-
-## 🔧 COLMAP Pipeline Details
-
-### Processing Stages
-
-1. **Frame Extraction** (10-20s)
-   - Extracts key frames from video
-   - Adaptive sampling based on quality settings
-   - 30-100 frames depending on quality
-
-2. **Feature Detection** (30-60s with GPU)
-   - SIFT feature extraction
-   - GPU-accelerated when available
-   - ~8,000 features per frame
-
-3. **Feature Matching** (1-3 min with GPU)
-   - Exhaustive or sequential matching
-   - GPU-accelerated matching
-   - Establishes image correspondences
-
-4. **Sparse Reconstruction** (1-5 min)
-   - Structure-from-Motion (SfM)
-   - Camera pose estimation
-   - Sparse 3D point cloud generation
-
-5. **Dense Reconstruction** (2-10 min with GPU)
-   - Multi-view stereo (MVS)
-   - Dense point cloud generation
-   - Optional mesh generation
-
-### Quality Settings
-
-| Quality | Frames | Resolution | GPU Time | CPU Time |
-|---------|--------|------------|----------|----------|
-| Low     | 30     | 800px      | ~3 min   | ~15 min  |
-| Medium  | 50     | 1600px     | ~6 min   | ~30 min  |
-| High    | 100    | 2400px     | ~15 min  | ~60 min  |
-
-## 🐳 Docker Images
-
-### Production (GPU-enabled)
-- **Base**: `nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04`
-- **COLMAP**: v3.9.1 with CUDA support
-- **Size**: ~8 GB
-- **Build Time**: 15-20 minutes
-
-### Development (CPU-only)
-- **Base**: `python:3.11-slim`
-- **COLMAP**: CPU-only build
-- **Size**: ~2 GB
-- **Build Time**: 5-10 minutes
-
-## 📊 Performance Benchmarks
-
-### GPU (NVIDIA T4)
-- Frame Extraction: 0.8s
-- Feature Detection: 45s (50 frames)
-- Feature Matching: 1.2 min
-- Sparse Reconstruction: 1.8 min
-- Dense Reconstruction: 4-5 min
-- **Total**: ~8-10 minutes
-
-### CPU (4 cores)
-- Frame Extraction: 1.2s
-- Feature Detection: 180s (30 frames)
-- Feature Matching: 5 min
-- Sparse Reconstruction: 8 min
-- Dense Reconstruction: 15-20 min
-- **Total**: ~30-40 minutes
-
-## 🔒 Security Features
-
-- Non-root container execution
-- Rate limiting (20 requests/minute)
-- Job queueing with concurrency limits
-- Automatic cleanup of temporary files
-- Environment-based secrets management
-- CORS configuration
-- Health check endpoints
-
-## 🔍 Monitoring & Debugging
-
-### Health Check Response
-```json
-{
-  "status": "healthy",
-  "service": "colmap-worker",
-  "version": "1.0.0",
-  "gpu_status": true,
-  "active_gpu_jobs": 2,
-  "max_gpu_jobs": 4,
-  "memory_usage": "2458.3MB",
-  "timestamp": "2025-10-14T10:30:00"
-}
-```
-
-### Logs
-Monitor application logs in Northflank dashboard:
-
-```bash
-# Feature extraction
-{"timestamp": "2025-10-14 10:30:15", "level": "INFO", "message": "Running feature extraction"}
-
-# GPU detection
-{"timestamp": "2025-10-14 10:30:16", "level": "INFO", "message": "GPU detected: NVIDIA T4"}
-```
-
-### Common Issues
-
-**Issue**: GPU not detected
-- Check NVIDIA_VISIBLE_DEVICES environment variable
-- Verify GPU instance is properly configured
-- Check CUDA drivers in container logs
-
-**Issue**: Out of memory
-- Reduce MAX_CONCURRENT_JOBS
-- Lower quality settings for processing
-- Increase instance memory allocation
-
-**Issue**: Slow processing
-- Verify GPU is being used (check logs)
-- Check if COLMAP_CPU_ONLY is set to false
-- Monitor active_gpu_jobs count
 
 ## 📁 Project Structure
 
 ```
 colmap-mvp/
-├── main.py                     # FastAPI application
-├── database.py                 # SQLite database layer
-├── requirements.txt            # Python dependencies
-├── Dockerfile.northflank       # GPU-optimized Dockerfile
-├── northflank.json            # Northflank configuration
-├── .env.example               # Environment template
-├── README.md                  # This file
-├── src/                       # Frontend source
-│   ├── app/                  # Next.js app directory
-│   ├── components/           # React components
-│   ├── lib/                  # Utilities
-│   └── types/                # TypeScript types
-├── gcp-deployment/            # Google Cloud configs
-└── public/                    # Static assets
+├── src/                    # Next.js frontend
+│   ├── app/               # App routes and pages
+│   ├── components/        # React components
+│   └── lib/               # API client and utilities
+├── scripts/               # Utility scripts
+│   ├── test/             # Test scripts
+│   └── diagnostics/      # Diagnostic scripts
+├── docs/                  # Documentation (organized by date)
+│   ├── 2025-10-22/       # Latest session
+│   ├── 2025-10-21/       # Previous work
+│   └── logs/             # Historical logs
+├── main.py                # FastAPI backend
+├── database.py            # SQLite database
+├── demo-resources/        # Demo 3D models and thumbnails
+└── start-local.sh         # One-command startup script
 ```
 
-## 🛠️ Development
+## 🔧 Manual Setup (if needed)
 
-### Run Tests
+### Prerequisites
+- Python 3.13+
+- Node.js 18+
+- COLMAP (optional, for actual processing)
+
+### Install Dependencies
 
 ```bash
-# Test COLMAP installation
-docker run --gpus all colmap-worker-gpu colmap --version
+# Backend
+python3 -m venv venv-local
+source venv-local/bin/activate
+pip install -r requirements.txt
+
+# Frontend
+npm install
+```
+
+### Start Services Manually
+
+```bash
+# Terminal 1 - Backend
+source venv-local/bin/activate
+python3 main.py
+
+# Terminal 2 - Frontend
+npm run dev
+```
+
+## 📝 Features
+
+- ✅ Upload video files for 3D reconstruction
+- ✅ Real-time processing status
+- ✅ View completed 3D models
+- ✅ Project and scan management
+- ✅ Demo scans with pre-loaded 3D models
+
+## 🎯 Usage
+
+1. Open http://localhost:3000
+2. Login with demo@colmap.app
+3. View demo project with 2 completed scans
+4. Click any scan to view its 3D model
+5. Upload your own videos for processing
+
+## 💾 Data Storage
+
+- **Database**: `/tmp/colmap_app.db`
+- **Results**: `./data/results/`
+- **Uploads**: `./data/uploads/`
+- **Demo Resources**: `./demo-resources/`
+
+## 🧪 Development
+
+### View Logs
+```bash
+# Backend logs
+tail -f backend.log
+
+# Frontend logs
+tail -f frontend.log
+```
+
+### Testing
+```bash
+# Test COLMAP pipeline
+./scripts/test/test-colmap-simple.sh
 
 # Test database
-python -c "from database import db; print(db.get_connection())"
+./scripts/test/test-database.sh
 
-# Test API locally
-pip install -r requirements.txt
-python main.py
+# Run diagnostics
+./scripts/diagnostics/diagnose-colmap.sh
 ```
 
-### Frontend Development
-
+### Reset Demo Data
 ```bash
-cd colmap-mvp
-npm install
-npm run dev
-# Open http://localhost:3000
+curl -X POST http://localhost:3000/api/backend/database/setup-demo
 ```
 
-## 🤝 Contributing
+### Documentation
+All documentation is organized in `docs/` by date:
+- **Latest:** `docs/2025-10-22/SESSION_SUMMARY.md`
+- **Full index:** `docs/README.md`
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## 🐛 Troubleshooting
 
-## 📝 License
+**Backend won't start?**
+```bash
+# Check if port is in use
+lsof -ti:8080
 
-This project is licensed under the MIT License.
+# View logs
+cat backend.log
+```
 
-## 📞 Support
+**Frontend won't start?**
+```bash
+# Check if port is in use
+lsof -ti:3000
 
-- **Issues**: [GitHub Issues](https://github.com/marco-interact/colmap-mvp/issues)
-- **Documentation**: [Northflank Docs](https://northflank.com/docs)
-- **COLMAP**: [COLMAP Documentation](https://colmap.github.io/)
+# View logs
+cat frontend.log
+```
 
-## 🙏 Acknowledgments
+**Can't see demo scans?**
+```bash
+# Reinitialize demo data
+curl -X POST http://localhost:3000/api/backend/database/setup-demo
+```
 
-- [COLMAP](https://colmap.github.io/) - 3D reconstruction software
-- [FastAPI](https://fastapi.tiangolo.com/) - Modern web framework
-- [Next.js](https://nextjs.org/) - React framework
-- [Three.js](https://threejs.org/) - 3D graphics library
-- [Northflank](https://northflank.com/) - Cloud deployment platform
+## 📄 License
 
----
-
-**Made with ❤️ for 3D reconstruction**
+MIT License

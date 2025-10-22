@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
-  
   // Skip type checking and linting during build (for faster builds)
   typescript: {
     ignoreBuildErrors: true,
@@ -10,23 +8,16 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/client']
-  },
-  // Optimize static assets and fonts
-  assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
-  generateEtags: false,
-  poweredByHeader: false,
-  images: {
-    remotePatterns: [
+  // Proxy backend API calls through Next.js on port 3000
+  async rewrites() {
+    return [
       {
-        protocol: 'https',
-        hostname: '*.supabase.co',
-        port: '',
-        pathname: '/storage/v1/object/public/**',
+        source: '/api/backend/:path*',
+        destination: 'http://localhost:8000/:path*',
       },
-    ],
+    ]
   },
+  
   // Enable webpack 5 polyfills for Node.js modules
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -39,19 +30,11 @@ const nextConfig = {
     }
     return config;
   },
-  // Environment variables for build
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
-  },
-  // Northflank optimization
-  trailingSlash: false,
+  
+  // Optimization settings
   compress: true,
-  generateBuildId: async () => {
-    return 'build-' + Date.now()
-  },
-  // Ensure proper HTML standards mode
   poweredByHeader: false,
-  generateEtags: false
+  generateEtags: false,
 };
 
 module.exports = nextConfig;

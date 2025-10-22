@@ -74,6 +74,7 @@ class Database:
                     video_size INTEGER,
                     video_duration REAL,
                     processing_quality TEXT DEFAULT 'medium',
+                    thumbnail_path TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (project_id) REFERENCES projects (id)
@@ -246,15 +247,39 @@ class Database:
         finally:
             conn.close()
     
-    def update_scan_status(self, scan_id: str, status: str):
-        """Update scan status"""
+    def update_scan_status(self, scan_id: str, status: str, thumbnail_path: str = None):
+        """Update scan status and optionally thumbnail path"""
         conn = self.get_connection()
         try:
-            conn.execute(
-                'UPDATE scans SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                (status, scan_id)
-            )
+            if thumbnail_path:
+                conn.execute(
+                    'UPDATE scans SET status = ?, thumbnail_path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                    (status, thumbnail_path, scan_id)
+                )
+            else:
+                conn.execute(
+                    'UPDATE scans SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                    (status, scan_id)
+                )
             conn.commit()
+        finally:
+            conn.close()
+    
+    def delete_scan(self, scan_id: str):
+        """Delete a scan and its technical details"""
+        conn = self.get_connection()
+        try:
+            # Delete technical details first (foreign key constraint)
+            conn.execute('DELETE FROM scan_technical_details WHERE scan_id = ?', (scan_id,))
+            
+            # Delete processing jobs
+            conn.execute('DELETE FROM processing_jobs WHERE scan_id = ?', (scan_id,))
+            
+            # Delete the scan
+            conn.execute('DELETE FROM scans WHERE id = ?', (scan_id,))
+            
+            conn.commit()
+            logger.info(f"Deleted scan and related data: {scan_id}")
         finally:
             conn.close()
     
@@ -334,6 +359,258 @@ class Database:
                 data['results'] = json.loads(data['results'])
             
             return data
+        finally:
+            conn.close()
+    
+    def get_all_jobs(self) -> Dict:
+        """Get all processing jobs"""
+        conn = self.get_connection()
+        try:
+            rows = conn.execute('SELECT * FROM processing_jobs ORDER BY started_at DESC').fetchall()
+            jobs = {}
+            for row in rows:
+                job_data = dict(row)
+                jobs[job_data['job_id']] = {
+                    'job_id': job_data['job_id'],
+                    'scan_id': job_data['scan_id'],
+                    'status': job_data['status'],
+                    'progress': job_data['progress'],
+                    'current_stage': job_data['current_stage'],
+                    'message': job_data['message'],
+                    'created_at': job_data['started_at']
+                }
+            return jobs
+        finally:
+            conn.close()
+    
+    def update_job_status(self, job_id: str, status: str, job_data: Dict = None):
+        """Update or create job status"""
+        conn = self.get_connection()
+        try:
+            # Check if job exists
+            existing = conn.execute('SELECT job_id FROM processing_jobs WHERE job_id = ?', (job_id,)).fetchone()
+            
+            if existing:
+                # Update existing job
+                conn.execute('''
+                    UPDATE processing_jobs 
+                    SET status = ?, progress = ?, current_stage = ?, message = ?
+                    WHERE job_id = ?
+                ''', (
+                    status, 
+                    job_data.get('progress', 0) if job_data else 0,
+                    job_data.get('current_stage', 'Unknown') if job_data else 'Unknown',
+                    job_data.get('message', '') if job_data else '',
+                    job_id
+                ))
+            else:
+                # Insert new job
+                conn.execute('''
+                    INSERT INTO processing_jobs 
+                    (job_id, scan_id, status, progress, current_stage, message)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    job_id,
+                    job_data.get('scan_id', '') if job_data else '',
+                    status,
+                    job_data.get('progress', 0) if job_data else 0,
+                    job_data.get('current_stage', 'Unknown') if job_data else 'Unknown',
+                    job_data.get('message', '') if job_data else ''
+                ))
+            
+            conn.commit()
+        finally:
+            conn.close()
+    
+    def get_all_projects(self) -> List[Dict]:
+        """Get all projects"""
+        conn = self.get_connection()
+        try:
+            rows = conn.execute('''
+                SELECT p.*, COUNT(s.id) as scan_count
+                FROM projects p
+                LEFT JOIN scans s ON p.id = s.project_id
+                GROUP BY p.id
+                ORDER BY p.updated_at DESC
+            ''').fetchall()
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
+    
+    def get_project_by_id(self, project_id: str) -> Optional[Dict]:
+        """Get a project by ID with scan count"""
+        conn = self.get_connection()
+        try:
+            row = conn.execute('''
+                SELECT p.*, COUNT(s.id) as scan_count
+                FROM projects p
+                LEFT JOIN scans s ON p.id = s.project_id
+                WHERE p.id = ?
+                GROUP BY p.id
+            ''', (project_id,)).fetchone()
+            return dict(row) if row else None
+        finally:
+            conn.close()
+    
+    def setup_demo_data(self) -> Dict:
+        """Setup demo data with completed scans"""
+        try:
+            # Create demo user
+            demo_email = "demo@colmap.app"
+            user = self.get_user_by_email(demo_email)
+            
+            if not user:
+                user_id = self.create_user(demo_email, "Demo User")
+            else:
+                user_id = user['id']
+            
+            # Check if demo project already exists
+            conn = self.get_connection()
+            try:
+                existing_project = conn.execute(
+                    'SELECT id FROM projects WHERE user_id = ? AND name = ?',
+                    (user_id, "Demo Showcase Project")
+                ).fetchone()
+                
+                if existing_project:
+                    logger.info("Demo data already exists, skipping setup")
+                    # Get scan IDs for existing project
+                    scan_rows = conn.execute(
+                        'SELECT id FROM scans WHERE project_id = ?',
+                        (existing_project['id'],)
+                    ).fetchall()
+                    scan_ids = [row['id'] for row in scan_rows]
+                    
+                    return {
+                        "status": "success",
+                        "message": "Demo data already exists",
+                        "user_id": user_id,
+                        "project_id": existing_project['id'],
+                        "scan_ids": scan_ids,
+                        "skipped": True
+                    }
+            finally:
+                conn.close()
+            
+            # Create demo project
+            project_id = self.create_project(
+                user_id=user_id,
+                name="Demo Showcase Project",
+                description="Sample 3D reconstructions demonstrating COLMAP capabilities",
+                location="Demo Location",
+                space_type="indoor",
+                project_type="architecture"
+            )
+            
+            # Demo scan configurations
+            demo_scans = [
+                {
+                    "name": "Dollhouse Interior Scan",
+                    "video_filename": "dollhouse-interior.mp4",
+                    "video_size": 18432000,  # ~18MB
+                    "ply_file": "demoscan-dollhouse/fvtc_firstfloor_processed.ply",
+                    "glb_file": "demoscan-dollhouse/single_family_home_-_first_floor.glb",
+                    "thumbnail": "thumbnails/demoscan-dollhouse-thumb.jpg",
+                    "point_count": 1045892,
+                    "camera_count": 48
+                },
+                {
+                    "name": "Facade Architecture Scan",
+                    "video_filename": "facade-exterior.mp4",
+                    "video_size": 24576000,  # ~24MB
+                    "ply_file": "demoscan-fachada/1mill.ply",
+                    "glb_file": "demoscan-fachada/aleppo_destroyed_building_front.glb",
+                    "thumbnail": "thumbnails/demoscan-fachada-thumb.jpg",
+                    "point_count": 892847,
+                    "camera_count": 36
+                }
+            ]
+            
+            scan_ids = []
+            for scan_config in demo_scans:
+                # Create scan
+                scan_id = self.create_scan(
+                    project_id=project_id,
+                    name=scan_config["name"],
+                    video_filename=scan_config["video_filename"],
+                    video_size=scan_config["video_size"],
+                    processing_quality="high"
+                )
+                
+                # Save technical details
+                self.save_scan_technical_details(scan_id, {
+                    "point_count": scan_config["point_count"],
+                    "camera_count": scan_config["camera_count"],
+                    "feature_count": scan_config["point_count"] * 8,
+                    "processing_time_seconds": 245.6,
+                    "resolution": "1920x1080",
+                    "file_size_bytes": scan_config["video_size"],
+                    "reconstruction_error": 0.38,
+                    "coverage_percentage": 96.4,
+                    "processing_stages": [
+                        {"name": "Frame Extraction", "status": "completed", "duration": "1.2s", "frames_extracted": scan_config["camera_count"]},
+                        {"name": "Feature Detection", "status": "completed", "duration": "58.4s", "features_detected": scan_config["point_count"] * 8},
+                        {"name": "Feature Matching", "status": "completed", "duration": "1.5m", "matches": scan_config["point_count"] * 3},
+                        {"name": "Sparse Reconstruction", "status": "completed", "duration": "2.1m", "points": scan_config["point_count"]},
+                        {"name": "Dense Reconstruction", "status": "completed", "duration": "0.6m", "points": scan_config["point_count"] * 3}
+                    ],
+                    "results": {
+                        "point_cloud_url": f"/demo-resources/{scan_config['ply_file']}",
+                        "mesh_url": f"/demo-resources/{scan_config['glb_file']}",
+                        "thumbnail_url": f"/demo-resources/{scan_config['thumbnail']}"
+                    }
+                })
+                
+                scan_ids.append(scan_id)
+            
+            logger.info("✅ Demo data setup completed")
+            return {
+                "status": "success",
+                "message": "Demo data setup completed",
+                "user_id": user_id,
+                "project_id": project_id,
+                "scan_ids": scan_ids
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to setup demo data: {e}")
+            raise
+    
+    def cleanup_duplicate_demos(self) -> Dict:
+        """Remove duplicate demo projects, keeping only the most recent one"""
+        conn = self.get_connection()
+        try:
+            # Find all demo projects
+            demo_projects = conn.execute('''
+                SELECT p.id, p.created_at 
+                FROM projects p
+                JOIN users u ON p.user_id = u.id
+                WHERE u.email = 'demo@colmap.app' AND p.name = 'Demo Showcase Project'
+                ORDER BY p.created_at DESC
+            ''').fetchall()
+            
+            if len(demo_projects) <= 1:
+                return {"status": "success", "message": "No duplicates to clean", "deleted": 0}
+            
+            # Keep the most recent, delete the rest
+            keep_project_id = demo_projects[0]['id']
+            delete_ids = [proj['id'] for proj in demo_projects[1:]]
+            
+            # Delete scans for duplicate projects
+            for proj_id in delete_ids:
+                conn.execute('DELETE FROM scan_technical_details WHERE scan_id IN (SELECT id FROM scans WHERE project_id = ?)', (proj_id,))
+                conn.execute('DELETE FROM scans WHERE project_id = ?', (proj_id,))
+                conn.execute('DELETE FROM projects WHERE id = ?', (proj_id,))
+            
+            conn.commit()
+            
+            logger.info(f"Cleaned up {len(delete_ids)} duplicate demo projects")
+            return {
+                "status": "success",
+                "message": f"Removed {len(delete_ids)} duplicate projects",
+                "deleted": len(delete_ids),
+                "kept_project_id": keep_project_id
+            }
         finally:
             conn.close()
 

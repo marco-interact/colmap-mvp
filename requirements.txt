@@ -1,8 +1,23 @@
-fastapi==0.117.1
-uvicorn[standard]==0.37.0
-pydantic==2.11.9
-python-multipart==0.0.20
-psutil==5.9.8
-opencv-python==4.8.1.78
-numpy==1.24.3
-Pillow==10.0.1
+# COLMAP MVP Backend - Python Dependencies
+# Optimized for Northflank deployment
+
+# Web Framework
+fastapi==0.115.4
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12
+
+# Database
+aiosqlite==0.20.0
+
+# Computer Vision & 3D Processing
+opencv-python==4.10.0.84
+numpy==1.26.4
+
+# Utilities
+python-dotenv==1.0.1
+pydantic==2.9.2
+pydantic-settings==2.6.0
+
+# Optional: Monitoring (for production)
+# psutil==6.1.0
+

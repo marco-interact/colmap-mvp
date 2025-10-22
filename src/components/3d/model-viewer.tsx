@@ -2,18 +2,16 @@
 
 import { useRef, useEffect, useState, useCallback } from "react"
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
-import { OrbitControls, Environment, useGLTF, Html, Text } from "@react-three/drei"
+import { OrbitControls, Environment, Html, useGLTF } from "@react-three/drei"
 import { PLYLoader } from "three-stdlib"
 import { 
   Maximize2, 
   Minimize2, 
   RotateCcw, 
-  Download, 
-  Settings,
+  Download,
   Eye,
   EyeOff,
   Ruler,
-  Volume,
   Square
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -40,33 +38,46 @@ function PLYModel({ url }: { url: string }) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!url) return
+    if (!url) {
+      setLoading(false)
+      return
+    }
 
     setLoading(true)
     setError(null)
 
-    const loader = new PLYLoader()
-    loader.load(
-      url,
-      (geometry) => {
-        geometry.computeVertexNormals()
-        setGeometry(geometry)
-        setLoading(false)
-        console.log('✅ PLY file loaded successfully:', {
-          vertices: geometry.attributes.position?.count,
-          hasColors: !!geometry.attributes.color
-        })
-      },
-      (progress) => {
-        const percent = (progress.loaded / progress.total) * 100
-        console.log(`Loading PLY: ${percent.toFixed(1)}%`)
-      },
-      (error) => {
-        console.error('❌ Error loading PLY file:', error)
-        setError('Failed to load 3D model')
-        setLoading(false)
-      }
-    )
+    try {
+      const loader = new PLYLoader()
+      loader.load(
+        url,
+        (geometry) => {
+          if (geometry) {
+            geometry.computeVertexNormals()
+            setGeometry(geometry)
+            console.log('✅ PLY file loaded successfully:', {
+              vertices: geometry.attributes.position?.count,
+              hasColors: !!geometry.attributes.color
+            })
+          }
+          setLoading(false)
+        },
+        (progress) => {
+          if (progress.total > 0) {
+            const percent = (progress.loaded / progress.total) * 100
+            console.log(`Loading PLY: ${percent.toFixed(1)}%`)
+          }
+        },
+        (error) => {
+          console.error('❌ Error loading PLY file:', error)
+          setError('Failed to load 3D model')
+          setLoading(false)
+        }
+      )
+    } catch (err) {
+      console.error('❌ Error initializing PLY loader:', err)
+      setError('Failed to initialize 3D model loader')
+      setLoading(false)
+    }
   }, [url])
 
   if (loading) {
@@ -349,7 +360,7 @@ function MeasurementTool({
 }
 
 export function ModelViewer({ 
-  modelUrl = "/models/sample.ply",
+  modelUrl,
   pointCloudUrl,
   className = "",
   showControls = true,
@@ -361,11 +372,11 @@ export function ModelViewer({
   const [measurementPoints, setMeasurementPoints] = useState<MeasurementPoint[]>([])
   const [resetCamera, setResetCamera] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Generate demo point cloud data
+  // Generate demo point cloud data for testing
   const demoPointCloud = new Float32Array(30000)
   for (let i = 0; i < 10000; i++) {
     demoPointCloud[i * 3] = (Math.random() - 0.5) * 10
@@ -416,14 +427,7 @@ export function ModelViewer({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
 
-  useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setLoading(false)
-    }, 1500)
-    
-    return () => clearTimeout(timer)
-  }, [])
+  // No artificial loading delay
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
@@ -448,13 +452,15 @@ export function ModelViewer({
       <Canvas
         camera={{ position: [5, 5, 5], fov: 75 }}
         className="bg-gray-950"
+        gl={{ antialias: false, powerPreference: "low-power" }}
+        dpr={[1, 1.5]}
       >
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} />
         <directionalLight position={[-10, -10, -10]} intensity={0.5} />
         
         {/* Environment for better reflections */}
-        <Environment preset="studio" />
+        <Environment preset="city" />
         
         {/* Load real PLY model if URL provided, otherwise show demo cube */}
         {pointCloudUrl ? (
@@ -475,7 +481,7 @@ export function ModelViewer({
             </mesh>
             
             {/* Point cloud */}
-            <PointCloud points={demoPointCloud} visible={showPointCloud} />
+            {showPointCloud && <PointCloud points={demoPointCloud} visible={true} />}
           </>
         )}
         

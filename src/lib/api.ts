@@ -50,31 +50,14 @@ export interface ProcessingJob {
   }
 }
 
-// Get the COLMAP worker URL from environment or use default
+// Get the COLMAP worker URL - always use Next.js proxy at /api/backend
 const getWorkerUrl = () => {
-  // Use environment variable if set, otherwise use the deployed backend URL
-  let url = process.env.NEXT_PUBLIC_API_URL || 'https://p01--colmap-worker-gpu--xf7lzhrl47hj.code.run'
-  
-  // FORCE HTTPS (fix mixed content errors)
-  if (url && url.startsWith('http://')) {
-    url = url.replace('http://', 'https://')
-    console.warn('⚠️ Forced HTTP → HTTPS for security')
-  }
-  
-  console.log('🔍 Worker URL Configuration:', { 
-    url, 
-    originalEnv: process.env.NEXT_PUBLIC_API_URL,
-    env: process.env.NODE_ENV,
-    isClient: typeof window !== 'undefined',
+  // Use Next.js API proxy - all requests go through port 3000
+  const url = '/api/backend'
+  console.log('🔍 Using Next.js API proxy:', { 
+    url,
     timestamp: new Date().toISOString()
   })
-  
-  if (!url) {
-    console.warn('❌ Backend URL not configured, using demo mode')
-    return null
-  }
-  
-  console.log('✅ Worker URL configured:', url)
   return url
 }
 
@@ -138,6 +121,54 @@ class APIClient {
         stack: error.stack
       })
       throw new Error(`Network error: ${error.message}`)
+    }
+  }
+
+  // Get all projects
+  async getAllProjects(): Promise<{ projects: any[] }> {
+    if (!this.baseUrl) {
+      return { projects: [] }
+    }
+
+    try {
+      const response = await this.request<{ projects: any[] }>(`/projects`)
+      return response
+    } catch (error) {
+      console.error('Error fetching all projects:', error)
+      return { projects: [] }
+    }
+  }
+
+  // Get project by ID
+  async getProject(projectId: string): Promise<any> {
+    if (!this.baseUrl) {
+      return null
+    }
+
+    try {
+      const response = await this.request<any>(`/projects/${projectId}`)
+      return response
+    } catch (error) {
+      console.error('Error fetching project:', error)
+      return null
+    }
+  }
+
+  // Get scans for a project
+  async getScans(projectId: string): Promise<{ scans: any[] }> {
+    if (!this.baseUrl) {
+      return { scans: [] }
+    }
+
+    try {
+      const response = await this.request<any>(`/projects/${projectId}/scans`)
+      // Backend returns array directly, wrap it in object
+      const scans = Array.isArray(response) ? response : (response.scans || [])
+      console.log(`📊 Loaded ${scans.length} scans for project ${projectId}`)
+      return { scans }
+    } catch (error) {
+      console.error('Error fetching scans:', error)
+      return { scans: [] }
     }
   }
 
@@ -457,12 +488,11 @@ class APIClient {
 // Export singleton instance
 export const apiClient = new APIClient()
 
-// Local storage helpers for demo mode
+// Local storage helpers - no demo data
 export const localStorage = {
   getProjects: (): Project[] => {
-    if (typeof window === 'undefined') return []
-    const stored = window.localStorage.getItem('videogrammetry_projects')
-    return stored ? JSON.parse(stored) : []
+    // Return empty array - no demo projects
+    return []
   },
 
   saveProjects: (projects: Project[]) => {
@@ -471,9 +501,8 @@ export const localStorage = {
   },
 
   getScans: (): Scan[] => {
-    if (typeof window === 'undefined') return []
-    const stored = window.localStorage.getItem('videogrammetry_scans')
-    return stored ? JSON.parse(stored) : []
+    // Return empty array - no demo scans
+    return []
   },
 
   saveScans: (scans: Scan[]) => {
