@@ -15,7 +15,7 @@ numpy==1.26.4
 
 # Utilities
 python-dotenv==1.0.1
-pydantic==2.9.2
+pydantic==2.12.3
 pydantic-settings==2.6.0
 
 # Optional: Monitoring (for production)
