@@ -53,20 +53,12 @@ README.md
 scripts/
 *.sh
 
-# Config files not needed in container
+# Config files not needed in backend container
 .env
 .env.local
-*.config.js
-tsconfig.json
-
-# Frontend files (separate container)
-src/
-public/
-package.json
-package-lock.json
-next-env.d.ts
-tailwind.config.ts
-postcss.config.js
 
 # Fonts
 JetBrains_Mono/
+
+# Note: Frontend files (src/, public/, package.json) are NOT excluded
+# They are needed for frontend Dockerfile builds
