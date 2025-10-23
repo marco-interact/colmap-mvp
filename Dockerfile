@@ -1,93 +1,52 @@
-# Dockerfile for COLMAP MVP - GPU-Optimized Backend
-# Optimized for Northflank deployment with NVIDIA A100 GPU acceleration
-# Specs: A100 40GB VRAM, 12 vCPU, 85GB RAM
+# Lightweight COLMAP Backend with Pre-built Binaries
+# Optimized for Northflank deployment (avoids build I/O errors)
 
-FROM nvidia/cuda:12.2.0-devel-ubuntu22.04
-
-# Prevent interactive prompts during build
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONUNBUFFERED=1
-
-# GPU Configuration
-ENV CUDA_VISIBLE_DEVICES=0
-ENV NVIDIA_VISIBLE_DEVICES=all
-ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
-
-# Install system dependencies in VERY small chunks to avoid Northflank I/O errors
-RUN apt-get update
-
-RUN apt-get install -y build-essential cmake
-
-RUN apt-get install -y git wget curl ca-certificates && rm -rf /var/lib/apt/lists/*
-
-# COLMAP boost (split into micro-chunks)
-RUN apt-get update
-RUN apt-get install -y libboost-program-options-dev libboost-filesystem-dev
-RUN apt-get install -y libboost-graph-dev libboost-system-dev libboost-test-dev libeigen3-dev
-RUN rm -rf /var/lib/apt/lists/*
-
-# COLMAP libs
-RUN apt-get update
-RUN apt-get install -y libflann-dev libfreeimage-dev libmetis-dev
-RUN apt-get install -y libgoogle-glog-dev libgflags-dev libsqlite3-dev
-RUN rm -rf /var/lib/apt/lists/*
-
-# Graphics
-RUN apt-get update
-RUN apt-get install -y libglew-dev qtbase5-dev
-RUN apt-get install -y libqt5opengl5-dev libcgal-dev libceres-dev
-RUN rm -rf /var/lib/apt/lists/*
-
-# Python & media
-RUN apt-get update
-RUN apt-get install -y python3.10 python3-pip python3.10-venv
-RUN apt-get install -y libopencv-dev python3-opencv ffmpeg
-RUN rm -rf /var/lib/apt/lists/*
-
-# Install COLMAP from source (GPU-optimized build for A100)
-WORKDIR /tmp
-RUN git clone https://github.com/colmap/colmap.git && \
-    cd colmap && \
-    git checkout 3.12.6 && \
-    mkdir build && \
-    cd build && \
-    cmake .. -DCMAKE_BUILD_TYPE=Release \
-             -DCUDA_ENABLED=ON \
-             -DCUDA_ARCHS="80" \
-             -DGUI_ENABLED=OFF \
-             -DCMAKE_CUDA_ARCHITECTURES=80 && \
-    make -j12 && \
-    make install && \
-    cd /tmp && \
-    rm -rf colmap
-
-# Verify COLMAP installation
-RUN colmap help
+FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
 
 # Set working directory
 WORKDIR /app
 
-# Copy Python requirements
-COPY requirements.txt .
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+# Install system dependencies (smaller, faster than building from source)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3-pip \
+    python3-dev \
+    colmap \
+    libopencv-dev \
+    python3-opencv \
+    ffmpeg \
+    sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
+COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY main.py .
 COPY database.py .
 
-# Create necessary directories
-RUN mkdir -p /app/data/results /app/data/uploads /app/data/cache
+# Copy demo resources (baked into image)
+COPY demo-resources/ /app/demo-resources/
 
-# Expose port (Northflank will map this)
-EXPOSE 8000
+# Create data directories (will be overridden by persistent volume)
+RUN mkdir -p /app/data/results /app/data/cache /app/data/uploads
+
+# GPU environment variables
+ENV CUDA_VISIBLE_DEVICES=0
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:8000/health || exit 1
+    CMD python3 -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
 
-# Run the application
-CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# Expose port
+EXPOSE 8000
 
-
+# Run application
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
