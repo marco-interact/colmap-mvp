@@ -65,7 +65,7 @@ RUN git clone https://github.com/colmap/colmap.git && \
     rm -rf colmap
 
 # Verify COLMAP installation
-RUN colmap --version
+RUN colmap help
 
 # Set working directory
 WORKDIR /app
