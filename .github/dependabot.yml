@@ -1,0 +1,50 @@
+# Dependabot configuration for automated dependency updates
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "marco-interact"
+    assignees:
+      - "marco-interact"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Node.js dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "marco-interact"
+    assignees:
+      - "marco-interact"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "marco-interact"
+    assignees:
+      - "marco-interact"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
