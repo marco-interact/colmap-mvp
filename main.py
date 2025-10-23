@@ -441,12 +441,24 @@ class COLMAPProcessor:
             return False
         
         # Step 2: Dense stereo matching (requires GPU/CUDA)
+        # Based on: https://colmap.github.io/tutorial.html#dense-reconstruction
         logger.info("Step 2/3: Computing depth maps (requires GPU)...")
         cmd_stereo = [
             "colmap", "patch_match_stereo",
             "--workspace_path", str(self.dense_dir),
             "--workspace_format", "COLMAP",
-            "--PatchMatchStereo.geom_consistency", "1"
+            # Geometric consistency for better quality
+            "--PatchMatchStereo.geom_consistency", "1",
+            # A100-optimized parameters
+            "--PatchMatchStereo.gpu_index", "0",
+            "--PatchMatchStereo.window_radius", "7",  # Larger window for better quality
+            "--PatchMatchStereo.window_step", "2",    # More efficient sampling
+            "--PatchMatchStereo.num_samples", "15",   # More samples for accuracy
+            "--PatchMatchStereo.num_iterations", "7",  # More iterations for convergence
+            "--PatchMatchStereo.sigma_spatial", "3.0",
+            "--PatchMatchStereo.sigma_color", "0.3",
+            # Cache size optimized for A100 (40GB VRAM)
+            "--PatchMatchStereo.cache_size", "32"  # 32GB cache (leave room for compute)
         ]
         
         try:
@@ -459,13 +471,21 @@ class COLMAPProcessor:
             return False
         
         # Step 3: Stereo fusion
+        # Fuses multiple depth/normal maps into a single point cloud
         logger.info("Step 3/3: Fusing depth maps into dense point cloud...")
         cmd_fusion = [
             "colmap", "stereo_fusion",
             "--workspace_path", str(self.dense_dir),
             "--workspace_format", "COLMAP",
-            "--input_type", "geometric",
-            "--output_path", str(self.dense_dir / "fused.ply")
+            "--input_type", "geometric",  # Use geometric consistency
+            "--output_path", str(self.dense_dir / "fused.ply"),
+            # Fusion quality parameters
+            "--StereoFusion.max_reproj_error", "2.0",  # Stricter than default (2.0)
+            "--StereoFusion.max_depth_error", "0.01",   # 1% depth error tolerance
+            "--StereoFusion.max_normal_error", "10",    # 10 degrees normal deviation
+            "--StereoFusion.min_num_pixels", "5",       # Minimum views per point
+            "--StereoFusion.check_num_images", "50",    # Check up to 50 images
+            "--StereoFusion.use_cache", "1"             # Enable caching
         ]
         
         try:
@@ -1751,6 +1771,94 @@ async def get_reconstruction_database_info(job_id: str):
         
     except Exception as e:
         logger.error(f"Error getting database info: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/reconstruction/{job_id}/export/text")
+async def export_model_text(job_id: str):
+    """Export reconstruction model to human-readable text format
+    
+    Exports cameras.txt, images.txt, points3D.txt for inspection and debugging.
+    Based on COLMAP importing/exporting: https://colmap.github.io/tutorial.html#importing-and-exporting
+    """
+    try:
+        # Find reconstruction work directory
+        work_dir = None
+        for scan_dir in STORAGE_DIR.glob("*"):
+            if scan_dir.name == job_id and scan_dir.is_dir():
+                work_dir = scan_dir
+                break
+        
+        if not work_dir:
+            raise HTTPException(status_code=404, detail="Reconstruction not found")
+        
+        # Create processor to access export methods
+        processor = COLMAPProcessor(str(work_dir))
+        
+        # Export to text format
+        output_dir = work_dir / "model_text"
+        if not processor.export_model_to_text(output_dir):
+            raise HTTPException(status_code=500, detail="Failed to export model to text format")
+        
+        # List exported files
+        exported_files = []
+        for f in output_dir.glob("*"):
+            if f.is_file():
+                exported_files.append({
+                    "name": f.name,
+                    "size": f.stat().st_size,
+                    "path": f"results/{job_id}/model_text/{f.name}"
+                })
+        
+        return {
+            "success": True,
+            "message": "Model exported to text format",
+            "output_directory": str(output_dir.relative_to(work_dir)),
+            "files": exported_files
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error exporting model to text: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/reconstruction/{job_id}/verification/stats")
+async def get_verification_stats(job_id: str):
+    """Get detailed geometric verification statistics
+    
+    Provides inlier ratios, verification rates, and match quality metrics.
+    Based on COLMAP geometric verification: https://colmap.github.io/tutorial.html#feature-matching-and-geometric-verification
+    """
+    try:
+        # Find work directory
+        work_dir = STORAGE_DIR / job_id
+        if not work_dir.exists():
+            raise HTTPException(status_code=404, detail="Reconstruction not found")
+        
+        processor = COLMAPProcessor(str(work_dir))
+        
+        # Get comprehensive database info including verification stats
+        db_info = processor.get_database_info()
+        if not db_info:
+            raise HTTPException(status_code=404, detail="Database information not available")
+        
+        return {
+            "job_id": job_id,
+            "verification": db_info.get("verification", {}),
+            "features": db_info.get("features", {}),
+            "matches": db_info.get("matches", {}),
+            "quality_metrics": {
+                "avg_inlier_ratio": db_info["verification"]["avg_inlier_ratio"],
+                "verification_rate": db_info["verification"]["verification_rate"],
+                "avg_features_per_image": db_info["features"]["avg_per_image"],
+                "avg_matches_per_pair": db_info["matches"]["avg_per_pair"]
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting verification stats: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/results/{job_id}/{filename:path}")
