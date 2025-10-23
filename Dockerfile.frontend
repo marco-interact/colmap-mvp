@@ -25,6 +25,6 @@ RUN npm run build
 # Expose port
 EXPOSE 3000
 
-# Start Next.js
-CMD ["npm", "start"]
+# Start Next.js - use node directly for compatibility
+CMD ["node_modules/.bin/next", "start", "-p", "3000"]
 

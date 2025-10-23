@@ -13,55 +13,36 @@ ENV CUDA_VISIBLE_DEVICES=0
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
-# Install system dependencies in smaller chunks to avoid I/O errors
-# Build essentials first
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
-    git \
-    wget \
-    curl \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+# Install system dependencies in VERY small chunks to avoid Northflank I/O errors
+RUN apt-get update
 
-# COLMAP core dependencies
-RUN apt-get update && apt-get install -y \
-    libboost-program-options-dev \
-    libboost-filesystem-dev \
-    libboost-graph-dev \
-    libboost-system-dev \
-    libboost-test-dev \
-    libeigen3-dev \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get install -y build-essential cmake
 
-# COLMAP additional libraries
-RUN apt-get update && apt-get install -y \
-    libflann-dev \
-    libfreeimage-dev \
-    libmetis-dev \
-    libgoogle-glog-dev \
-    libgflags-dev \
-    libsqlite3-dev \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get install -y git wget curl ca-certificates && rm -rf /var/lib/apt/lists/*
 
-# Graphics and Qt dependencies
-RUN apt-get update && apt-get install -y \
-    libglew-dev \
-    qtbase5-dev \
-    libqt5opengl5-dev \
-    libcgal-dev \
-    libceres-dev \
-    && rm -rf /var/lib/apt/lists/*
+# COLMAP boost (split into micro-chunks)
+RUN apt-get update
+RUN apt-get install -y libboost-program-options-dev libboost-filesystem-dev
+RUN apt-get install -y libboost-graph-dev libboost-system-dev libboost-test-dev libeigen3-dev
+RUN rm -rf /var/lib/apt/lists/*
 
-# OpenCV, Python, and FFmpeg
-RUN apt-get update && apt-get install -y \
-    libopencv-dev \
-    python3-opencv \
-    python3.10 \
-    python3-pip \
-    python3.10-venv \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+# COLMAP libs
+RUN apt-get update
+RUN apt-get install -y libflann-dev libfreeimage-dev libmetis-dev
+RUN apt-get install -y libgoogle-glog-dev libgflags-dev libsqlite3-dev
+RUN rm -rf /var/lib/apt/lists/*
+
+# Graphics
+RUN apt-get update
+RUN apt-get install -y libglew-dev qtbase5-dev
+RUN apt-get install -y libqt5opengl5-dev libcgal-dev libceres-dev
+RUN rm -rf /var/lib/apt/lists/*
+
+# Python & media
+RUN apt-get update
+RUN apt-get install -y python3.10 python3-pip python3.10-venv
+RUN apt-get install -y libopencv-dev python3-opencv ffmpeg
+RUN rm -rf /var/lib/apt/lists/*
 
 # Install COLMAP from source (GPU-optimized build for A100)
 WORKDIR /tmp
