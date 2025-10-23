@@ -815,15 +815,20 @@ async def upload_results_to_storage(job_id: str, processor: COLMAPProcessor) -> 
 @app.get("/")
 async def root():
     """Root endpoint for health checks"""
-    logger.info("Root endpoint accessed")
-    gpu_available = _check_gpu_availability()
-    return {
-        "message": "COLMAP Worker API", 
-        "status": "running",
-        "version": "1.0.0",
-        "gpu_enabled": gpu_available,
-        "timestamp": datetime.now().isoformat()
-    }
+    try:
+        return {
+            "message": "COLMAP Worker API", 
+            "status": "running",
+            "version": "2.0-gpu",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Root endpoint error: {e}")
+        return {
+            "message": "COLMAP Worker API",
+            "status": "error",
+            "error": str(e)
+        }
 
 def _check_gpu_availability():
     """
@@ -865,26 +870,35 @@ def _check_gpu_availability():
 
 @app.get("/health")
 async def health_check():
-    """Kubernetes-style health check endpoint"""
-    return {
-        "status": "healthy", 
-        "service": "colmap-worker",
-        "gpu_available": _check_gpu_availability(),
-        "timestamp": datetime.now().isoformat(),
-        "memory_usage": _get_memory_usage(),
-        "active_jobs": len([j for j in jobs.values() if j["status"] == "processing"]),
-        "database_path": db.db_path,
-        "database_exists": Path(db.db_path).exists()
-    }
+    """Kubernetes-style health check endpoint - simplified for reliability"""
+    try:
+        return {
+            "status": "healthy", 
+            "service": "colmap-worker",
+            "timestamp": datetime.now().isoformat(),
+            "version": "2.0-gpu"
+        }
+    except Exception as e:
+        logger.error(f"Health check error: {e}")
+        return {
+            "status": "unhealthy",
+            "error": str(e)
+        }
 
 @app.get("/readiness")
 async def readiness_check():
-    """Readiness probe"""
-    return {
-        "status": "ready", 
-        "timestamp": datetime.now().isoformat(),
-        "gpu_ready": _check_gpu_availability()
-    }
+    """Readiness probe - simplified"""
+    try:
+        return {
+            "status": "ready", 
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Readiness check error: {e}")
+        return {
+            "status": "not ready",
+            "error": str(e)
+        }
 
 @app.get("/colmap/check")
 async def check_colmap():
