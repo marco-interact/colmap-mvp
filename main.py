@@ -395,15 +395,7 @@ class COLMAPProcessor:
             return None
     
     def run_dense_reconstruction(self) -> bool:
-        """Run COLMAP dense reconstruction - requires CUDA/GPU"""
-        
-        # Check if GPU is available
-        if os.getenv("COLMAP_CPU_ONLY"):
-            logger.warning("Dense reconstruction requires GPU/CUDA - skipping on CPU-only system")
-            logger.info("Exporting sparse model as PLY instead")
-            ply_path = self.export_sparse_to_ply()
-            return ply_path is not None
-        
+        """Run COLMAP dense reconstruction with GPU/CUDA acceleration"""
         logger.info("Running dense reconstruction (GPU mode)")
         
         # Find the BEST sparse model directory (with most points)
@@ -753,14 +745,8 @@ async def process_video_pipeline(job_id: str, video_path: str, quality: str = "l
         # Stage 1: Extract frames
         jobs[job_id]["message"] = "Extracting frames from video..."
         
-        # HIGH-FIDELITY: More frames = more views = more 3D points
-        # Leverage local RAM - extract more frames for better reconstruction
-        if os.getenv("COLMAP_CPU_ONLY"):
-            # High-quality settings leveraging local RAM
-            max_frames = 40 if quality == "low" else 60 if quality == "medium" else 80
-        else:
-            # GPU available - can handle even more
-            max_frames = 50 if quality == "low" else 80 if quality == "medium" else 120
+        # GPU-optimized frame extraction for A100
+        max_frames = 50 if quality == "low" else 80 if quality == "medium" else 120
         
         logger.info(f"Extracting {max_frames} frames for high-fidelity reconstruction")
         frame_count = processor.extract_frames(video_path, max_frames)
@@ -848,8 +834,8 @@ async def process_video_pipeline(job_id: str, video_path: str, quality: str = "l
             ply_size = ply_path.stat().st_size
             logger.info(f"✓ Successfully exported sparse PLY ({ply_size:,} bytes)")
         
-        # Stage 7: Optional dense reconstruction (requires GPU, skip for CPU or low quality)
-        if quality in ["medium", "high"] and not os.getenv("COLMAP_CPU_ONLY"):
+        # Stage 7: Optional dense reconstruction (GPU-accelerated)
+        if quality in ["medium", "high"]:
             jobs[job_id]["current_stage"] = "Dense Reconstruction"
             jobs[job_id]["message"] = "Creating dense point cloud (GPU)..."
             jobs[job_id]["progress"] = 90
@@ -858,10 +844,7 @@ async def process_video_pipeline(job_id: str, video_path: str, quality: str = "l
             else:
                 logger.warning("⚠ Dense reconstruction failed, using sparse model")
         else:
-            if os.getenv("COLMAP_CPU_ONLY"):
-                logger.info("ℹ CPU-only mode: Dense reconstruction requires GPU - using sparse model")
-            else:
-                logger.info("ℹ Skipping dense reconstruction for fast processing")
+            logger.info("ℹ Skipping dense reconstruction (low quality mode - sparse only)")
         
         jobs[job_id]["progress"] = 95
         
@@ -1122,8 +1105,8 @@ async def check_colmap():
                 if len(parts) >= 2:
                     colmap_version = f"COLMAP {parts[1]}"
         
-        # Check for GPU support (for M2 Mac, this will be false)
-        gpu_name = "CPU Mode (M2 Mac)"
+        # Check GPU availability
+        gpu_name = "GPU Not Available"
         try:
             gpu_check = subprocess.run(
                 ['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
@@ -1134,7 +1117,7 @@ async def check_colmap():
             if gpu_check.returncode == 0:
                 gpu_name = gpu_check.stdout.strip()
         except:
-            pass  # nvidia-smi not available (expected on M2 Mac)
+            pass  # nvidia-smi not available
         
         # Check OpenCV
         try:
@@ -1156,7 +1139,6 @@ async def check_colmap():
             "opencv_version": opencv_version,
             "gpu_name": gpu_name,
             "gpu_available": _check_gpu_availability(),
-            "cpu_mode": os.getenv("COLMAP_CPU_ONLY") == "1",
             "python_packages": {
                 "fastapi": True,
                 "uvicorn": True,

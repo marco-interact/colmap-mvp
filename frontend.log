@@ -227,3 +227,21 @@ Error: socket hang up
    - Local:        http://localhost:3000
 
  ✓ Ready in 1511ms
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+   ▲ Next.js 14.0.4
+   - Local:        http://localhost:3000
+
+Backend URL for rewrites: http://localhost:8000
+ ✓ Ready in 1282ms
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+   ▲ Next.js 14.0.4
+   - Local:        http://localhost:3000
+
+Backend URL for rewrites: http://localhost:8000
+ ✓ Ready in 1451ms
+ ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
+   ▲ Next.js 14.0.4
+   - Local:        http://localhost:3000
+
+ERROR: No backend URL configured! Set API_URL or NEXT_PUBLIC_API_URL
+ ✓ Ready in 1244ms
