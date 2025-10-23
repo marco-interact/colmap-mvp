@@ -1,0 +1,70 @@
+{
+  "deployment": "northflank-gpu-a100",
+  "hardware": {
+    "gpu": "NVIDIA A100",
+    "vram_gb": 40,
+    "vcpus": 12,
+    "ram_gb": 85,
+    "gpus_per_instance": 1
+  },
+  "compute_plan": "nf-gpu-a100-10-1g",
+  "autoscaling": {
+    "enabled": true,
+    "min_instances": 1,
+    "max_instances": 3,
+    "cpu_threshold_percent": 70,
+    "memory_threshold_percent": 80
+  },
+  "colmap": {
+    "gpu_enabled": true,
+    "gpu_index": 0,
+    "num_threads": 12,
+    "quality_presets": {
+      "low": {
+        "max_image_size": 2048,
+        "max_features": 16384,
+        "max_matches": 65536,
+        "patch_match_cache_gb": 5,
+        "stereo_fusion_cache_gb": 5
+      },
+      "medium": {
+        "max_image_size": 4096,
+        "max_features": 32768,
+        "max_matches": 131072,
+        "patch_match_cache_gb": 10,
+        "stereo_fusion_cache_gb": 10
+      },
+      "high": {
+        "max_image_size": 8192,
+        "max_features": 65536,
+        "max_matches": 262144,
+        "patch_match_cache_gb": 15,
+        "stereo_fusion_cache_gb": 15
+      }
+    },
+    "dense_reconstruction": {
+      "geom_consistency": true,
+      "window_radius": 7,
+      "window_step": 1,
+      "num_iterations": 5,
+      "num_samples": 15,
+      "filter_min_ncc": 0.1
+    }
+  },
+  "performance": {
+    "max_memory_gb": 70,
+    "cache_size_gb": 10,
+    "max_concurrent_jobs": 1,
+    "uvicorn_workers": 1
+  },
+  "environment_variables": {
+    "PORT": "8000",
+    "PYTHONUNBUFFERED": "1",
+    "CUDA_VISIBLE_DEVICES": "0",
+    "NVIDIA_VISIBLE_DEVICES": "all",
+    "NVIDIA_DRIVER_CAPABILITIES": "compute,utility",
+    "COLMAP_GPU_ENABLED": "1",
+    "COLMAP_GPU_INDEX": "0",
+    "COLMAP_NUM_THREADS": "12"
+  }
+}

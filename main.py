@@ -179,22 +179,23 @@ class COLMAPProcessor:
         """
         logger.info(f"Running feature extraction (quality: {quality})")
         
-        # Check GPU availability
-        use_gpu = "0" if os.getenv("COLMAP_CPU_ONLY") else "1"
+        # A100 GPU Configuration - 40GB VRAM, 12 vCPU
+        use_gpu = "1"  # Always use GPU on Northflank A100
+        gpu_index = "0"  # Single GPU instance
         
-        # High-fidelity settings - maximize features and quality
+        # A100-optimized settings - leverage massive VRAM and compute
         if quality == "low":
-            max_image_size = "1920"  # Full HD for good detail
-            max_features = "8192"    # 4x more features
-            num_threads = "6"        # Use more threads
+            max_image_size = "2048"   # 2K resolution
+            max_features = "16384"    # 16K features (GPU can handle more)
+            num_threads = "12"        # Use all 12 vCPUs
         elif quality == "medium":
-            max_image_size = "2400"  # 2.4K resolution
-            max_features = "16384"   # 8x more features
-            num_threads = "8"
+            max_image_size = "4096"   # 4K resolution
+            max_features = "32768"    # 32K features
+            num_threads = "12"
         else:  # high
-            max_image_size = "3200"  # ~4K resolution
-            max_features = "32768"   # Maximum features
-            num_threads = "8"
+            max_image_size = "8192"   # 8K resolution (A100 has the VRAM!)
+            max_features = "65536"    # 64K features - maximum quality
+            num_threads = "12"
         
         logger.info(f"Feature extraction: {max_features} features, {max_image_size}px max size, {num_threads} threads")
         
@@ -204,10 +205,12 @@ class COLMAPProcessor:
             "--image_path", str(self.images_dir),
             "--ImageReader.single_camera", "1",
             "--SiftExtraction.use_gpu", use_gpu,
+            "--SiftExtraction.gpu_index", gpu_index,
             "--SiftExtraction.max_image_size", max_image_size,
             "--SiftExtraction.max_num_features", max_features,
             "--SiftExtraction.upright", "0",
-            "--SiftExtraction.domain_size_pooling", "1",  # Enable for better coverage
+            "--SiftExtraction.domain_size_pooling", "1",  # Better features
+            "--SiftExtraction.estimate_affine_shape", "1",  # A100 can handle this
             "--SiftExtraction.num_threads", num_threads
         ]
         
@@ -230,22 +233,26 @@ class COLMAPProcessor:
         """
         logger.info(f"Running feature matching (quality: {quality})")
         
-        # Check if running in CPU-only mode
-        use_gpu = "0" if os.getenv("COLMAP_CPU_ONLY") else "1"
+        # A100 GPU Configuration - 40GB VRAM
+        use_gpu = "1"  # Always use GPU on Northflank A100
+        gpu_index = "0"  # Single GPU instance
         
-        # High-fidelity settings - use exhaustive matcher for best results
+        # A100-optimized matching - leverage GPU for faster processing
         if quality == "low":
-            matcher_type = "exhaustive_matcher"  # Better matching, more points
-            max_matches = "32768"  # 4x more matches
-            cross_check = "1"      # Enable for quality
+            matcher_type = "exhaustive_matcher"  # Best coverage
+            max_matches = "65536"    # 64K matches
+            cross_check = "1"        # Quality over speed
+            guided_matching = "1"    # Enable for more points
         elif quality == "medium":
             matcher_type = "exhaustive_matcher"
-            max_matches = "65536"  # 8x more matches
+            max_matches = "131072"   # 128K matches
             cross_check = "1"
+            guided_matching = "1"
         else:  # high
             matcher_type = "exhaustive_matcher"
-            max_matches = "131072"  # Maximum matches
+            max_matches = "262144"   # 256K matches (A100 can handle it!)
             cross_check = "1"
+            guided_matching = "1"
         
         logger.info(f"Feature matching: {matcher_type}, {max_matches} max matches, cross_check={cross_check}")
         
@@ -253,11 +260,13 @@ class COLMAPProcessor:
             "colmap", matcher_type,
             "--database_path", str(self.database_path),
             "--SiftMatching.use_gpu", use_gpu,
+            "--SiftMatching.gpu_index", gpu_index,
             "--SiftMatching.max_ratio", "0.8",
             "--SiftMatching.max_distance", "0.7",
             "--SiftMatching.cross_check", cross_check,
-            "--SiftMatching.max_num_matches", max_matches
-            # Note: max_error and confidence parameters removed - not available in this COLMAP version
+            "--SiftMatching.max_num_matches", max_matches,
+            "--SiftMatching.guided_matching", guided_matching,
+            "--SiftMatching.num_threads", "12"  # Utilize all vCPUs
         ]
         
         try:

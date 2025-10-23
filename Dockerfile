@@ -1,14 +1,17 @@
-# Dockerfile for COLMAP MVP - CPU-Optimized Backend
-# Optimized for Northflank deployment with CPU-based COLMAP processing
+# Dockerfile for COLMAP MVP - GPU-Optimized Backend
+# Optimized for Northflank deployment with NVIDIA A100 GPU acceleration
+# Specs: A100 40GB VRAM, 12 vCPU, 85GB RAM
 
-FROM ubuntu:22.04
+FROM nvidia/cuda:12.2.0-devel-ubuntu22.04
 
 # Prevent interactive prompts during build
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 
-# Set CPU-only mode for COLMAP
-ENV COLMAP_CPU_ONLY=1
+# GPU Configuration
+ENV CUDA_VISIBLE_DEVICES=0
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -49,7 +52,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install COLMAP from source (CPU-optimized build)
+# Install COLMAP from source (GPU-optimized build for A100)
 WORKDIR /tmp
 RUN git clone https://github.com/colmap/colmap.git && \
     cd colmap && \
@@ -57,9 +60,11 @@ RUN git clone https://github.com/colmap/colmap.git && \
     mkdir build && \
     cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release \
-             -DCUDA_ENABLED=OFF \
-             -DGUI_ENABLED=OFF && \
-    make -j$(nproc) && \
+             -DCUDA_ENABLED=ON \
+             -DCUDA_ARCHS="80" \
+             -DGUI_ENABLED=OFF \
+             -DCMAKE_CUDA_ARCHITECTURES=80 && \
+    make -j12 && \
     make install && \
     cd /tmp && \
     rm -rf colmap

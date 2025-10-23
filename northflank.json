@@ -1,27 +1,39 @@
 {
-  "name": "colmap-mvp-backend",
-  "description": "COLMAP 3D Reconstruction Backend (CPU-optimized)",
+  "name": "colmap-mvp-backend-gpu",
+  "description": "COLMAP 3D Reconstruction Backend (NVIDIA A100 GPU-optimized)",
   "spec": {
     "kind": "Deployment",
-    "name": "colmap-backend",
+    "name": "colmap-backend-gpu",
     "billing": {
-      "deploymentPlan": "nf-compute-50"
+      "deploymentPlan": "nf-gpu-a100-10-1g"
     },
     "deployment": {
       "instances": 1,
+      "minInstances": 1,
+      "maxInstances": 3,
+      "autoscaling": {
+        "enabled": true,
+        "cpuThreshold": 70,
+        "memoryThreshold": 80
+      },
       "storage": {
         "ephemeralStorage": {
-          "storageSize": 10240
+          "storageSize": 102400
         }
       },
       "docker": {
-        "configType": "default"
+        "configType": "gpu"
       }
     },
     "runtimeEnvironment": {
       "resources": {
-        "cpus": "2.0",
-        "memory": "4096"
+        "cpus": "12.0",
+        "memory": "87040",
+        "gpu": {
+          "type": "nvidia-a100",
+          "count": 1,
+          "vramMB": 40960
+        }
       },
       "runtimeFiles": [
         {
@@ -76,12 +88,44 @@
     },
     "environmentVariables": [
       {
-        "key": "COLMAP_CPU_ONLY",
+        "key": "PORT",
+        "value": "8000"
+      },
+      {
+        "key": "PYTHONUNBUFFERED",
         "value": "1"
       },
       {
-        "key": "PORT",
-        "value": "8000"
+        "key": "CUDA_VISIBLE_DEVICES",
+        "value": "0"
+      },
+      {
+        "key": "NVIDIA_VISIBLE_DEVICES",
+        "value": "all"
+      },
+      {
+        "key": "NVIDIA_DRIVER_CAPABILITIES",
+        "value": "compute,utility"
+      },
+      {
+        "key": "COLMAP_GPU_ENABLED",
+        "value": "1"
+      },
+      {
+        "key": "COLMAP_GPU_INDEX",
+        "value": "0"
+      },
+      {
+        "key": "COLMAP_NUM_THREADS",
+        "value": "12"
+      },
+      {
+        "key": "MAX_MEMORY_GB",
+        "value": "70"
+      },
+      {
+        "key": "CACHE_SIZE_GB",
+        "value": "10"
       },
       {
         "key": "STORAGE_DIR",
@@ -92,8 +136,8 @@
         "value": "/app/data/cache"
       },
       {
-        "key": "PYTHONUNBUFFERED",
-        "value": "1"
+        "key": "LOG_LEVEL",
+        "value": "INFO"
       }
     ],
     "healthCheck": {
