@@ -502,3 +502,4 @@ Strategy: Auto-scale based on demand
 **Last Updated:** October 22, 2025  
 **Contact:** marco-interact/colmap-mvp
 
+

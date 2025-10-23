@@ -21,3 +21,4 @@ pydantic-settings==2.6.0
 # Optional: Monitoring (for production)
 # psutil==6.1.0
 
+

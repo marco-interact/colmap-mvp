@@ -120,3 +120,4 @@ Keep in project root (e.g., `start-local.sh`)
 **Maintenance:** Easy to find and manage  
 **Production:** Only essential scripts in root
 
+
