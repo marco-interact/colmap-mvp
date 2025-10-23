@@ -105,8 +105,8 @@ STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 CACHE_DIR = Path(os.getenv("CACHE_DIR", "./data/cache"))
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-# Local uploads directory
-UPLOADS_DIR = Path("./data/uploads")
+# Uploads directory (use persistent storage)
+UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", "./data/uploads"))
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Demo resources directory

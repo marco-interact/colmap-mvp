@@ -243,3 +243,5 @@ INFO:      - "GET /projects HTTP/1.1" 200 OK
 {"timestamp": "2025-10-22 17:25:32", "level": "WARNING", "message": "No GPU detected - running in CPU mode"}
 INFO:      - "GET /health HTTP/1.1" 200 OK
 INFO:      - "GET /projects HTTP/1.1" 200 OK
+{"timestamp": "2025-10-23 02:09:19", "level": "INFO", "message": "Serving demo file: demoscan-dollhouse/fvtc_firstfloor_processed.ply"}
+INFO:     127.0.0.1:62325 - "GET /demo-resources/demoscan-dollhouse/fvtc_firstfloor_processed.ply HTTP/1.1" 200 OK

@@ -19,7 +19,14 @@
       "storage": {
         "ephemeralStorage": {
           "storageSize": 102400
-        }
+        },
+        "persistentVolumes": [
+          {
+            "name": "colmap-persistent-data",
+            "mountPath": "/persistent-data",
+            "storageSize": 100000
+          }
+        ]
       },
       "docker": {
         "configType": "gpu"
@@ -129,11 +136,19 @@
       },
       {
         "key": "STORAGE_DIR",
-        "value": "/app/data/results"
+        "value": "/persistent-data/results"
       },
       {
         "key": "CACHE_DIR",
-        "value": "/app/data/cache"
+        "value": "/persistent-data/cache"
+      },
+      {
+        "key": "DATABASE_PATH",
+        "value": "/persistent-data/database.db"
+      },
+      {
+        "key": "UPLOADS_DIR",
+        "value": "/persistent-data/uploads"
       },
       {
         "key": "LOG_LEVEL",
