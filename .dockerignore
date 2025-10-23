@@ -17,7 +17,7 @@ ENV/
 
 # Data directories (these should use volumes)
 data/
-demo-resources/
+# demo-resources/ - INCLUDED for demo scans
 
 # Logs
 *.log
