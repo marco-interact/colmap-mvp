@@ -1,2 +1,2 @@
-web: node_modules/.bin/next start -p ${PORT:-3000}
+web: bash start.sh
 
