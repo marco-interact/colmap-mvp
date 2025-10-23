@@ -8,9 +8,6 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   
-  // Enable standalone output for Docker
-  output: 'standalone',
-  
   // Proxy backend API calls through Next.js on port 3000
   async rewrites() {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';

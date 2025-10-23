@@ -480,6 +480,176 @@ class COLMAPProcessor:
         logger.info("Dense reconstruction completed successfully")
         return True
     
+    def export_model_to_text(self, output_dir: Optional[Path] = None) -> bool:
+        """Export reconstruction model to human-readable text format
+        
+        Exports cameras.txt, images.txt, points3D.txt for inspection and debugging.
+        Based on COLMAP importing and exporting documentation.
+        """
+        if output_dir is None:
+            output_dir = self.work_dir / "model_text"
+        output_dir.mkdir(exist_ok=True)
+        
+        # Find best sparse model
+        sparse_models = []
+        for d in self.sparse_dir.iterdir():
+            if d.is_dir() and (d / "cameras.bin").exists():
+                points_size = (d / "points3D.bin").stat().st_size if (d / "points3D.bin").exists() else 0
+                sparse_models.append((d, points_size))
+        
+        if not sparse_models:
+            logger.error("No sparse model found for text export")
+            return False
+        
+        sparse_model_dir = max(sparse_models, key=lambda x: x[1])[0]
+        logger.info(f"Exporting model {sparse_model_dir.name} to text format")
+        
+        cmd = [
+            "colmap", "model_converter",
+            "--input_path", str(sparse_model_dir),
+            "--output_path", str(output_dir),
+            "--output_type", "TXT"
+        ]
+        
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            if result.returncode != 0:
+                logger.error(f"Text export failed: {result.stderr}")
+                return False
+            logger.info(f"✓ Model exported to text format: {output_dir}")
+            return True
+        except Exception as e:
+            logger.error(f"Text export error: {e}")
+            return False
+    
+    def import_model_from_text(self, text_dir: Path, output_dir: Optional[Path] = None) -> bool:
+        """Import reconstruction model from text format
+        
+        Imports cameras.txt, images.txt, points3D.txt into binary format.
+        """
+        if output_dir is None:
+            output_dir = self.sparse_dir / "imported"
+        output_dir.mkdir(exist_ok=True, parents=True)
+        
+        logger.info(f"Importing model from text format: {text_dir}")
+        
+        cmd = [
+            "colmap", "model_converter",
+            "--input_path", str(text_dir),
+            "--output_path", str(output_dir),
+            "--input_type", "TXT",
+            "--output_type", "BIN"
+        ]
+        
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            if result.returncode != 0:
+                logger.error(f"Text import failed: {result.stderr}")
+                return False
+            logger.info(f"✓ Model imported from text format: {output_dir}")
+            return True
+        except Exception as e:
+            logger.error(f"Text import error: {e}")
+            return False
+    
+    def get_database_info(self) -> Optional[dict]:
+        """Comprehensive database inspection
+        
+        Based on COLMAP database management documentation.
+        Returns detailed information about cameras, images, features, matches, and geometric verification.
+        """
+        try:
+            if not self.database_path.exists():
+                logger.warning("Database not found")
+                return None
+            
+            import sqlite3
+            conn = sqlite3.connect(str(self.database_path))
+            cursor = conn.cursor()
+            
+            # Camera information
+            cursor.execute("SELECT camera_id, model, width, height, params FROM cameras")
+            cameras = []
+            for row in cursor.fetchall():
+                cameras.append({
+                    "camera_id": row[0],
+                    "model": row[1],
+                    "width": row[2],
+                    "height": row[3],
+                    "params": row[4]
+                })
+            
+            # Image information
+            cursor.execute("SELECT COUNT(*) FROM images")
+            num_images = cursor.fetchone()[0]
+            
+            # Feature statistics
+            cursor.execute("SELECT SUM(rows) FROM keypoints")
+            total_keypoints = cursor.fetchone()[0] or 0
+            
+            cursor.execute("SELECT AVG(rows) FROM keypoints")
+            avg_keypoints_per_image = cursor.fetchone()[0] or 0
+            
+            # Match statistics
+            cursor.execute("SELECT COUNT(*) FROM matches")
+            num_matches = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT SUM(rows) FROM matches")
+            total_match_points = cursor.fetchone()[0] or 0
+            
+            cursor.execute("SELECT AVG(rows) FROM matches")
+            avg_matches_per_pair = cursor.fetchone()[0] or 0
+            
+            # Geometric verification statistics
+            cursor.execute("SELECT COUNT(*) FROM two_view_geometries")
+            num_verified = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT SUM(rows) FROM two_view_geometries WHERE rows > 0")
+            total_verified_matches = cursor.fetchone()[0] or 0
+            
+            cursor.execute("SELECT AVG(rows) FROM two_view_geometries WHERE rows > 0")
+            avg_verified_per_pair = cursor.fetchone()[0] or 0
+            
+            # Inlier ratio calculation
+            cursor.execute("""
+                SELECT AVG(CAST(tvg.rows AS FLOAT) / CAST(m.rows AS FLOAT))
+                FROM two_view_geometries tvg
+                JOIN matches m ON tvg.pair_id = m.pair_id
+                WHERE m.rows > 0 AND tvg.rows > 0
+            """)
+            avg_inlier_ratio = cursor.fetchone()[0] or 0
+            
+            conn.close()
+            
+            info = {
+                "database_path": str(self.database_path),
+                "cameras": cameras,
+                "num_cameras": len(cameras),
+                "num_images": num_images,
+                "features": {
+                    "total_keypoints": int(total_keypoints),
+                    "avg_per_image": float(avg_keypoints_per_image),
+                },
+                "matches": {
+                    "num_pairs": num_matches,
+                    "total_matches": int(total_match_points),
+                    "avg_per_pair": float(avg_matches_per_pair),
+                },
+                "verification": {
+                    "num_verified_pairs": num_verified,
+                    "total_verified_matches": int(total_verified_matches),
+                    "avg_verified_per_pair": float(avg_verified_per_pair),
+                    "avg_inlier_ratio": float(avg_inlier_ratio),
+                    "verification_rate": (num_verified / num_matches * 100) if num_matches > 0 else 0
+                }
+            }
+            
+            return info
+            
+        except Exception as e:
+            logger.error(f"Error getting database info: {e}")
+            return None
+    
     def get_reconstruction_stats(self) -> Optional[dict]:
         """Get statistics from COLMAP database
         
