@@ -10,7 +10,8 @@ const nextConfig = {
   
   // Proxy backend API calls through Next.js on port 3000
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const backendUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    console.log('Backend URL for rewrites:', backendUrl);
     return [
       {
         source: '/api/backend/:path*',
