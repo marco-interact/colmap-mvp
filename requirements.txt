@@ -31,7 +31,7 @@ cupy-cuda12x==12.3.0  # GPU-accelerated array processing
 numba==0.58.1  # JIT compilation for GPU operations
 
 # Utilities
-python-dotenv==1.0.1
+python-dotenv==1.1.1
 pydantic==2.9.2
 pydantic-settings==2.6.0
 
