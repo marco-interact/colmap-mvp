@@ -1,19 +1,55 @@
 # ========================================
-# COLMAP Backend - USE NEW PRE-BUILT IMAGE
-# Image includes: open3d_utils.py, demo-resources/
-# Build: 2025-10-24T06:50:00Z - PUSH AND BUILD FIRST
+# COLMAP Backend - BUILD FROM SCRATCH
+# This will FORCE Northflank to build everything fresh
 # ========================================
 
-FROM ghcr.io/marco-interact/colmap-mvp@sha256:ef92def84a997ef34a5b23b99f427a05759f21277da8a99765d9b3cf79cfde65
+FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
 
-# This image contains:
-# ✅ CUDA 12.2.0 runtime
-# ✅ Python 3.11 + all dependencies (Open3D, FastAPI, etc.)
-# ✅ COLMAP (pre-built from apt)
-# ✅ open3d_utils.py - Open3D processor functions
-# ✅ demo-resources/ - All PLY and GLB files
-# ✅ main.py - With startup handler that auto-creates demo data
-# ✅ database.py - With demo setup functions
-# ✅ Startup event that auto-initializes demo data
+# Set working directory
+WORKDIR /app
 
-# No additional setup needed - image is ready to run
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3-pip \
+    python3-dev \
+    colmap \
+    libopencv-dev \
+    python3-opencv \
+    ffmpeg \
+    sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY main.py .
+COPY database.py .
+COPY open3d_utils.py .
+
+# Copy demo resources
+COPY demo-resources/ /app/demo-resources/
+
+# Create data directories
+RUN mkdir -p /app/data/results /app/data/cache /app/data/uploads
+
+# GPU environment variables
+ENV CUDA_VISIBLE_DEVICES=0
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python3 -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+
+# Expose port
+EXPOSE 8000
+
+# Run application
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
