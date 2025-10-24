@@ -256,3 +256,5 @@ INFO:     127.0.0.1:60291 - "GET /demo-resources/demoscan-fachada/1mill.ply HTTP
 INFO:     127.0.0.1:60295 - "GET /models/56f0d8d0-2a6b-43cc-a685-928c207fa845/pointcloud.ply HTTP/1.1" 404 Not Found
 {"timestamp": "2025-10-23 23:51:02", "level": "INFO", "message": "Serving demo file: demoscan-dollhouse/fvtc_firstfloor_processed.ply"}
 INFO:     127.0.0.1:50670 - "GET /demo-resources/demoscan-dollhouse/fvtc_firstfloor_processed.ply HTTP/1.1" 200 OK
+{"timestamp": "2025-10-24 02:35:31", "level": "INFO", "message": "Serving demo file: demoscan-dollhouse/fvtc_firstfloor_processed.ply"}
+INFO:     127.0.0.1:54164 - "GET /demo-resources/demoscan-dollhouse/fvtc_firstfloor_processed.ply HTTP/1.1" 200 OK

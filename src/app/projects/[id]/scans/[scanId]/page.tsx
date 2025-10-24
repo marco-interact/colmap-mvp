@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ProcessingStatus } from "@/components/processing-status"
 import { SimpleViewer } from "@/components/3d/simple-viewer"
+import { Open3DTools } from "@/components/3d/open3d-tools"
 import { apiClient } from "@/lib/api"
 
 interface Scan {
@@ -579,6 +580,24 @@ export default function ScanDetailPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Open3D Tools */}
+              {scan.status === 'completed' && (
+                <Open3DTools 
+                  scanId={scanId}
+                  onStatsUpdate={(stats) => {
+                    console.log('Point cloud stats updated:', stats)
+                  }}
+                  onImageGenerated={(imageUrl) => {
+                    console.log('High-res image generated:', imageUrl)
+                    // You could show a modal or download the image
+                  }}
+                  onMeshGenerated={(meshUrl) => {
+                    console.log('Mesh generated:', meshUrl)
+                    // You could update the 3D viewer with the new mesh
+                  }}
+                />
+              )}
             </div>
           </aside>
         </div>
