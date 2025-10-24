@@ -1,6 +1,8 @@
-# Lightweight COLMAP Backend with Pre-built Binaries
-# Optimized for Northflank deployment (avoids build I/O errors)
-# Build timestamp: 2025-10-24T05:40:00Z - Force rebuild with open3d_utils.py
+# ========================================
+# COLMAP Backend - COMPLETE REBUILD
+# Includes: open3d_utils.py, demo-resources/
+# Build: 2025-10-24T05:45:00Z
+# ========================================
 
 FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
 
@@ -10,6 +12,7 @@ WORKDIR /app
 # Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
+ENV FORCE_REBUILD=20251024_0545
 
 # Install system dependencies (smaller, faster than building from source)
 RUN apt-get update && apt-get install -y --no-install-recommends \
