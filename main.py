@@ -10,7 +10,12 @@ from fastapi.responses import JSONResponse
 import logging
 import os
 from pathlib import Path
-from database import db
+from database import Database
+import os
+
+# PERSISTENT DATABASE PATH - NEVER DELETE DATA
+DATABASE_PATH = os.getenv("DATABASE_PATH", "/persistent-data/database.db")
+db = Database(DATABASE_PATH)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -56,6 +61,33 @@ async def get_scans(project_id: str):
         logger.error(f"Error getting scans: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/status")
+async def get_status():
+    """Get current backend status and demo data info"""
+    try:
+        projects = db.get_all_projects()
+        logger.info(f"📊 Current status: {len(projects)} projects found")
+        
+        status = {
+            "backend": "running",
+            "database_path": DATABASE_PATH,
+            "projects_count": len(projects),
+            "projects": []
+        }
+        
+    for project in projects:
+            scans = db.get_scans_by_project(project['id'])
+            status["projects"].append({
+            "id": project["id"],
+            "name": project["name"],
+                "scan_count": len(scans)
+            })
+        
+        return status
+    except Exception as e:
+        logger.error(f"Status check failed: {e}")
+        return {"backend": "error", "error": str(e)}
+
 @app.post("/database/setup-demo")
 async def setup_demo_data():
     """FORCE setup demo data - ALWAYS WORKS"""
@@ -72,12 +104,12 @@ async def setup_demo_data():
             logger.info(f"   Project '{project['name']}': {len(scans)} scans")
         
         return {
-            "status": "success", 
+            "status": "success",
             "data": result,
             "verification": {
                 "projects_count": len(projects),
                 "projects": [{"id": p["id"], "name": p["name"], "scan_count": len(db.get_scans_by_project(p["id"]))} for p in projects]
-            }
+        }
         }
     except Exception as e:
         logger.error(f"Demo data setup failed: {e}")
