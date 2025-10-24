@@ -2,8 +2,14 @@ import open3d as o3d
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Any
 import logging
+import os
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+# PERSISTENT STORAGE FOR OPEN3D
+OPEN3D_STORAGE_DIR = Path(os.getenv("OPEN3D_STORAGE_DIR", "/persistent-data/open3d"))
+OPEN3D_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 class Open3DProcessor:
     """Basic Open3D processor for 3D point cloud operations"""
@@ -81,7 +87,7 @@ class Open3DProcessor:
             return {"error": str(e)}
     
     def apply_colormap(self, point_cloud_path: str, colormap: str = "jet") -> str:
-        """Apply colormap to point cloud"""
+        """Apply colormap to point cloud - uses persistent storage"""
         try:
             pcd = o3d.io.read_point_cloud(point_cloud_path)
             
@@ -99,17 +105,18 @@ class Open3DProcessor:
             
             pcd.colors = o3d.utility.Vector3dVector(colors)
             
-            output_path = point_cloud_path.replace('.ply', '_colored.ply')
-            o3d.io.write_point_cloud(output_path, pcd)
+            # Save to persistent storage
+            output_path = OPEN3D_STORAGE_DIR / f"{Path(point_cloud_path).stem}_colored.ply"
+            o3d.io.write_point_cloud(str(output_path), pcd)
             
-            return output_path
+            return str(output_path)
             
         except Exception as e:
             logger.error(f"Error applying colormap: {e}")
             return point_cloud_path
     
     def downsample_point_cloud(self, point_cloud_path: str, voxel_size: float = 0.05) -> str:
-        """Downsample point cloud using voxel grid"""
+        """Downsample point cloud using voxel grid - uses persistent storage"""
         try:
             pcd = o3d.io.read_point_cloud(point_cloud_path)
             
@@ -118,10 +125,11 @@ class Open3DProcessor:
             
             downsampled = pcd.voxel_down_sample(voxel_size)
             
-            output_path = point_cloud_path.replace('.ply', '_downsampled.ply')
-            o3d.io.write_point_cloud(output_path, downsampled)
+            # Save to persistent storage
+            output_path = OPEN3D_STORAGE_DIR / f"{Path(point_cloud_path).stem}_downsampled.ply"
+            o3d.io.write_point_cloud(str(output_path), downsampled)
             
-            return output_path
+            return str(output_path)
             
         except Exception as e:
             logger.error(f"Error downsampling point cloud: {e}")
@@ -139,10 +147,11 @@ class Open3DProcessor:
                 search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=radius, max_nn=max_nn)
             )
             
-            output_path = point_cloud_path.replace('.ply', '_normals.ply')
-            o3d.io.write_point_cloud(output_path, pcd)
+            # Save to persistent storage
+            output_path = OPEN3D_STORAGE_DIR / f"{Path(point_cloud_path).stem}_normals.ply"
+            o3d.io.write_point_cloud(str(output_path), pcd)
             
-            return output_path
+            return str(output_path)
             
         except Exception as e:
             logger.error(f"Error estimating normals: {e}")
@@ -158,10 +167,11 @@ class Open3DProcessor:
             
             cleaned, _ = pcd.remove_statistical_outlier(nb_neighbors=nb_neighbors, std_ratio=std_ratio)
             
-            output_path = point_cloud_path.replace('.ply', '_cleaned.ply')
-            o3d.io.write_point_cloud(output_path, cleaned)
+            # Save to persistent storage
+            output_path = OPEN3D_STORAGE_DIR / f"{Path(point_cloud_path).stem}_cleaned.ply"
+            o3d.io.write_point_cloud(str(output_path), cleaned)
             
-            return output_path
+            return str(output_path)
             
         except Exception as e:
             logger.error(f"Error removing outliers: {e}")
@@ -185,10 +195,11 @@ class Open3DProcessor:
             else:
                 return point_cloud_path
             
-            output_path = point_cloud_path.replace('.ply', f'_{method}_mesh.ply')
-            o3d.io.write_triangle_mesh(output_path, mesh)
+            # Save to persistent storage
+            output_path = OPEN3D_STORAGE_DIR / f"{Path(point_cloud_path).stem}_{method}_mesh.ply"
+            o3d.io.write_triangle_mesh(str(output_path), mesh)
             
-            return output_path
+            return str(output_path)
             
         except Exception as e:
             logger.error(f"Error creating mesh: {e}")
@@ -216,11 +227,12 @@ class Open3DProcessor:
             ctr.set_up(camera_params["up"])
             ctr.set_zoom(camera_params["zoom"])
             
-            output_path = point_cloud_path.replace('.ply', '_render.png')
-            vis.capture_screen_image(output_path)
+            # Save to persistent storage
+            output_path = OPEN3D_STORAGE_DIR / f"{Path(point_cloud_path).stem}_render.png"
+            vis.capture_screen_image(str(output_path))
             vis.destroy_window()
             
-            return output_path
+            return str(output_path)
             
         except Exception as e:
             logger.error(f"Error rendering to image: {e}")

@@ -176,6 +176,7 @@ async def startup_event():
             logger.error(f"❌ Emergency demo data creation failed: {e2}")
 
 # PERSISTENT STORAGE CONFIGURATION - NEVER DELETE DATA
+# All integrations (COLMAP, Open3D, Three.js) use persistent storage
 STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "/persistent-data/results"))
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -184,9 +185,17 @@ DATABASE_PATH = os.getenv("DATABASE_PATH", "/persistent-data/database.db")
 CACHE_DIR = Path(os.getenv("CACHE_DIR", "/persistent-data/cache"))
 UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", "/persistent-data/uploads"))
 
+# PERSISTENT PATHS FOR ALL INTEGRATIONS
+COLMAP_STORAGE_DIR = STORAGE_DIR  # COLMAP uses persistent storage
+OPEN3D_STORAGE_DIR = STORAGE_DIR  # Open3D uses persistent storage  
+THREEJS_STORAGE_DIR = STORAGE_DIR  # Three.js uses persistent storage
+
 # Ensure all persistent directories exist
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+COLMAP_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+OPEN3D_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+THREEJS_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 # Initialize database with PERSISTENT path
 db = Database(DATABASE_PATH)
