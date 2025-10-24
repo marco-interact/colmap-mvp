@@ -25,7 +25,7 @@ from typing import Optional, Dict, Any
 import uuid
 import zipfile
 from database import db
-from open3d_utils import open3d_processor
+from open3d_utils_enhanced import open3d_processor
 
 # Configure logging
 logging.basicConfig(
@@ -2234,6 +2234,203 @@ async def render_to_image(scan_id: str, width: int = 1920, height: int = 1080,
 async def get_camera_parameters():
     """Get default camera parameters for Open3D visualization"""
     return open3d_processor.get_camera_parameters()
+
+# ==========================================
+# UNIFIED COLMAP + Open3D + Three.js APIs
+# ==========================================
+
+@app.get("/api/scan/{scan_id}/unified-info")
+async def get_unified_scan_info(scan_id: str):
+    """Get unified information combining COLMAP, Open3D, and Three.js data"""
+    try:
+        # Get basic scan info
+        scan = db.get_scan(scan_id)
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        # Get Open3D statistics
+        stats = open3d_processor.get_point_cloud_stats(scan_id)
+        
+        # Get COLMAP technical details
+        technical_details = scan.get('technical_details', {})
+        
+        return {
+            "scan": {
+                "id": scan_id,
+                "name": scan.get('name'),
+                "status": scan.get('status'),
+                "created_at": scan.get('created_at'),
+                "updated_at": scan.get('updated_at')
+            },
+            "colmap": {
+                "technical_details": technical_details,
+                "processing_stages": scan.get('processing_stages', []),
+                "reconstruction_quality": technical_details.get('reconstruction_error', 'N/A')
+            },
+            "open3d": {
+                "point_cloud_stats": stats,
+                "gpu_accelerated": stats.get('gpuAccelerated', False)
+            },
+            "threejs": {
+                "model_url": scan.get('results', {}).get('pointCloudUrl'),
+                "mesh_url": scan.get('results', {}).get('meshUrl'),
+                "texture_url": scan.get('results', {}).get('textureUrl'),
+                "viewer_ready": scan.get('status') == 'completed'
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error getting unified scan info: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/scan/{scan_id}/process-unified")
+async def process_unified_reconstruction(scan_id: str, background_tasks: BackgroundTasks):
+    """Process scan with unified COLMAP + Open3D + Three.js pipeline"""
+    try:
+        # Get scan details
+        scan = db.get_scan(scan_id)
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        if scan.get('status') == 'processing':
+            raise HTTPException(status_code=400, detail="Scan is already being processed")
+        
+        # Update status to processing
+        db.update_scan_status(scan_id, 'processing')
+        
+        # Start unified background processing
+        background_tasks.add_task(process_unified_reconstruction_background, scan_id)
+        
+        return {"message": "Unified processing started", "scan_id": scan_id}
+    except Exception as e:
+        logger.error(f"Error starting unified processing: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/scan/{scan_id}/export-unified")
+async def export_unified_data(scan_id: str, format: str = "all"):
+    """Export unified data in multiple formats for Three.js consumption"""
+    try:
+        scan = db.get_scan(scan_id)
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        if scan.get('status') != 'completed':
+            raise HTTPException(status_code=400, detail="Scan not completed")
+        
+        export_data = {
+            "scan_id": scan_id,
+            "formats": {}
+        }
+        
+        # Export point cloud
+        if format in ["all", "pointcloud"]:
+            stats = open3d_processor.get_point_cloud_stats(scan_id)
+            export_data["formats"]["pointcloud"] = {
+                "url": f"/api/point-cloud/{scan_id}/download",
+                "stats": stats,
+                "threejs_compatible": True
+            }
+        
+        # Export mesh
+        if format in ["all", "mesh"]:
+            mesh_result = open3d_processor.create_mesh(scan_id, "poisson")
+            if mesh_result.get("success"):
+                export_data["formats"]["mesh"] = {
+                    "url": mesh_result.get("meshUrl"),
+                    "method": "poisson",
+                    "threejs_compatible": True
+                }
+        
+        # Export high-res image
+        if format in ["all", "image"]:
+            image_result = open3d_processor.render_to_image(scan_id, 1920, 1080)
+            if image_result.get("success"):
+                export_data["formats"]["image"] = {
+                    "url": image_result.get("imageUrl"),
+                    "resolution": "1920x1080",
+                    "format": "PNG"
+                }
+        
+        return export_data
+        
+    except Exception as e:
+        logger.error(f"Error exporting unified data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==========================================
+# BACKGROUND PROCESSING FUNCTIONS
+# ==========================================
+
+async def process_unified_reconstruction_background(scan_id: str):
+    """Background task for unified COLMAP + Open3D + Three.js processing"""
+    try:
+        logger.info(f"🚀 Starting unified processing for scan: {scan_id}")
+        
+        # Step 1: COLMAP reconstruction
+        logger.info("📸 Step 1: COLMAP 3D reconstruction")
+        processor = COLMAPProcessor(scan_id)
+        
+        # Feature extraction
+        if not processor.run_feature_extraction("high"):
+            raise Exception("Feature extraction failed")
+        
+        # Feature matching
+        if not processor.run_feature_matching("high"):
+            raise Exception("Feature matching failed")
+        
+        # Sparse reconstruction
+        if not processor.run_sparse_reconstruction():
+            raise Exception("Sparse reconstruction failed")
+        
+        # Dense reconstruction
+        if not processor.run_dense_reconstruction("high"):
+            raise Exception("Dense reconstruction failed")
+        
+        # Step 2: Open3D processing
+        logger.info("🔧 Step 2: Open3D point cloud processing")
+        
+        # Get point cloud statistics
+        stats = open3d_processor.get_point_cloud_stats(scan_id)
+        logger.info(f"📊 Point cloud stats: {stats.get('pointCount', 0)} points")
+        
+        # Apply colormap
+        open3d_processor.apply_colormap(scan_id, "viridis")
+        
+        # Estimate normals
+        open3d_processor.estimate_normals(scan_id)
+        
+        # Remove outliers
+        open3d_processor.remove_outliers(scan_id)
+        
+        # Step 3: Three.js optimization
+        logger.info("🎨 Step 3: Three.js optimization")
+        
+        # Create mesh for Three.js
+        mesh_result = open3d_processor.create_mesh(scan_id, "poisson")
+        
+        # Render high-resolution image
+        image_result = open3d_processor.render_to_image(scan_id, 1920, 1080)
+        
+        # Update scan status
+        db.update_scan_status(scan_id, 'completed')
+        
+        # Update technical details
+        technical_details = {
+            "point_count": stats.get('pointCount', 0),
+            "density": stats.get('density', 0),
+            "dimensions": stats.get('dimensions', []),
+            "gpu_accelerated": stats.get('gpuAccelerated', False),
+            "mesh_created": mesh_result.get('success', False),
+            "high_res_image": image_result.get('success', False),
+            "processing_time": "Unified pipeline completed"
+        }
+        
+        db.update_scan_technical_details(scan_id, technical_details)
+        
+        logger.info(f"✅ Unified processing completed for scan: {scan_id}")
+        
+    except Exception as e:
+        logger.error(f"❌ Unified processing failed for scan {scan_id}: {e}")
+        db.update_scan_status(scan_id, 'failed')
 
 if __name__ == "__main__":
     # Use port 8000 for localhost development, 8080 for cloud deployment

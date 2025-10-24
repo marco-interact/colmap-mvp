@@ -14,6 +14,22 @@ opencv-python==4.10.0.84
 numpy==1.26.4
 open3d==0.18.0  # Advanced 3D visualization and processing
 
+# Enhanced 3D Processing Stack
+trimesh==4.0.5  # Mesh processing and manipulation
+pyvista==0.44.1  # 3D plotting and mesh analysis
+plotly==5.17.0  # Interactive 3D visualizations
+dash==2.14.2  # Web-based 3D dashboards
+dash-bootstrap-components==1.5.0  # Bootstrap components for Dash
+
+# Three.js Integration Dependencies
+websockets==12.0  # Real-time 3D data streaming
+asyncio-mqtt==0.16.1  # Message queuing for 3D data
+redis==5.0.1  # Caching for 3D models and point clouds
+
+# GPU Acceleration
+cupy-cuda12x==12.3.0  # GPU-accelerated array processing
+numba==0.58.1  # JIT compilation for GPU operations
+
 # Utilities
 python-dotenv==1.0.1
 pydantic==2.9.2
