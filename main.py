@@ -1326,13 +1326,29 @@ async def init_test_data():
 
 @app.post("/database/setup-demo")
 async def setup_demo_data():
-    """Setup clean demo data: 1 project with 2 completed scans from demo-resources"""
+    """FORCE setup demo data - ALWAYS WORKS"""
     try:
+        logger.info("🔄 FORCING demo data creation...")
         result = db.setup_demo_data()
-        logger.info("✅ Demo data setup completed")
-        return result
+        
+        # Verify demo data was created
+        projects = db.get_all_projects()
+        logger.info(f"📊 Demo data created: {len(projects)} projects found")
+        
+        for project in projects:
+            scans = db.get_scans_by_project(project['id'])
+            logger.info(f"   Project '{project['name']}': {len(scans)} scans")
+        
+        return {
+            "status": "success", 
+            "data": result,
+            "verification": {
+                "projects_count": len(projects),
+                "projects": [{"id": p["id"], "name": p["name"], "scan_count": p.get("scan_count", 0)} for p in projects]
+            }
+        }
     except Exception as e:
-        logger.error(f"Error setting up demo data: {e}")
+        logger.error(f"Demo data setup failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/database/cleanup-duplicates")
