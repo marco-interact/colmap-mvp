@@ -1,0 +1,113 @@
+{
+  "name": "colmap-mvp-frontend",
+  "description": "COLMAP 3D Reconstruction Frontend (Next.js)",
+  "spec": {
+    "kind": "Deployment",
+    "name": "colmap-frontend",
+    "billing": {
+      "deploymentPlan": "nf-1x-1"
+    },
+    "deployment": {
+      "instances": 1,
+      "minInstances": 1,
+      "maxInstances": 3,
+      "autoscaling": {
+        "enabled": true,
+        "cpuThreshold": 70,
+        "memoryThreshold": 80
+      },
+      "storage": {
+        "ephemeralStorage": {
+          "storageSize": 2048
+        }
+      }
+    },
+    "runtimeEnvironment": {
+      "resources": {
+        "cpus": "1.0",
+        "memory": "2048"
+      }
+    },
+    "ports": [
+      {
+        "name": "http",
+        "internalPort": 3000,
+        "protocol": "HTTP",
+        "public": true,
+        "domains": []
+      }
+    ],
+    "buildSettings": {
+      "dockerfile": {
+        "buildEngine": "kaniko",
+        "dockerfilePath": "/Dockerfile.frontend",
+        "dockerWorkDir": "/app",
+        "useCache": true
+      }
+    },
+    "buildArguments": {
+      "NEXT_PUBLIC_API_URL": "http://colmap-worker-gpu-testing:8000",
+      "NODE_ENV": "production",
+      "PORT": "3000"
+    },
+    "vcsData": {
+      "projectUrl": "https://github.com/marco-interact/colmap-mvp",
+      "projectType": "github",
+      "accountLogin": "marco-interact",
+      "projectId": "colmap-mvp"
+    },
+    "buildConfiguration": {
+      "pathIgnoreRules": [
+        "data/**",
+        "demo-resources/**",
+        "docs/**",
+        "scripts/**",
+        "*.log",
+        "*.db",
+        "venv*/**"
+      ]
+    },
+    "environmentVariables": [
+      {
+        "key": "NODE_ENV",
+        "value": "production"
+      },
+      {
+        "key": "PORT",
+        "value": "3000"
+      },
+      {
+        "key": "API_URL",
+        "value": "http://colmap-worker-gpu-testing:8000"
+      },
+      {
+        "key": "NEXT_PUBLIC_API_URL",
+        "value": "http://colmap-worker-gpu-testing:8000"
+      }
+    ],
+    "healthCheck": {
+      "livenessProbe": {
+        "httpGet": {
+          "path": "/",
+          "port": 3000
+        },
+        "initialDelaySeconds": 30,
+        "periodSeconds": 30,
+        "timeoutSeconds": 10,
+        "successThreshold": 1,
+        "failureThreshold": 3
+      },
+      "readinessProbe": {
+        "httpGet": {
+          "path": "/",
+          "port": 3000
+        },
+        "initialDelaySeconds": 20,
+        "periodSeconds": 10,
+        "timeoutSeconds": 5,
+        "successThreshold": 1,
+        "failureThreshold": 3
+      }
+    }
+  }
+}
