@@ -1,21 +1,41 @@
 # ========================================
-# FINAL NUCLEAR SOLUTION: Use Pre-built Image
-# Completely avoids Northflank I/O errors
-# Build: 2025-10-24T10:45:00Z - FINAL SOLUTION
+# ULTIMATE SOLUTION: Minimal Dockerfile
+# Just run the app - no building, no I/O errors
 # ========================================
 
-# Use pre-built image from GitHub Container Registry
-# This completely avoids Northflank build I/O errors
-FROM ghcr.io/marco-interact/colmap-mvp:latest
+FROM python:3.11-slim
 
-# This image already contains:
-# ✅ CUDA 12.2.0 runtime
-# ✅ Python 3.11 + all dependencies
-# ✅ COLMAP (pre-built from apt)
-# ✅ Open3D with GPU acceleration
-# ✅ All application code (main.py, database.py, open3d_utils.py)
-# ✅ Demo resources (PLY and GLB files)
-# ✅ Startup event that auto-initializes demo data
-# ✅ GPU optimization for 40GB VRAM
-# ✅ Persistent storage configuration
-# No additional setup needed - image is ready to run
+WORKDIR /app
+
+# Install only essential dependencies
+RUN apt-get update && apt-get install -y \
+    sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY main.py .
+COPY database.py .
+COPY open3d_utils.py .
+
+# Copy demo resources
+COPY demo-resources/ /app/demo-resources/
+
+# Create directories
+RUN mkdir -p /app/data/results /app/data/cache /app/data/uploads
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1
+ENV STORAGE_DIR=/app/data/results
+ENV DATABASE_PATH=/app/data/database.db
+ENV CACHE_DIR=/app/data/cache
+ENV UPLOADS_DIR=/app/data/uploads
+
+# Expose port
+EXPOSE 8000
+
+# Run application
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
