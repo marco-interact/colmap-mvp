@@ -98,6 +98,43 @@ def save_job(job_id: str, job_data: dict):
 # Initialize jobs from database
 jobs = get_jobs()
 
+# ==========================================
+# STARTUP: AUTO-INITIALIZE DEMO DATA
+# ==========================================
+@app.on_event("startup")
+async def startup_event():
+    """Initialize demo data on first startup (persists across restarts)"""
+    try:
+        logger.info("🚀 Starting up COLMAP Worker...")
+        
+        # Check if demo data exists (won't recreate if already present)
+        result = db.setup_demo_data()
+        
+        if result.get("skipped"):
+            logger.info("✅ Demo data already exists - using persistent storage")
+        else:
+            logger.info("✅ Demo data initialized successfully")
+            logger.info(f"   Project ID: {result.get('project_id')}")
+            logger.info(f"   Scan IDs: {result.get('scan_ids')}")
+        
+        # Verify demo resources are accessible
+        if DEMO_RESOURCES_DIR.exists():
+            dollhouse_ply = DEMO_RESOURCES_DIR / "demoscan-dollhouse/fvtc_firstfloor_processed.ply"
+            facade_ply = DEMO_RESOURCES_DIR / "demoscan-fachada/1mill.ply"
+            
+            if dollhouse_ply.exists() and facade_ply.exists():
+                logger.info("✅ Demo resources verified: PLY and GLB files accessible")
+            else:
+                logger.warning("⚠️  Demo resource files missing in container")
+        else:
+            logger.warning(f"⚠️  Demo resources directory not found: {DEMO_RESOURCES_DIR}")
+        
+        logger.info("🎯 COLMAP Worker ready for requests")
+        
+    except Exception as e:
+        logger.error(f"❌ Startup initialization failed: {e}")
+        # Don't crash the app, just log the error
+
 # Local storage configuration - optimized for local development
 STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "./data/results"))
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
