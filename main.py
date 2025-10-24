@@ -175,17 +175,21 @@ async def startup_event():
         except Exception as e2:
             logger.error(f"❌ Emergency demo data creation failed: {e2}")
 
-# Local storage configuration - optimized for local development
-STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "./data/results"))
+# PERSISTENT STORAGE CONFIGURATION - NEVER DELETE DATA
+STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "/persistent-data/results"))
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
-# Local cache directory
-CACHE_DIR = Path(os.getenv("CACHE_DIR", "./data/cache"))
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
+# PERSISTENT DATABASE PATH - NEVER DELETE
+DATABASE_PATH = os.getenv("DATABASE_PATH", "/persistent-data/database.db")
+CACHE_DIR = Path(os.getenv("CACHE_DIR", "/persistent-data/cache"))
+UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", "/persistent-data/uploads"))
 
-# Uploads directory (use persistent storage)
-UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", "./data/uploads"))
+# Ensure all persistent directories exist
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Initialize database with PERSISTENT path
+db = Database(DATABASE_PATH)
 
 # Demo resources directory
 DEMO_RESOURCES_DIR = Path("./demo-resources")
@@ -198,8 +202,9 @@ class COLMAPProcessor:
     """Handles COLMAP 3D reconstruction pipeline"""
     
     def __init__(self, work_dir: str):
+        # Use persistent storage directory
         self.work_dir = Path(work_dir)
-        self.work_dir.mkdir(exist_ok=True)
+        self.work_dir.mkdir(parents=True, exist_ok=True)
         
         # Create subdirectories
         self.images_dir = self.work_dir / "images"
