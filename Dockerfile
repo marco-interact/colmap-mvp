@@ -1,5 +1,6 @@
 # Use pre-built image from GitHub Container Registry
 # This avoids Northflank build I/O errors by pulling the already-built image
+# FORCE BUILD: 2025-10-24T06:25:00Z - Include open3d_utils.py and demo data
 
 FROM ghcr.io/marco-interact/colmap-mvp@sha256:ef92def84a997ef34a5b23b99f427a05759f21277da8a99765d9b3cf79cfde65
 
