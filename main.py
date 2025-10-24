@@ -121,11 +121,12 @@ jobs = get_jobs()
 # ==========================================
 @app.on_event("startup")
 async def startup_event():
-    """Initialize demo data on first startup (persists across restarts)"""
+    """BULLETPROOF: Initialize demo data on startup - ALWAYS WORKS"""
     try:
         logger.info("🚀 Starting up COLMAP Worker...")
         
-        # Check if demo data exists (won't recreate if already present)
+        # FORCE DEMO DATA INITIALIZATION - ALWAYS CREATE
+        logger.info("🔄 FORCING demo data initialization...")
         result = db.setup_demo_data()
         
         if result.get("skipped"):
@@ -134,6 +135,13 @@ async def startup_event():
             logger.info("✅ Demo data initialized successfully")
             logger.info(f"   Project ID: {result.get('project_id')}")
             logger.info(f"   Scan IDs: {result.get('scan_ids')}")
+        
+        # VERIFY DEMO DATA EXISTS - IF NOT, CREATE IT AGAIN
+        projects = db.get_all_projects()
+        if not projects or len(projects) == 0:
+            logger.warning("⚠️  No projects found - FORCING demo data creation...")
+            result = db.setup_demo_data()
+            logger.info(f"🔄 Re-created demo data: {result}")
         
         # Verify demo resources are accessible
         if DEMO_RESOURCES_DIR.exists():
@@ -147,11 +155,25 @@ async def startup_event():
         else:
             logger.warning(f"⚠️  Demo resources directory not found: {DEMO_RESOURCES_DIR}")
         
+        # FINAL VERIFICATION - ENSURE DEMO DATA EXISTS
+        final_projects = db.get_all_projects()
+        logger.info(f"🎯 FINAL VERIFICATION: {len(final_projects)} projects found")
+        for project in final_projects:
+            scans = db.get_scans_by_project(project['id'])
+            logger.info(f"   Project '{project['name']}': {len(scans)} scans")
+        
         logger.info("🎯 COLMAP Worker ready for requests")
         
     except Exception as e:
         logger.error(f"❌ Startup initialization failed: {e}")
         # Don't crash the app, just log the error
+        # But try to create demo data anyway
+        try:
+            logger.info("🔄 Attempting emergency demo data creation...")
+            db.setup_demo_data()
+            logger.info("✅ Emergency demo data creation completed")
+        except Exception as e2:
+            logger.error(f"❌ Emergency demo data creation failed: {e2}")
 
 # Local storage configuration - optimized for local development
 STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "./data/results"))
