@@ -1,7 +1,7 @@
 # ========================================
 # COLMAP Backend - USE NEW PRE-BUILT IMAGE
 # Image includes: open3d_utils.py, demo-resources/
-# Build: 2025-10-24T06:35:00Z - INITIALIZE NEW BUILD
+# Build: 2025-10-24T06:50:00Z - PUSH AND BUILD FIRST
 # ========================================
 
 FROM ghcr.io/marco-interact/colmap-mvp@sha256:ef92def84a997ef34a5b23b99f427a05759f21277da8a99765d9b3cf79cfde65
