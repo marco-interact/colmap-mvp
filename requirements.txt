@@ -7,7 +7,7 @@ uvicorn[standard]==0.32.0
 python-multipart==0.0.12
 
 # Database
-aiosqlite==0.20.0
+aiosqlite==0.21.0
 
 # Computer Vision & 3D Processing
 opencv-python==4.10.0.84
