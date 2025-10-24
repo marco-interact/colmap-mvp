@@ -25,6 +25,7 @@ from typing import Optional, Dict, Any
 import uuid
 import zipfile
 from database import db
+from open3d_utils import open3d_processor
 
 # Configure logging
 logging.basicConfig(
@@ -1914,6 +1915,288 @@ async def download_file(project_id: str, file_type: str):
     }
 
 # Demo resources are served via the @app.get("/demo-resources/{scan_folder}/{filename:path}") route handler
+
+# ==========================================
+# OPEN3D ADVANCED VISUALIZATION ENDPOINTS
+# ==========================================
+
+@app.get("/api/point-cloud/{scan_id}/stats")
+async def get_point_cloud_stats(scan_id: str):
+    """Get comprehensive point cloud statistics (COLMAP GUI feature)
+    
+    Provides:
+    - Point count, bounding box, centroid
+    - Color and normal information
+    - Nearest neighbor distances
+    """
+    try:
+        # Find point cloud file
+        scan = db.get_scan(scan_id)
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        # Check if it's a demo scan
+        technical_details = db.get_scan_technical_details(scan_id)
+        if technical_details and technical_details.get("results"):
+            results = json.loads(technical_details["results"]) if isinstance(technical_details["results"], str) else technical_details["results"]
+            ply_url = results.get("point_cloud_url", "")
+            
+            if ply_url.startswith("/demo-resources/"):
+                # Demo resource
+                ply_path = DEMO_RESOURCES_DIR / ply_url.replace("/demo-resources/", "")
+            else:
+                # Regular reconstruction
+                ply_path = STORAGE_DIR / scan_id / "sparse_point_cloud.ply"
+        else:
+            ply_path = STORAGE_DIR / scan_id / "sparse_point_cloud.ply"
+        
+        if not ply_path.exists():
+            raise HTTPException(status_code=404, detail="Point cloud file not found")
+        
+        stats = open3d_processor.get_point_cloud_stats(str(ply_path))
+        return {
+            "scan_id": scan_id,
+            "file_path": str(ply_path),
+            "statistics": stats
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting point cloud stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/point-cloud/{scan_id}/point/{point_index}")
+async def get_point_info(scan_id: str, point_index: int):
+    """Get information about a specific point (COLMAP GUI point selection)
+    
+    Returns:
+    - Point position, color, normal
+    - Nearest neighbors
+    """
+    try:
+        scan = db.get_scan(scan_id)
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        # Find PLY file (similar logic as above)
+        technical_details = db.get_scan_technical_details(scan_id)
+        if technical_details and technical_details.get("results"):
+            results = json.loads(technical_details["results"]) if isinstance(technical_details["results"], str) else technical_details["results"]
+            ply_url = results.get("point_cloud_url", "")
+            
+            if ply_url.startswith("/demo-resources/"):
+                ply_path = DEMO_RESOURCES_DIR / ply_url.replace("/demo-resources/", "")
+            else:
+                ply_path = STORAGE_DIR / scan_id / "sparse_point_cloud.ply"
+        else:
+            ply_path = STORAGE_DIR / scan_id / "sparse_point_cloud.ply"
+        
+        if not ply_path.exists():
+            raise HTTPException(status_code=404, detail="Point cloud file not found")
+        
+        point_info = open3d_processor.select_point_info(str(ply_path), point_index)
+        return {
+            "scan_id": scan_id,
+            "point_info": point_info
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting point info: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/point-cloud/{scan_id}/colormap")
+async def apply_colormap(scan_id: str, colormap: str = "jet"):
+    """Apply colormap to point cloud (COLMAP GUI render option)
+    
+    Colormaps: jet, viridis, plasma, hot, cool, rainbow
+    """
+    try:
+        scan = db.get_scan(scan_id)
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        ply_path = STORAGE_DIR / scan_id / "sparse_point_cloud.ply"
+        if not ply_path.exists():
+            raise HTTPException(status_code=404, detail="Point cloud file not found")
+        
+        output_path = open3d_processor.apply_colormap(str(ply_path), colormap)
+        
+        return {
+            "scan_id": scan_id,
+            "colormap": colormap,
+            "output_file": output_path,
+            "download_url": f"/reconstruction/{scan_id}/download/{Path(output_path).name}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error applying colormap: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/point-cloud/{scan_id}/downsample")
+async def downsample_point_cloud(scan_id: str, voxel_size: float = 0.05):
+    """Downsample point cloud for faster rendering"""
+    try:
+        scan = db.get_scan(scan_id)
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        ply_path = STORAGE_DIR / scan_id / "sparse_point_cloud.ply"
+        if not ply_path.exists():
+            raise HTTPException(status_code=404, detail="Point cloud file not found")
+        
+        output_path = open3d_processor.downsample_point_cloud(str(ply_path), voxel_size)
+        
+        return {
+            "scan_id": scan_id,
+            "voxel_size": voxel_size,
+            "output_file": output_path,
+            "download_url": f"/reconstruction/{scan_id}/download/{Path(output_path).name}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downsampling point cloud: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/point-cloud/{scan_id}/estimate-normals")
+async def estimate_normals(scan_id: str, radius: float = 0.1, max_nn: int = 30):
+    """Estimate normals for point cloud"""
+    try:
+        scan = db.get_scan(scan_id)
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        ply_path = STORAGE_DIR / scan_id / "sparse_point_cloud.ply"
+        if not ply_path.exists():
+            raise HTTPException(status_code=404, detail="Point cloud file not found")
+        
+        output_path = open3d_processor.estimate_normals(str(ply_path), radius, max_nn)
+        
+        return {
+            "scan_id": scan_id,
+            "radius": radius,
+            "max_nn": max_nn,
+            "output_file": output_path,
+            "download_url": f"/reconstruction/{scan_id}/download/{Path(output_path).name}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error estimating normals: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/point-cloud/{scan_id}/remove-outliers")
+async def remove_outliers(scan_id: str, nb_neighbors: int = 20, std_ratio: float = 2.0):
+    """Remove statistical outliers from point cloud"""
+    try:
+        scan = db.get_scan(scan_id)
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        ply_path = STORAGE_DIR / scan_id / "sparse_point_cloud.ply"
+        if not ply_path.exists():
+            raise HTTPException(status_code=404, detail="Point cloud file not found")
+        
+        output_path = open3d_processor.remove_outliers(str(ply_path), nb_neighbors, std_ratio)
+        
+        return {
+            "scan_id": scan_id,
+            "nb_neighbors": nb_neighbors,
+            "std_ratio": std_ratio,
+            "output_file": output_path,
+            "download_url": f"/reconstruction/{scan_id}/download/{Path(output_path).name}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error removing outliers: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/point-cloud/{scan_id}/create-mesh")
+async def create_mesh(scan_id: str, method: str = "poisson"):
+    """Create mesh from point cloud
+    
+    Methods: poisson, ball_pivoting
+    """
+    try:
+        scan = db.get_scan(scan_id)
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        ply_path = STORAGE_DIR / scan_id / "sparse_point_cloud.ply"
+        if not ply_path.exists():
+            raise HTTPException(status_code=404, detail="Point cloud file not found")
+        
+        output_path = open3d_processor.create_mesh(str(ply_path), method)
+        
+        return {
+            "scan_id": scan_id,
+            "method": method,
+            "output_file": output_path,
+            "download_url": f"/reconstruction/{scan_id}/download/{Path(output_path).name}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating mesh: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/point-cloud/{scan_id}/render")
+async def render_to_image(scan_id: str, width: int = 1920, height: int = 1080,
+                         camera_params: Optional[Dict] = None):
+    """Render point cloud to high-res image (COLMAP GUI screenshot)"""
+    try:
+        scan = db.get_scan(scan_id)
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        # Find PLY file
+        technical_details = db.get_scan_technical_details(scan_id)
+        if technical_details and technical_details.get("results"):
+            results = json.loads(technical_details["results"]) if isinstance(technical_details["results"], str) else technical_details["results"]
+            ply_url = results.get("point_cloud_url", "")
+            
+            if ply_url.startswith("/demo-resources/"):
+                ply_path = DEMO_RESOURCES_DIR / ply_url.replace("/demo-resources/", "")
+            else:
+                ply_path = STORAGE_DIR / scan_id / "sparse_point_cloud.ply"
+        else:
+            ply_path = STORAGE_DIR / scan_id / "sparse_point_cloud.ply"
+        
+        if not ply_path.exists():
+            raise HTTPException(status_code=404, detail="Point cloud file not found")
+        
+        output_path = open3d_processor.render_to_image(
+            str(ply_path), width, height, camera_params
+        )
+        
+        return {
+            "scan_id": scan_id,
+            "width": width,
+            "height": height,
+            "output_file": output_path,
+            "download_url": f"/reconstruction/{scan_id}/download/{Path(output_path).name}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error rendering to image: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/camera/parameters")
+async def get_camera_parameters():
+    """Get default camera parameters for Open3D visualization"""
+    return open3d_processor.get_camera_parameters()
 
 if __name__ == "__main__":
     # Use port 8000 for localhost development, 8080 for cloud deployment
