@@ -1,5 +1,6 @@
 # Lightweight COLMAP Backend with Pre-built Binaries
 # Optimized for Northflank deployment (avoids build I/O errors)
+# Build timestamp: 2025-10-24T05:40:00Z - Force rebuild with open3d_utils.py
 
 FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
 
