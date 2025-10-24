@@ -31,6 +31,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY main.py .
 COPY database.py .
+COPY open3d_utils.py .
 COPY open3d_utils_enhanced.py .
 
 # Copy demo resources
