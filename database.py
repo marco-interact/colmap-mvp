@@ -75,6 +75,9 @@ class Database:
                     video_duration REAL,
                     processing_quality TEXT DEFAULT 'medium',
                     thumbnail_path TEXT,
+                    ply_file TEXT,
+                    glb_file TEXT,
+                    thumbnail TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (project_id) REFERENCES projects (id)
