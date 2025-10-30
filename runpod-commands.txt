@@ -41,10 +41,10 @@ colmap -h
 STEP 7: Start the backend
 --------------------------
 python main.py
-
+    
 
 Additional Info:
-- Your backend will run on: http://213.181.111.2:8000
+- Your backend will run on:http://213.181.111.2:8000
 - Check status: curl http://localhost:8000/health
 - View logs: tail -f backend.log
 - GPU status: nvidia-smi
