@@ -131,7 +131,7 @@ class APIClient {
     }
 
     try {
-      const response = await this.request<{ projects: any[] }>(`/projects`)
+      const response = await this.request<{ projects: any[] }>(`/api/projects`)
       return response
     } catch (error) {
       console.error('Error fetching all projects:', error)
@@ -146,7 +146,7 @@ class APIClient {
     }
 
     try {
-      const response = await this.request<any>(`/projects/${projectId}`)
+      const response = await this.request<any>(`/api/projects/${projectId}`)
       return response
     } catch (error) {
       console.error('Error fetching project:', error)
@@ -417,7 +417,7 @@ class APIClient {
         project_type: projectType
       })
       
-      const response = await fetch(`${this.baseUrl}/projects`, {
+      const response = await fetch(`${this.baseUrl}/api/projects`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
