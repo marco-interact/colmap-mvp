@@ -123,12 +123,24 @@ class COLMAPProcessor:
             "colmap", "feature_extractor",
             "--database_path", str(self.database_path),
             "--image_path", str(self.images_path),
+            
+            # SIFT Extraction Parameters
+            # Reference: https://colmap.github.io/tutorial.html#feature-detection-and-extraction
             "--SiftExtraction.use_gpu", "1" if use_gpu else "0",
-            "--SiftExtraction.domain_size_pooling", "1",
-            "--SiftExtraction.estimate_affine_shape", "1",
+            "--SiftExtraction.domain_size_pooling", "1",  # Better feature distribution
+            "--SiftExtraction.estimate_affine_shape", "1",  # Viewpoint invariance
             "--SiftExtraction.max_num_features", params["max_num_features"],
             "--SiftExtraction.max_image_size", params["max_image_size"],
-            "--ImageReader.single_camera", "1",  # Video sequences
+            
+            # Image Reader (for video sequences)
+            "--ImageReader.single_camera", "1",  # All frames from same camera
+            
+            # Additional quality parameters
+            "--SiftExtraction.first_octave", "-1",  # Start at full resolution
+            "--SiftExtraction.num_octaves", "4",    # Multi-scale pyramid
+            "--SiftExtraction.octave_resolution", "3",  # Scales per octave
+            "--SiftExtraction.peak_threshold", "0.0067",  # Feature threshold
+            "--SiftExtraction.edge_threshold", "10.0",    # Edge filter
         ]
         
         try:
@@ -287,26 +299,90 @@ class COLMAPProcessor:
         return best_model, stats
     
     def _parse_feature_stats(self, output: str) -> Dict:
-        """Parse feature extraction statistics from output"""
-        stats = {}
+        """
+        Parse feature extraction statistics from COLMAP output
+        Extracts: num_images, total_features, avg_features_per_image
+        """
+        stats = {
+            "status": "success" if "Database" in output else "unknown"
+        }
         
-        # Simple parsing - can be enhanced
-        if "Extracted features from" in output:
-            stats["status"] = "success"
-        else:
-            stats["status"] = "unknown"
+        # Try to extract statistics from output
+        lines = output.split('\n')
+        for i, line in enumerate(lines):
+            # Look for database stats
+            if "Database:" in line and i + 1 < len(lines):
+                # Next line often has image count
+                try:
+                    num_images = len(list(self.images_path.glob("*.jpg")))
+                    stats["num_images"] = num_images
+                except:
+                    pass
+                break
+        
+        # Count features in database
+        try:
+            if self.database_path.exists():
+                import sqlite3
+                conn = sqlite3.connect(self.database_path)
+                cursor = conn.cursor()
+                
+                # Count keypoints
+                cursor.execute("SELECT COUNT(*) FROM keypoints")
+                stats["total_keypoints"] = cursor.fetchone()[0]
+                
+                # Count images
+                cursor.execute("SELECT COUNT(*) FROM images")
+                stats["num_images"] = cursor.fetchone()[0]
+                
+                if stats["num_images"] > 0:
+                    stats["avg_features_per_image"] = stats["total_keypoints"] // stats["num_images"]
+                
+                conn.close()
+                logger.info(f"Feature stats: {stats['num_images']} images, {stats['total_keypoints']} keypoints")
+        except Exception as e:
+            logger.warning(f"Could not parse feature stats from database: {e}")
         
         return stats
     
     def _parse_match_stats(self, output: str) -> Dict:
-        """Parse feature matching statistics from output"""
-        stats = {}
+        """
+        Parse feature matching statistics from COLMAP output
+        Extracts: matched_pairs, verification_rate
+        """
+        stats = {
+            "status": "success" if "Database" in output else "unknown"
+        }
         
-        # Simple parsing - can be enhanced
-        if "Matched image pairs" in output:
-            stats["status"] = "success"
-        else:
-            stats["status"] = "unknown"
+        # Try to extract statistics from output
+        lines = output.split('\n')
+        for line in lines:
+            # Look for match count
+            if "Matched" in line and "pairs" in line:
+                try:
+                    # Extract number from "Matched X image pairs"
+                    import re
+                    match = re.search(r'(\d+)', line)
+                    if match:
+                        stats["matched_pairs"] = int(match.group(1))
+                except:
+                    pass
+        
+        # Count matches in database
+        try:
+            if self.database_path.exists():
+                import sqlite3
+                conn = sqlite3.connect(self.database_path)
+                cursor = conn.cursor()
+                
+                # Count two-view geometries (verified matches)
+                cursor.execute("SELECT COUNT(*) FROM two_view_geometries")
+                stats["verified_pairs"] = cursor.fetchone()[0]
+                
+                conn.close()
+                logger.info(f"Match stats: {stats.get('verified_pairs', 'unknown')} verified pairs")
+        except Exception as e:
+            logger.warning(f"Could not parse match stats from database: {e}")
         
         return stats
 
