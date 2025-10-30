@@ -243,6 +243,23 @@ async def get_projects():
         logger.error(f"Error getting projects: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# New: get single project by id
+@app.get("/api/projects/{project_id}")
+async def get_project(project_id: str):
+    """Get a single project by ID"""
+    try:
+        conn = get_db_connection()
+        row = conn.execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
+        conn.close()
+        if not row:
+            raise HTTPException(status_code=404, detail="Project not found")
+        return dict(row)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting project: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/projects/{project_id}/scans")
 async def get_scans(project_id: str):
     """Get scans for a project"""

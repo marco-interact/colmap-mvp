@@ -161,7 +161,7 @@ class APIClient {
     }
 
     try {
-      const response = await this.request<any>(`/projects/${projectId}/scans`)
+      const response = await this.request<any>(`/api/projects/${projectId}/scans`)
       // Backend returns array directly, wrap it in object
       const scans = Array.isArray(response) ? response : (response.scans || [])
       console.log(`📊 Loaded ${scans.length} scans for project ${projectId}`)

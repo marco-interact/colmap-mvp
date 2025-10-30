@@ -116,7 +116,8 @@ export default function ProjectDetailPage() {
           name: scan.name,
           projectId: scan.project_id,
           projectName: projectData?.name || "",
-          thumbnail: `/api/backend/api/scans/${scan.id}/thumbnail.jpg`,
+          // Serve thumbnail through Next.js proxy to the backend static folder
+          thumbnail: scan.thumbnail ? `/api/backend/demo-resources/${scan.thumbnail}` : undefined,
           status: scan.status as 'completed' | 'processing' | 'failed' | 'pending',
           location: projectData?.location || "",
           updated: new Date(scan.updated_at || scan.created_at).toLocaleDateString(),
