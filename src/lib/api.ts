@@ -477,7 +477,7 @@ class APIClient {
     }
 
     try {
-      return await this.request<{ status: string }>('/health')
+      return await this.request<{ status: string }>('/api/status')
     } catch (error) {
       // If health check fails, we're now in demo mode
       return { status: 'demo' }
