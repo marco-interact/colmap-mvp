@@ -1,61 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Mock data
-const mockProjects = [
-  {
-    id: '1',
-    name: 'Demo Project',
-    description: 'A sample 3D reconstruction project',
-    location: 'San Francisco, CA',
-    space_type: 'indoor',
-    project_type: 'architecture',
-    created_at: '2024-01-15T10:00:00Z',
-    updated_at: '2024-01-15T10:00:00Z',
-    user_id: 'user-1',
-    scans: [
-      {
-        id: 'scan-1',
-        name: 'Demo Scan',
-        project_id: '1',
-        status: 'completed',
-        created_at: '2024-01-15T10:30:00Z',
-        updated_at: '2024-01-15T11:00:00Z',
-        model_url: '/models/sample.ply',
-        thumbnail_url: '/api/assets/sample-scan-thumbnail.jpg'
-      }
-    ]
-  }
-]
+// Backend URL - use environment variable or fallback
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export async function GET() {
-  return NextResponse.json({
-    success: true,
-    data: mockProjects
-  })
+  try {
+    // Proxy request to backend
+    const response = await fetch(`${BACKEND_URL}/api/projects`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    })
+
+    if (!response.ok) {
+      console.error(`Backend error: ${response.status} ${response.statusText}`)
+      // Return empty array if backend unavailable
+      return NextResponse.json({ projects: [] })
+    }
+
+    const data = await response.json()
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error('Failed to fetch projects from backend:', error)
+    // Return empty array if backend unavailable
+    return NextResponse.json({ projects: [] })
+  }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     
-    const newProject = {
-      id: `project-${Date.now()}`,
+    // Proxy request to backend
+    const backendData = new URLSearchParams({
+      user_email: data.user_email || 'demo@colmap.app',
       name: data.name,
       description: data.description || '',
       location: data.location || '',
       space_type: data.space_type || '',
       project_type: data.project_type || '',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      user_id: 'user-1',
-      scans: []
-    }
-    
-    return NextResponse.json({
-      success: true,
-      data: newProject
     })
+    
+    const response = await fetch(`${BACKEND_URL}/api/projects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: backendData,
+    })
+
+    if (!response.ok) {
+      console.error(`Backend error: ${response.status} ${response.statusText}`)
+      return NextResponse.json({ error: 'Backend unavailable' }, { status: 503 })
+    }
+
+    const result = await response.json()
+    return NextResponse.json(result)
   } catch (error) {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    console.error('Failed to create project:', error)
+    return NextResponse.json({ error: 'Network error' }, { status: 500 })
   }
 }
