@@ -131,7 +131,7 @@ class APIClient {
     }
 
     try {
-      const response = await this.request<{ projects: any[] }>(`/projects`)
+      const response = await this.request<{ projects: any[] }>(`/api/projects`)
       return response
     } catch (error) {
       console.error('Error fetching all projects:', error)
@@ -146,7 +146,7 @@ class APIClient {
     }
 
     try {
-      const response = await this.request<any>(`/projects/${projectId}`)
+      const response = await this.request<any>(`/api/projects/${projectId}`)
       return response
     } catch (error) {
       console.error('Error fetching project:', error)
@@ -161,7 +161,7 @@ class APIClient {
     }
 
     try {
-      const response = await this.request<any>(`/projects/${projectId}/scans`)
+      const response = await this.request<any>(`/api/projects/${projectId}/scans`)
       // Backend returns array directly, wrap it in object
       const scans = Array.isArray(response) ? response : (response.scans || [])
       console.log(`📊 Loaded ${scans.length} scans for project ${projectId}`)
@@ -462,7 +462,7 @@ class APIClient {
     }
 
     try {
-      const response = await this.request<Scan[]>(`/projects/${projectId}/scans`)
+      const response = await this.request<Scan[]>(`/api/projects/${projectId}/scans`)
       return response
     } catch (error) {
       console.warn('Failed to get scans from API, using demo data:', error)
