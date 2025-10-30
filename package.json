@@ -43,7 +43,7 @@
     "@types/three": "^0.158.3",
     "cssnano": "^7.1.1",
     "cssnano-preset-advanced": "^7.0.9",
-    "eslint": "^8",
+    "eslint": "^9",
     "eslint-config-next": "14.0.4",
     "prettier": "^3.1.1",
     "prettier-plugin-tailwindcss": "^0.5.9"
