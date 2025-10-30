@@ -1,0 +1,49 @@
+Cloudflare Tunnel Setup for Public Access
+===========================================
+
+Backend is running ✅ on localhost:8000
+
+NOW set up Cloudflare Tunnel:
+
+STEP 1: Install cloudflared
+----------------------------
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
+sudo apt-get install -y ./cloudflared.deb
+
+
+STEP 2: Start tunnel in background
+------------------------------------
+nohup cloudflared tunnel --url http://localhost:8000 > tunnel.log 2>&1 &
+
+
+STEP 3: Get the public URL
+---------------------------
+sleep 3
+grep -o 'https://[^ ]*\.trycloudflare\.com' tunnel.log
+
+# You'll see something like: https://abc123-def456.trycloudflare.com
+# COPY THIS URL!
+
+
+STEP 4: Test the tunnel
+------------------------
+# Copy the URL from above and test:
+curl https://YOUR-URL.trycloudflare.com/health
+
+# Should return: {"status":"healthy","message":"Backend is running",...}
+
+
+STEP 5: Update Vercel
+----------------------
+# In your LOCAL terminal (not RunPod), run:
+echo "https://YOUR-URL.trycloudflare.com" | vercel env add NEXT_PUBLIC_API_URL production
+
+# Then redeploy:
+vercel --prod
+
+
+IMPORTANT:
+- The tunnel stays active as long as the RunPod terminal stays open
+- If you restart the pod, you'll need to restart the tunnel
+- Each new tunnel gets a different URL
+

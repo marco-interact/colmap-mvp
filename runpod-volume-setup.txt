@@ -1,0 +1,56 @@
+RunPod Volume Setup - Persistent Storage
+==========================================
+
+Volume ID: mtb2kqkyin
+Pod ID: l1ejj2bk9uj6j2
+IP: 213.181.111.2
+
+STEP 1: Link Volume to Pod (in RunPod Dashboard)
+--------------------------------------------------
+1. Go to RunPod Dashboard
+2. Navigate to your pod: l1ejj2bk9uj6j2
+3. Click "Edit" → "Attach Volume"
+4. Select volume: mtb2kqkyin
+5. Mount point: /workspace/volume
+6. Click "Save" and wait for pod to restart
+
+
+STEP 2: Restart Backend with Latest Changes
+--------------------------------------------
+cd /workspace/colmap-mvp
+git pull origin main
+
+# Create volume directory structure
+mkdir -p /workspace/volume
+mkdir -p /workspace/volume/results
+mkdir -p /workspace/volume/cache
+mkdir -p /workspace/volume/uploads
+
+# Start backend (database will be created in volume)
+source venv/bin/activate
+python main.py
+
+
+STEP 3: Verify Volume is Working
+---------------------------------
+# Check if database was created in volume
+ls -la /workspace/volume/
+
+# Database should now be persistent across pod restarts!
+# All your data will be saved in the volume
+
+
+Volume Benefits:
+✅ Persistent storage across pod restarts
+✅ Database survives pod recreation
+✅ Reconstructions stored safely
+✅ Can be attached to multiple pods
+
+
+Additional Info:
+- Volume path: /workspace/volume
+- Database: /workspace/volume/database.db
+- Results: /workspace/volume/results/
+- Cache: /workspace/volume/cache/
+- Uploads: /workspace/volume/uploads/
+

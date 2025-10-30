@@ -1,0 +1,39 @@
+How to Use Your Existing Volume (mtb2kqkyin) in RunPod
+=======================================================
+
+You already have a volume: mtb2kqkyin
+
+The issue: RunPod's "Edit Pod" creates a NEW volume, not attach an existing one.
+The solution: You need to attach your existing volume differently.
+
+OPTION 1: Create New Pod with Your Volume (Recommended)
+--------------------------------------------------------
+1. Go to RunPod Dashboard
+2. Click "Deploy" → "GPU Pod"
+3. Configure as before (RTX 4090, PyTorch, etc.)
+4. In the pod configuration:
+   - Find "Existing Volume" or "Volume" section
+   - Select your volume: mtb2kqkyin
+   - Set Mount Path: /workspace/volume
+5. Deploy the new pod
+6. Delete old pod to save costs
+
+OPTION 2: Keep Using /workspace (Current Pod)
+-----------------------------------------------
+Since your volume is already mounted at /workspace:
+1. Keep the current mount path: /workspace
+2. Create directory: mkdir -p /workspace/volume
+3. Use this path for database: /workspace/volume/database.db
+4. All your current pod data is ALREADY in /workspace
+
+OPTION 3: Use Default Volume Disk Size
+---------------------------------------
+If you just created a volume (mtb2kqkyin):
+1. Leave "Volume Disk" at 50 GB (will create new)
+2. OR set to 100 GB if you need more space
+3. Mount Path: /workspace
+4. Your existing volume can be attached in a separate step
+
+
+Which volume configuration do you see in your RunPod dashboard?
+

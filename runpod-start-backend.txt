@@ -1,0 +1,47 @@
+Start Backend in RunPod Terminal
+==================================
+
+The backend stopped. Start it again:
+
+STEP 1: Navigate to project
+-----------------------------
+cd /workspace/colmap-mvp
+
+
+STEP 2: Activate virtual environment
+------------------------------------
+source venv/bin/activate
+
+
+STEP 3: Start backend in background
+------------------------------------
+nohup python main.py > backend.log 2>&1 &
+
+
+STEP 4: Check if it's running
+------------------------------
+ps aux | grep python
+curl http://localhost:8000/health
+
+
+STEP 5: View logs
+-----------------
+tail -f backend.log
+
+
+If it works, you should see:
+✅ {"status":"healthy","message":"Backend is running","database_path":"/workspace/database.db"}
+
+
+THEN set up Cloudflare Tunnel for public access:
+
+# Install cloudflared
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
+sudo apt-get install -y ./cloudflared.deb
+
+# Start tunnel
+cloudflared tunnel --url http://localhost:8000
+
+# You'll get a URL like: https://xxxxx.trycloudflare.com
+# Copy that URL and update Vercel environment variable
+

@@ -1,0 +1,65 @@
+RunPod Fresh Start Commands
+============================
+
+Your RunPod IP: 213.181.111.2
+Pod ID: l1ejj2bk9uj6j2
+
+STEP 1: Remove the non-git directory completely
+------------------------------------------------
+cd /workspace
+sudo rm -rf colmap-mvp
+# Wait a moment, then verify it's gone
+ls -la
+
+
+STEP 2: Clone fresh from GitHub
+--------------------------------
+git clone https://github.com/marco-interact/colmap-mvp.git
+cd colmap-mvp
+ls -la
+
+
+STEP 3: Verify requirements.txt exists
+---------------------------------------
+cat requirements.txt
+# Should show Python dependencies
+
+
+STEP 4: Install system dependencies
+------------------------------------
+sudo apt-get update && sudo apt-get install -y colmap python3-pip python3-venv git
+
+
+STEP 5: Set up Python environment
+----------------------------------
+python3 -m venv venv
+source venv/bin/activate
+
+
+STEP 6: Install Python dependencies
+------------------------------------
+pip install --upgrade pip
+pip install -r requirements.txt
+
+
+STEP 7: Create directories
+---------------------------
+mkdir -p data/results data/cache data/uploads
+
+
+STEP 8: Test COLMAP
+--------------------
+colmap -h
+
+
+STEP 9: Start the backend
+--------------------------
+python main.py
+
+
+Additional Info:
+- Your backend will run on: http://213.181.111.2:8000
+- Check status: curl http://localhost:8000/health
+- View logs: tail -f backend.log
+- GPU status: nvidia-smi
+

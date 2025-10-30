@@ -1,0 +1,36 @@
+RunPod Update Commands - Restart Backend with Fix
+==================================================
+
+Your RunPod IP: 213.181.111.2
+Pod ID: l1ejj2bk9uj6j2
+
+STEP 1: Stop the current backend
+---------------------------------
+# Press CTRL+C in the terminal where the backend is running
+
+
+STEP 2: Pull latest changes from GitHub
+----------------------------------------
+cd /workspace/colmap-mvp
+git pull origin main
+
+
+STEP 3: Restart the backend
+----------------------------
+source venv/bin/activate
+python main.py
+
+
+STEP 4: Verify the fix
+-----------------------
+# In another terminal or tab, test project creation
+curl -X POST "http://localhost:8000/projects?user_email=test@example.com&name=Test%20Project"
+
+# Should return: {"status":"success","project_id":"..."}
+
+
+Additional Info:
+- The backend will now support project creation
+- Test projects should be visible in the frontend
+- Backend URL: http://213.181.111.2:8000
+
