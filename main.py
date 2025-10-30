@@ -6,7 +6,8 @@ Just FastAPI + basic endpoints - NO COMPLEX DEPENDENCIES
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 import logging
 import os
 import sqlite3
@@ -20,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(title="COLMAP Backend", version="1.0.0")
+
+# Mount static files for demo resources
+app.mount("/demo-resources", StaticFiles(directory="demo-resources"), name="demo-resources")
 
 # CORS middleware
 app.add_middleware(
@@ -129,7 +133,10 @@ def create_demo_data():
                 "video_filename": "demoscan-dollhouse.mp4",
                 "video_size": 18432000,
                 "processing_quality": "high",
-                "status": "completed"
+                "status": "completed",
+                "ply_file": "demoscan-dollhouse/fvtc_firstfloor_processed.ply",
+                "glb_file": "demoscan-dollhouse/single_family_home_-_first_floor.glb",
+                "thumbnail": "thumbnails/demoscan-dollhouse-thumb.jpg"
             },
             {
                 "id": str(uuid.uuid4()),
@@ -137,16 +144,20 @@ def create_demo_data():
                 "video_filename": "demoscan-fachada.mp4",
                 "video_size": 24576000,
                 "processing_quality": "high",
-                "status": "completed"
+                "status": "completed",
+                "ply_file": "demoscan-fachada/1mill.ply",
+                "glb_file": "demoscan-fachada/aleppo_destroyed_building_front.glb",
+                "thumbnail": "thumbnails/demoscan-fachada-thumb.jpg"
             }
         ]
         
         for scan in demo_scans:
             conn.execute('''
-                INSERT INTO scans (id, project_id, name, video_filename, video_size, processing_quality, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO scans (id, project_id, name, video_filename, video_size, processing_quality, status, ply_file, glb_file, thumbnail)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (scan["id"], demo_project_id, scan["name"], scan["video_filename"], 
-                  scan["video_size"], scan["processing_quality"], scan["status"]))
+                  scan["video_size"], scan["processing_quality"], scan["status"],
+                  scan["ply_file"], scan["glb_file"], scan["thumbnail"]))
         
         conn.commit()
         logger.info("✅ Demo data created successfully")
