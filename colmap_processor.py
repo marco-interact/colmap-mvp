@@ -155,30 +155,74 @@ class COLMAPProcessor:
             logger.error(f"Feature extraction failed: {e.stderr}")
             raise
     
-    def match_features(self, matching_type: str = "sequential", use_gpu: bool = True) -> Dict:
+    def match_features(self, matching_type: str = "sequential", use_gpu: bool = True, quality: str = "medium") -> Dict:
         """
-        Match features between images
+        Match features between images with geometric verification
+        
         Reference: https://colmap.github.io/tutorial.html#feature-matching-and-geometric-verification
+        
+        Matching strategies per COLMAP tutorial:
+        - sequential_matcher: Best for video sequences (ordered frames)
+        - exhaustive_matcher: Best for unordered images (all pairs)
+        - spatial_matcher: Best for geotagged images
+        
+        Geometric verification is automatic via RANSAC and stored in two_view_geometries table.
         """
-        logger.info(f"Matching features with {matching_type} matcher")
+        logger.info(f"Matching features with {matching_type} matcher (quality={quality})")
+        
+        # Quality-based match limits
+        quality_params = {
+            "low": {"max_num_matches": "32768"},
+            "medium": {"max_num_matches": "65536"},
+            "high": {"max_num_matches": "131072"}
+        }
+        match_params = quality_params.get(quality, quality_params["medium"])
         
         if matching_type == "sequential":
-            # Best for video sequences
+            # Best for video sequences (frames in order)
+            # Reference: https://colmap.github.io/tutorial.html#feature-matching-and-geometric-verification
             cmd = [
                 "colmap", "sequential_matcher",
                 "--database_path", str(self.database_path),
-                "--SequentialMatching.overlap", "10",
+                
+                # Sequential-specific parameters
+                "--SequentialMatching.overlap", "10",  # Match 10 adjacent frames
+                "--SequentialMatching.quadratic_overlap", "0",  # Linear overlap
+                
+                # SIFT Matching Parameters
                 "--SiftMatching.use_gpu", "1" if use_gpu else "0",
-                "--SiftMatching.guided_matching", "1",
-                "--SiftMatching.cross_check", "1",
+                "--SiftMatching.guided_matching", "1",  # Use epipolar geometry
+                "--SiftMatching.cross_check", "1",  # Bidirectional matching
+                "--SiftMatching.max_num_matches", match_params["max_num_matches"],
+                
+                # Geometric Verification (automatic)
+                "--SiftMatching.max_ratio", "0.8",  # Lowe's ratio test
+                "--SiftMatching.max_distance", "0.7",  # Descriptor distance
+                "--SiftMatching.max_error", "4.0",  # RANSAC threshold (pixels)
+                "--SiftMatching.confidence", "0.999",  # RANSAC confidence
+                "--SiftMatching.min_num_inliers", "15",  # Min matches per pair
+                "--SiftMatching.min_inlier_ratio", "0.25",  # Quality threshold
             ]
-        else:  # exhaustive
+        else:  # exhaustive_matcher
+            # Best for unordered image collections
+            # Reference: https://colmap.github.io/tutorial.html#feature-matching-and-geometric-verification
             cmd = [
                 "colmap", "exhaustive_matcher",
                 "--database_path", str(self.database_path),
+                
+                # SIFT Matching Parameters
                 "--SiftMatching.use_gpu", "1" if use_gpu else "0",
-                "--SiftMatching.guided_matching", "1",
-                "--SiftMatching.cross_check", "1",
+                "--SiftMatching.guided_matching", "1",  # Use epipolar geometry
+                "--SiftMatching.cross_check", "1",  # Bidirectional matching
+                "--SiftMatching.max_num_matches", match_params["max_num_matches"],
+                
+                # Geometric Verification (automatic)
+                "--SiftMatching.max_ratio", "0.8",  # Lowe's ratio test
+                "--SiftMatching.max_distance", "0.7",  # Descriptor distance
+                "--SiftMatching.max_error", "4.0",  # RANSAC threshold (pixels)
+                "--SiftMatching.confidence", "0.999",  # RANSAC confidence
+                "--SiftMatching.min_num_inliers", "15",  # Min matches per pair
+                "--SiftMatching.min_inlier_ratio", "0.25",  # Quality threshold
             ]
         
         try:
