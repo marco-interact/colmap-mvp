@@ -27,8 +27,8 @@ asyncio-mqtt==0.16.1  # Message queuing for 3D data
 redis==5.0.1  # Caching for 3D models and point clouds
 
 # GPU Acceleration
-cupy-cuda12x==12.3.0  # GPU-accelerated array processing
-numba==0.58.1  # JIT compilation for GPU operations
+# cupy-cuda12x==12.3.0  # GPU-accelerated array processing (optional - heavy build)
+# numba==0.58.1  # JIT compilation for GPU operations (optional - complex build)
 
 # Utilities
 python-dotenv==1.0.1
