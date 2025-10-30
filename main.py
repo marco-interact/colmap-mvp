@@ -84,10 +84,32 @@ def init_database():
                 video_size INTEGER,
                 processing_quality TEXT,
                 status TEXT DEFAULT 'pending',
+                ply_file TEXT,
+                glb_file TEXT,
+                thumbnail TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (project_id) REFERENCES projects (id)
             )
         ''')
+        
+        # Add new columns to existing scans table if they don't exist
+        try:
+            conn.execute('ALTER TABLE scans ADD COLUMN ply_file TEXT')
+            logger.info("✅ Added ply_file column")
+        except:
+            pass  # Column already exists
+        
+        try:
+            conn.execute('ALTER TABLE scans ADD COLUMN glb_file TEXT')
+            logger.info("✅ Added glb_file column")
+        except:
+            pass  # Column already exists
+            
+        try:
+            conn.execute('ALTER TABLE scans ADD COLUMN thumbnail TEXT')
+            logger.info("✅ Added thumbnail column")
+        except:
+            pass  # Column already exists
         
         conn.commit()
         logger.info("✅ Database initialized")
