@@ -30,13 +30,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Database path
-DATABASE_PATH = os.getenv("DATABASE_PATH", "/persistent-data/database.db")
+# Database path - RunPod volume mount
+DATABASE_PATH = os.getenv("DATABASE_PATH", "/workspace/volume/database.db")
 
 def get_db_connection():
     """Get database connection"""
-    # Ensure directory exists
-    os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
+    # Ensure directory exists (works with RunPod volume mount)
+    db_dir = os.path.dirname(DATABASE_PATH)
+    if db_dir and db_dir != os.path.dirname(os.path.abspath(DATABASE_PATH)):
+        os.makedirs(db_dir, exist_ok=True)
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
     return conn
