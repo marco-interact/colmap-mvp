@@ -1,0 +1,22 @@
+Copy and run these commands on RunPod to check backend status:
+
+# Check if backend is running
+ps aux | grep "python.*main.py" | grep -v grep
+
+# Check backend log file location
+ls -la /workspace/colmap-mvp/backend.log 2>&1
+
+# Read recent logs
+tail -30 /workspace/colmap-mvp/backend.log 2>&1
+
+# Test backend health
+curl http://localhost:8000/health 2>&1
+
+# Check demo data
+curl http://localhost:8000/api/projects 2>&1
+
+# If backend is not running, start it
+cd /workspace/colmap-mvp
+source venv/bin/activate
+nohup python main.py > /workspace/colmap-mvp/backend.log 2>&1 &
+
