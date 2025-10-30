@@ -99,15 +99,21 @@ def create_demo_data():
         
         # Create demo user
         demo_user_id = str(uuid.uuid4())
+        # Check if demo data already exists
+        existing = conn.execute("SELECT COUNT(*) as count FROM projects").fetchone()["count"]
+        if existing > 0:
+            logger.info("Demo data already exists, skipping creation")
+            return {"status": "exists", "message": "Demo data already present"}
+        
         conn.execute('''
-            INSERT OR IGNORE INTO users (id, email, name) 
+            INSERT INTO users (id, email, name) 
             VALUES (?, ?, ?)
         ''', (demo_user_id, "demo@colmap.app", "Demo User"))
         
         # Create demo project
         demo_project_id = str(uuid.uuid4())
         conn.execute('''
-            INSERT OR IGNORE INTO projects (id, user_id, name, description, location, space_type, project_type)
+            INSERT INTO projects (id, user_id, name, description, location, space_type, project_type)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (demo_project_id, demo_user_id, "Demo Showcase Project", 
               "Sample 3D reconstructions demonstrating COLMAP capabilities",
@@ -135,7 +141,7 @@ def create_demo_data():
         
         for scan in demo_scans:
             conn.execute('''
-                INSERT OR IGNORE INTO scans (id, project_id, name, video_filename, video_size, processing_quality, status)
+                INSERT INTO scans (id, project_id, name, video_filename, video_size, processing_quality, status)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (scan["id"], demo_project_id, scan["name"], scan["video_filename"], 
                   scan["video_size"], scan["processing_quality"], scan["status"]))
