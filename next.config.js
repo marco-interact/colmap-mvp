@@ -12,7 +12,8 @@ const nextConfig = {
   async rewrites() {
     const backendUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL;
     if (!backendUrl) {
-      console.error('ERROR: No backend URL configured! Set API_URL or NEXT_PUBLIC_API_URL');
+      // Don't error during build - just skip rewrites if URL not set
+      console.warn('WARNING: No backend URL configured. Set NEXT_PUBLIC_API_URL for API rewrites.');
       return [];
     }
     console.log('Backend URL for rewrites:', backendUrl);
@@ -26,6 +27,12 @@ const nextConfig = {
   
   // Enable webpack 5 polyfills for Node.js modules
   webpack: (config, { isServer }) => {
+    // Add path alias resolution
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': require('path').resolve(__dirname, './src'),
+    };
+    
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,

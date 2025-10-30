@@ -1,0 +1,51 @@
+RunPod Setup Commands - Copy & Paste Into RunPod Web Terminal
+================================================================
+
+Your RunPod IP: 213.181.111.2
+Pod ID: l1ejj2bk9uj6j2
+
+STEP 1: Install COLMAP and dependencies
+----------------------------------------
+apt-get update && apt-get install -y colmap python3-pip python3-venv git
+
+
+STEP 2: Navigate to workspace and clone repository
+---------------------------------------------------
+cd /workspace
+git clone https://github.com/marco-interact/colmap-mvp.git
+cd colmap-mvp
+
+
+STEP 3: Set up Python environment
+----------------------------------
+python3 -m venv venv
+source venv/bin/activate
+
+
+STEP 4: Install Python dependencies
+------------------------------------
+pip install --upgrade pip
+pip install -r requirements.txt
+
+
+STEP 5: Create directories
+---------------------------
+mkdir -p data/results data/cache data/uploads
+
+
+STEP 6: Test COLMAP
+--------------------
+colmap -h
+
+
+STEP 7: Start the backend
+--------------------------
+python main.py
+
+
+Additional Info:
+- Your backend will run on: http://213.181.111.2:8000
+- Check status: curl http://localhost:8000/health
+- View logs: tail -f backend.log
+- GPU status: nvidia-smi
+

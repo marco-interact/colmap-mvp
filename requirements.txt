@@ -1,5 +1,5 @@
 # COLMAP MVP Backend - Python Dependencies
-# Optimized for Northflank deployment
+# Optimized for RunPod deployment
 
 # Web Framework
 fastapi==0.115.4

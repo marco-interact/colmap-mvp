@@ -12,7 +12,7 @@
 
 ### What You Need to Do (2 minutes):
 
-1. Go to https://app.northflank.com
+1. Go to your deployment platform
 2. Open your **frontend service** (colmap-frontend)
 3. Go to **Environment Variables**
 4. Set `NEXT_PUBLIC_API_URL` = `https://p01--colmap-worker-gpu--xf7lzhrl47hj.code.run`
@@ -132,7 +132,7 @@ curl: (6) Could not resolve host: p01--colmap-worker-apu--xf7lzhrl47hj.code.run
    ```
    ✅ **Correct hardcoded fallback**
 
-2. **`northflank-frontend.json`** (Line 74):
+2. **Frontend configuration** (Line 74):
    ```json
    "key": "NEXT_PUBLIC_API_URL",
    "value": "https://p01--colmap-worker-gpu--xf7lzhrl47hj.code.run"
@@ -147,9 +147,9 @@ curl: (6) Could not resolve host: p01--colmap-worker-apu--xf7lzhrl47hj.code.run
 
 ### The Issue:
 
-**Your Northflank frontend service has the wrong environment variable set.**
+**Your frontend service has the wrong environment variable set.**
 
-The config files are now correct, but the **live deployed frontend** still has the old wrong value. You must update it in the Northflank UI.
+The config files are now correct, but the **live deployed frontend** still has the old wrong value. You must update it in your deployment platform UI.
 
 ---
 
@@ -159,7 +159,7 @@ The config files are now correct, but the **live deployed frontend** still has t
 
 **This is the ONLY thing blocking you!**
 
-1. Open Northflank: https://app.northflank.com
+1. Open your deployment platform dashboard
 2. Navigate to: **colmap-frontend** service
 3. Click: **Environment** (left sidebar)
 4. Find or add: `NEXT_PUBLIC_API_URL`
@@ -207,7 +207,7 @@ Expected output:
 ## 📋 Files Modified
 
 1. ✅ `main.py` - Added `/colmap/check` diagnostic endpoint
-2. ✅ `northflank-frontend.json` - Fixed backend URL
+2. ✅ Frontend configuration - Fixed backend URL
 3. ✅ `test-cors.sh` - CORS testing script
 4. ✅ `diagnose-colmap.sh` - Complete diagnostic script
 5. ✅ `FIX_COLMAP_NOW.md` - Detailed fix guide
