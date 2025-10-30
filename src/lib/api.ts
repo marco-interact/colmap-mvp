@@ -192,7 +192,7 @@ class APIClient {
     formData.append('user_email', userEmail)
 
     try {
-      const response = await fetch(`${this.baseUrl}/upload-video`, {
+      const response = await fetch(`${this.baseUrl}/api/reconstruction/upload`, {
         method: 'POST',
         body: formData,
       })
@@ -417,7 +417,7 @@ class APIClient {
         project_type: projectType
       })
       
-      const response = await fetch(`${this.baseUrl}/projects`, {
+      const response = await fetch(`${this.baseUrl}/api/projects`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
