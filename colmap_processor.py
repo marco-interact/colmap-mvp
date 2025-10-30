@@ -237,34 +237,104 @@ class COLMAPProcessor:
             logger.error(f"Feature matching failed: {e.stderr}")
             raise
     
-    def sparse_reconstruction(self) -> Dict:
+    def sparse_reconstruction(self, quality: str = "medium") -> Dict:
         """
         Incremental Structure-from-Motion reconstruction
+        
         Reference: https://colmap.github.io/tutorial.html#sparse-reconstruction
+        
+        Process per COLMAP tutorial:
+        1. Load extracted data from database into memory
+        2. Seed reconstruction from an initial image pair
+        3. Incrementally extend scene by registering new images
+        4. Triangulate new 3D points
+        5. Creates multiple models if not all images register into same model
+        
+        Output: Binary files in sparse/N/ directory:
+        - cameras.bin: Camera intrinsics
+        - images.bin: Camera poses (extrinsics)
+        - points3D.bin: 3D points
         """
-        logger.info("Starting sparse reconstruction")
+        logger.info(f"Starting sparse reconstruction (quality={quality})")
+        
+        # Quality-based mapper parameters
+        quality_params = {
+            "low": {
+                "init_min_num_inliers": "50",
+                "min_num_matches": "10",
+                "filter_max_reproj_error": "8.0"
+            },
+            "medium": {
+                "init_min_num_inliers": "100",
+                "min_num_matches": "15",
+                "filter_max_reproj_error": "6.0"
+            },
+            "high": {
+                "init_min_num_inliers": "150",
+                "min_num_matches": "20",
+                "filter_max_reproj_error": "4.0"
+            }
+        }
+        mapper_params = quality_params.get(quality, quality_params["medium"])
         
         cmd = [
             "colmap", "mapper",
             "--database_path", str(self.database_path),
             "--image_path", str(self.images_path),
             "--output_path", str(self.sparse_path),
+            
+            # Thread Configuration
             "--Mapper.num_threads", "8",
-            "--Mapper.init_min_num_inliers", "100",
-            "--Mapper.extract_colors", "1",
-            "--Mapper.ba_refine_focal_length", "1",
-            "--Mapper.ba_refine_extra_params", "1",
+            
+            # Initialization
+            "--Mapper.init_min_num_inliers", mapper_params["init_min_num_inliers"],
+            "--Mapper.init_max_forward_motion", "0.95",
+            "--Mapper.init_min_tri_angle", "16.0",
+            
+            # Bundle Adjustment (refinement)
+            "--Mapper.ba_refine_focal_length", "1",      # Refine focal length
+            "--Mapper.ba_refine_principal_point", "0",   # Keep principal point
+            "--Mapper.ba_refine_extra_params", "1",      # Refine distortion
+            
+            # Bundle Adjustment Iterations
+            "--Mapper.ba_local_max_num_iterations", "40",
+            "--Mapper.ba_global_max_num_iterations", "100",
+            "--Mapper.ba_global_max_refinements", "5",
+            
+            # Point Filtering
+            "--Mapper.filter_max_reproj_error", mapper_params["filter_max_reproj_error"],
+            "--Mapper.filter_min_tri_angle", "1.5",
+            "--Mapper.min_num_matches", mapper_params["min_num_matches"],
+            
+            # Triangulation
+            "--Mapper.tri_min_angle", "1.5",
+            "--Mapper.tri_ignore_two_view_tracks", "0",  # Include 2-view tracks
+            "--Mapper.tri_max_transitivity", "2",
+            
+            # Multiple Models (per COLMAP tutorial)
+            "--Mapper.multiple_models", "1",
+            "--Mapper.max_num_models", "10",  # Up to 10 models
+            "--Mapper.max_model_overlap", "20",
+            
+            # Other Options
+            "--Mapper.extract_colors", "1",  # RGB colors for points
         ]
         
         try:
             result = subprocess.run(cmd, check=True, capture_output=True, text=True)
             
-            # Find best model
-            best_model, stats = self._find_best_model()
+            # Parse reconstruction statistics
+            stats = self._parse_reconstruction_stats(result.stdout)
+            
+            # Find best model (most 3D points)
+            best_model, model_stats = self._find_best_model()
             logger.info(f"Sparse reconstruction complete: {stats}")
+            
             return {
-                "model_path": str(best_model),
-                "stats": stats
+                "model_path": str(best_model) if best_model else None,
+                "num_models": model_stats.get("num_models", 0),
+                "best_model_points": model_stats.get("points_3d", 0),
+                "stats": {**stats, **model_stats}
             }
             
         except subprocess.CalledProcessError as e:
@@ -427,6 +497,39 @@ class COLMAPProcessor:
                 logger.info(f"Match stats: {stats.get('verified_pairs', 'unknown')} verified pairs")
         except Exception as e:
             logger.warning(f"Could not parse match stats from database: {e}")
+        
+        return stats
+    
+    def _parse_reconstruction_stats(self, output: str) -> Dict:
+        """
+        Parse sparse reconstruction statistics from COLMAP output
+        """
+        stats = {
+            "status": "success" if "Database" in output else "unknown"
+        }
+        
+        # Try to extract statistics from output
+        lines = output.split('\n')
+        for line in lines:
+            # Look for registered images
+            if "Registered" in line and "images" in line:
+                try:
+                    import re
+                    match = re.search(r'(\d+)', line)
+                    if match:
+                        stats["registered_images"] = int(match.group(1))
+                except:
+                    pass
+            
+            # Look for reconstructed points
+            if "Reconstructed" in line and "points" in line:
+                try:
+                    import re
+                    match = re.search(r'(\d+)', line)
+                    if match:
+                        stats["reconstructed_points"] = int(match.group(1))
+                except:
+                    pass
         
         return stats
 
