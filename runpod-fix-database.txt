@@ -1,0 +1,29 @@
+Fix Database Schema - Add Missing Columns
+==========================================
+
+The error shows the database doesn't have the new columns. In RunPod terminal:
+
+1. Stop the backend (it's already stopped due to port conflict):
+   pkill python
+
+2. Pull the latest code with ALTER TABLE fixes:
+   cd /workspace/colmap-mvp
+   git pull origin main
+
+3. Start the backend (it will add the missing columns):
+   source venv/bin/activate
+   nohup python main.py > backend.log 2>&1 &
+
+4. Watch the logs for column additions:
+   tail -f backend.log
+
+You should see:
+- "✅ Added ply_file column"
+- "✅ Added glb_file column" 
+- "✅ Added thumbnail column"
+- "✅ Demo data created successfully"
+
+5. Test the updated scans:
+   curl -s "https://thick-stylish-collaborative-stockings.trycloudflare.com/api/projects/$(curl -s https://thick-stylish-collaborative-stockings.trycloudflare.com/api/projects | jq -r '.projects[0].id')/scans" | jq .
+
+Should now include ply_file, glb_file, and thumbnail fields.

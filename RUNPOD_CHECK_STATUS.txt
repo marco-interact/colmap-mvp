@@ -20,3 +20,4 @@ cd /workspace/colmap-mvp
 source venv/bin/activate
 nohup python main.py > /workspace/colmap-mvp/backend.log 2>&1 &
 
+

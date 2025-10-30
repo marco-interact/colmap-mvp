@@ -1,0 +1,28 @@
+Update Database Schema and Restart Backend
+==========================================
+
+In RunPod terminal, run these commands to update the database schema:
+
+cd /workspace/colmap-mvp
+git pull origin main
+pkill python
+rm /workspace/database.db
+source venv/bin/activate
+nohup python main.py > backend.log 2>&1 &
+tail -f backend.log
+
+Wait for: "✅ Demo data created successfully"
+
+Test the updated scans with file paths:
+---------------------------------------
+curl -s "https://thick-stylish-collaborative-stockings.trycloudflare.com/api/projects/$(curl -s https://thick-stylish-collaborative-stockings.trycloudflare.com/api/projects | jq -r '.projects[0].id')/scans" | jq .
+
+Should now include:
+- ply_file: "demoscan-dollhouse/fvtc_firstfloor_processed.ply"
+- glb_file: "demoscan-dollhouse/single_family_home_-_first_floor.glb"
+- thumbnail: "thumbnails/demoscan-dollhouse-thumb.jpg"
+
+Test file serving:
+------------------
+curl -I https://thick-stylish-collaborative-stockings.trycloudflare.com/demo-resources/demoscan-dollhouse/fvtc_firstfloor_processed.ply
+curl -I https://thick-stylish-collaborative-stockings.trycloudflare.com/demo-resources/demoscan-dollhouse/single_family_home_-_first_floor.glb

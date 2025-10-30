@@ -1,0 +1,47 @@
+Recreate Demo Data in RunPod
+=============================
+
+Problem: Demo project and scans are not showing up
+
+SOLUTION: Recreate the demo data
+
+Option 1: Call the API endpoint to force demo data creation
+-----------------------------------------------------------
+In RunPod terminal, run:
+curl -X POST "https://thick-stylish-collaborative-stockings.trycloudflare.com/database/setup-demo"
+
+Or from localhost:
+curl -X POST "http://localhost:8000/database/setup-demo"
+
+
+Option 2: Delete database and restart backend
+----------------------------------------------
+In RunPod terminal:
+1. Stop backend (CTRL+C or pkill python)
+2. Delete database: rm /workspace/database.db
+3. Restart backend: 
+   cd /workspace/colmap-mvp
+   source venv/bin/activate
+   nohup python main.py > backend.log 2>&1 &
+
+4. Check logs: tail -f backend.log
+
+
+Option 3: Pull latest code and restart
+---------------------------------------
+cd /workspace/colmap-mvp
+git pull origin main
+pkill python  # Stop old process
+source venv/bin/activate
+nohup python main.py > backend.log 2>&1 &
+
+# Watch logs for demo data creation
+tail -f backend.log
+
+
+After any of these, test:
+-------------------------
+curl https://thick-stylish-collaborative-stockings.trycloudflare.com/api/projects
+
+Should return projects with scans!
+

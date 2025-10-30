@@ -1,0 +1,65 @@
+FINAL UPDATE FOR RUNPOD - Pull Latest Code and Restart
+========================================================
+
+Run these commands in your RunPod terminal to get the latest backend code:
+
+# 1. Navigate to project directory
+cd /workspace/colmap-mvp
+
+# 2. Stop all backend processes
+pkill python || true
+pkill cloudflared || true
+
+# 3. Pull latest code from GitHub
+git pull origin main
+
+# 4. Activate virtual environment
+source venv/bin/activate
+
+# 5. Delete old database to recreate with new schema
+rm -f /workspace/database.db
+
+# 6. Start backend in background
+nohup python main.py > backend.log 2>&1 &
+
+# 7. Wait for backend to start
+sleep 3
+
+# 8. Check backend logs
+tail -20 backend.log
+
+# 9. Test backend locally
+curl http://localhost:8000/api/projects
+
+# 10. Start Cloudflare tunnel
+nohup cloudflared tunnel --url http://localhost:8000 > cloudflared.log 2>&1 &
+
+# 11. Wait for tunnel
+sleep 5
+
+# 12. Get tunnel URL
+grep "https://" cloudflared.log | grep trycloudflare | head -1
+
+# 13. Test public access (replace URL with the one from step 12)
+curl https://engaging-enter-planned-virtue.trycloudflare.com/api/projects
+
+# 14. Check scan data
+curl https://engaging-enter-planned-virtue.trycloudflare.com/api/projects/$(curl -s https://engaging-enter-planned-virtue.trycloudflare.com/api/projects | jq -r '.projects[0].id')/scans | jq .
+
+
+IMPORTANT: After step 12, copy the new tunnel URL and update Vercel:
+------------------------------------------------------------------------
+On your Mac, run:
+echo "NEW_TUNNEL_URL_HERE" | vercel env rm NEXT_PUBLIC_API_URL production
+echo "NEW_TUNNEL_URL_HERE" | vercel env add NEXT_PUBLIC_API_URL production
+vercel --prod
+
+
+Expected Results:
+-----------------
+✅ Backend should show: "✅ Database initialized"
+✅ Backend should show: "✅ Demo data created successfully"  
+✅ Backend should show: "1 projects, 2 scans"
+✅ GET /api/projects returns project data
+✅ GET /api/projects/{id}/scans returns 2 scans with file paths
+

@@ -179,3 +179,4 @@ http://localhost:8000/api/projects
 
 **Need more info?** Check backend logs and browser console for exact error messages.
 
+

@@ -1,0 +1,27 @@
+Clean Database - Fresh Start
+==============================
+
+In RunPod terminal, run these commands to clear everything and start fresh:
+
+cd /workspace/colmap-mvp
+git pull origin main
+pkill python
+rm /workspace/database.db
+source venv/bin/activate
+nohup python main.py > backend.log 2>&1 &
+tail -f backend.log
+
+Wait for: "✅ Demo data created successfully"
+
+Then test:
+----------
+curl -s https://thick-stylish-collaborative-stockings.trycloudflare.com/api/projects | jq .
+
+Should show ONLY:
+- 1 project: "Reconstruction Test Project 1"
+- 2 scans: "demoscan-dollhouse" and "demoscan-fachada"
+
+Check scans:
+------------
+curl -s https://thick-stylish-collaborative-stockings.trycloudflare.com/api/projects/$(curl -s https://thick-stylish-collaborative-stockings.trycloudflare.com/api/projects | jq -r '.projects[0].id')/scans | jq .
+

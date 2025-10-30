@@ -1,0 +1,51 @@
+Setup COLMAP on RunPod
+=======================
+
+In your RunPod terminal, run these commands:
+
+1. Pull latest code:
+   cd /workspace/colmap-mvp
+   git pull origin main
+
+2. Install COLMAP:
+   bash runpod-install-colmap.sh
+   
+   OR install manually:
+   sudo apt-get update
+   sudo apt-get install -y colmap
+   
+   Verify: colmap --version
+
+3. Install ffmpeg (for video frame extraction):
+   sudo apt-get install -y ffmpeg
+
+4. Update Python dependencies:
+   source venv/bin/activate
+   pip install --upgrade -r requirements.txt
+
+5. Restart backend:
+   pkill python || true
+   rm -f /workspace/database.db
+   nohup python main.py > backend.log 2>&1 &
+   sleep 3
+   tail -20 backend.log
+
+6. Test COLMAP installation:
+   curl http://localhost:8000/api/status
+
+You should see a working backend with COLMAP ready!
+
+New API Endpoints Available:
+----------------------------
+- POST /api/reconstruction/upload
+  Body: project_id, scan_name, quality, video_file
+  
+- GET /api/reconstruction/{job_id}/status
+  Returns: job status, output file path
+
+Next Steps:
+-----------
+1. Upload a video via the frontend
+2. Process video through COLMAP pipeline
+3. Download 3D point cloud (.ply file)
+

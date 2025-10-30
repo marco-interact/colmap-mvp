@@ -68,3 +68,4 @@ curl http://localhost:8000/api/projects
 **Frontend Status:** ⏳ Deploying
 **404 Error:** ✅ FIXED
 
+
