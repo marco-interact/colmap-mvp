@@ -3,7 +3,7 @@
 # Just run the app - no building, no I/O errors
 # ========================================
 
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
@@ -12,9 +12,9 @@ RUN apt-get update && apt-get install -y \
     sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies - MINIMAL VERSION
-COPY requirements_minimal.txt .
-RUN pip install --no-cache-dir -r requirements_minimal.txt
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY main.py .
