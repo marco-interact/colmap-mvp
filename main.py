@@ -4,7 +4,7 @@ ULTRA SIMPLE COLMAP Backend - ABSOLUTELY MINIMAL
 Just FastAPI + basic endpoints - NO COMPLEX DEPENDENCIES
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -14,6 +14,9 @@ import sqlite3
 import json
 from datetime import datetime
 import uuid
+import subprocess
+from pathlib import Path
+from colmap_processor import COLMAPProcessor, process_video_to_pointcloud
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -329,6 +332,70 @@ async def setup_demo_data():
     except Exception as e:
         logger.error(f"Demo data setup failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/reconstruction/upload")
+async def upload_video_for_reconstruction(
+    project_id: str = Form(...),
+    scan_name: str = Form(...),
+    quality: str = Form("medium"),
+    video: UploadFile = File(...)
+):
+    """
+    Upload video for 3D reconstruction processing
+    Based on: https://colmap.github.io/tutorial.html
+    """
+    try:
+        logger.info(f"📹 Received video upload for project {project_id}")
+        
+        # Generate job ID
+        job_id = str(uuid.uuid4())
+        
+        # Create job directory
+        job_path = Path(f"/workspace/{job_id}")
+        job_path.mkdir(parents=True, exist_ok=True)
+        
+        # Save uploaded video
+        video_path = job_path / video.filename
+        with open(video_path, "wb") as f:
+            content = await video.read()
+            f.write(content)
+        
+        logger.info(f"💾 Saved video to {video_path} ({len(content)} bytes)")
+        
+        # Start reconstruction in background (async)
+        # For now, just return job ID
+        # TODO: Implement async processing
+        
+        return {
+            "status": "accepted",
+            "job_id": job_id,
+            "message": "Video uploaded, reconstruction queued"
+        }
+        
+    except Exception as e:
+        logger.error(f"Video upload failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/reconstruction/{job_id}/status")
+async def get_reconstruction_status(job_id: str):
+    """Get status of reconstruction job"""
+    job_path = Path(f"/workspace/{job_id}")
+    
+    if not job_path.exists():
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Check for outputs
+    ply_file = job_path / "exports" / "point_cloud.ply"
+    status = "processing"
+    
+    if ply_file.exists():
+        status = "completed"
+    
+    return {
+        "job_id": job_id,
+        "status": status,
+        "output_file": str(ply_file) if ply_file.exists() else None
+    }
 
 @app.on_event("startup")
 async def startup_event():
