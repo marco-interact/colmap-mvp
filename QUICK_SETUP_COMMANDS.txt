@@ -1,0 +1,63 @@
+# Quick Setup Commands for Pod 1tdnzv4w6qosch
+
+## 1. SSH into Pod
+
+Copy this command to your Mac Terminal:
+
+ssh 1tdnzv4w6qosch-644114f6@ssh.runpod.io -i ~/.ssh/id_ed25519
+
+Or simpler:
+
+ssh 1tdnzv4w6qosch-644114f6@ssh.runpod.io
+
+---
+
+## 2. Once Connected, Run Setup
+
+Copy and paste ALL of this:
+
+cd /workspace && \
+git clone https://github.com/marco-interact/colmap-mvp.git && \
+cd colmap-mvp && \
+python3 -m venv venv && \
+source venv/bin/activate && \
+pip install -r requirements.txt && \
+bash runpod-install-colmap.sh && \
+nohup python main.py > backend.log 2>&1 & sleep 10 && \
+tail -n 80 backend.log
+
+---
+
+## 3. Verify Everything Works
+
+curl http://localhost:8000/health
+curl http://localhost:8000/api/projects
+
+Expected output:
+- Health check should return: {"status":"healthy"...}
+- Projects should return: 1 project with 2 scans
+
+---
+
+## 4. Setup Cloudflare Tunnel
+
+pkill -f cloudflared || true && \
+nohup cloudflared tunnel --url http://localhost:8000 --protocol quic > /tmp/cloudflared.log 2>&1 & \
+sleep 10 && \
+grep -oE 'https://[a-zA-Z0-9.-]+\.trycloudflare\.com' /tmp/cloudflared.log | head -1
+
+Copy the URL that appears!
+
+---
+
+## 5. Update Vercel
+
+1. Go to Vercel Dashboard
+2. Your project → Settings → Environment Variables
+3. Update NEXT_PUBLIC_API_URL with the new Cloudflare URL
+4. Redeploy
+
+---
+
+That's it! 🎉
+
