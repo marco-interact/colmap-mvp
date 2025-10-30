@@ -215,6 +215,36 @@ async def get_scans(project_id: str):
         logger.error(f"Error getting scans: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/projects")
+async def create_project(user_email: str, name: str, description: str = "", location: str = "", space_type: str = "", project_type: str = ""):
+    """Create a new project"""
+    try:
+        conn = get_db_connection()
+        
+        # Get or create user
+        user_row = conn.execute("SELECT id FROM users WHERE email = ?", (user_email,)).fetchone()
+        if not user_row:
+            user_id = str(uuid.uuid4())
+            conn.execute("INSERT INTO users (id, email) VALUES (?, ?)", (user_id, user_email))
+            conn.commit()
+        else:
+            user_id = user_row["id"]
+        
+        # Create project
+        project_id = str(uuid.uuid4())
+        conn.execute(
+            "INSERT INTO projects (id, user_id, name, description, location, space_type, project_type) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (project_id, user_id, name, description, location, space_type, project_type)
+        )
+        conn.commit()
+        conn.close()
+        
+        logger.info(f"Created project: {name} (ID: {project_id})")
+        return {"status": "success", "project_id": project_id}
+    except Exception as e:
+        logger.error(f"Error creating project: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/database/setup-demo")
 async def setup_demo_data():
     """FORCE setup demo data - ALWAYS WORKS"""
