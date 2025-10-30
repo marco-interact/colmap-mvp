@@ -74,29 +74,31 @@ function Enhanced3DViewer({ className, scan }: { className?: string, scan: Scan 
 
   // Determine the 3D model URL
   const getModelUrl = () => {
+    // Use Next.js proxy to backend so it works in all environments
+    const backendProxyPrefix = '/api/backend'
     // Priority 1: Use actual reconstruction results if available
     if (scan.results?.pointCloudUrl) {
       console.log('✅ Using actual reconstruction PLY:', scan.results.pointCloudUrl)
-      return `http://localhost:8000${scan.results.pointCloudUrl}`
+      return `${backendProxyPrefix}${scan.results.pointCloudUrl}`
     }
     
     // Priority 2: Check technical_details for results
     if ((scan as any).technical_details?.results?.point_cloud_url) {
       console.log('✅ Using reconstruction PLY from technical_details:', (scan as any).technical_details.results.point_cloud_url)
-      return `http://localhost:8000${(scan as any).technical_details.results.point_cloud_url}`
+      return `${backendProxyPrefix}${(scan as any).technical_details.results.point_cloud_url}`
     }
     
     // Priority 3: Fallback to demo models based on scan name
     console.warn('⚠️ No reconstruction PLY found, using demo fallback for:', scan.name)
     if (scan.name?.toLowerCase().includes('dollhouse')) {
-      return 'http://localhost:8000/demo-resources/demoscan-dollhouse/fvtc_firstfloor_processed.ply'
+      return `${backendProxyPrefix}/demo-resources/demoscan-dollhouse/fvtc_firstfloor_processed.ply`
     }
     if (scan.name?.toLowerCase().includes('facade') || scan.name?.toLowerCase().includes('fachada')) {
-      return 'http://localhost:8000/demo-resources/demoscan-fachada/1mill.ply'
+      return `${backendProxyPrefix}/demo-resources/demoscan-fachada/1mill.ply`
     }
     
     // Priority 4: Default fallback
-    return 'http://localhost:8000/demo-resources/demoscan-dollhouse/fvtc_firstfloor_processed.ply'
+    return `${backendProxyPrefix}/demo-resources/demoscan-dollhouse/fvtc_firstfloor_processed.ply`
   }
   
   // Check if showing demo fallback
