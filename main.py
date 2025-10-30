@@ -93,17 +93,19 @@ def init_database():
         conn.close()
 
 def create_demo_data():
-    """Create demo data"""
+    """Create demo data - fresh start"""
     try:
         conn = get_db_connection()
         
+        # CLEAN SLATE: Delete all existing data
+        conn.execute("DELETE FROM scans")
+        conn.execute("DELETE FROM projects")
+        conn.execute("DELETE FROM users")
+        conn.commit()
+        logger.info("🗑️  Cleared all existing data")
+        
         # Create demo user
         demo_user_id = str(uuid.uuid4())
-        # Check if demo data already exists
-        existing = conn.execute("SELECT COUNT(*) as count FROM projects").fetchone()["count"]
-        if existing > 0:
-            logger.info("Demo data already exists, skipping creation")
-            return {"status": "exists", "message": "Demo data already present"}
         
         conn.execute('''
             INSERT INTO users (id, email, name) 
