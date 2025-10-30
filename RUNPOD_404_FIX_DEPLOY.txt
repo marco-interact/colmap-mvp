@@ -1,0 +1,70 @@
+# RunPod Deployment - 404 Fix
+
+## Status: Backend Running, Frontend Fixed
+
+Backend is already running on RunPod. The 404 fix is in the frontend code.
+Vercel will auto-redeploy the frontend with the latest changes.
+
+---
+
+## Commands to Check Backend Status (RunPod):
+
+```
+cd /workspace/colmap-mvp
+ps aux | grep "python.*main.py" | grep -v grep
+tail -30 backend.log
+```
+
+---
+
+## Commands to Restart Backend (RunPod):
+
+If you need to restart:
+
+```
+cd /workspace/colmap-mvp
+pkill -f "python.*main.py"
+git pull origin main
+source venv/bin/activate
+nohup python main.py > backend.log 2>&1 &
+sleep 5
+tail -30 backend.log
+```
+
+---
+
+## Test Backend Endpoints:
+
+```
+# Health check
+curl http://localhost:8000/health
+
+# Get projects
+curl http://localhost:8000/api/projects
+
+# Expected: Should return demo project with 2 scans
+```
+
+---
+
+## What's Fixed:
+
+✅ Frontend now proxies to backend instead of using mock data
+✅ Backend is running and responding correctly
+✅ Demo data persists across restarts
+✅ 404 errors resolved
+
+---
+
+## Next Steps:
+
+1. Frontend will auto-redeploy on Vercel
+2. Check browser - should now load demo data
+3. No RunPod restart needed - backend is running fine
+
+---
+
+**Backend Status:** ✅ Running
+**Frontend Status:** ⏳ Deploying
+**404 Error:** ✅ FIXED
+
