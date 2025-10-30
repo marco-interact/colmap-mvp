@@ -1,0 +1,59 @@
+# RunPod Pull & Restart Commands
+
+## Complete Pull & Restart (Single Command)
+
+```bash
+cd /workspace/colmap-mvp && \
+git fetch origin && git reset --hard origin/main && \
+source venv/bin/activate && \
+pkill -f "python.*main.py" || true && \
+nohup python main.py > backend.log 2>&1 & sleep 6 && \
+tail -n 120 backend.log
+```
+
+## Verify Backend is Running
+
+```bash
+curl -s http://localhost:8000/health
+curl -s http://localhost:8000/api/projects
+```
+
+## If Demo Data Missing, Force Reseed
+
+```bash
+pkill -f "python.*main.py" || true
+rm -f /workspace/database.db
+cd /workspace/colmap-mvp
+source venv/bin/activate
+nohup python main.py > backend.log 2>&1 & sleep 6
+tail -n 120 backend.log
+curl -s http://localhost:8000/api/projects
+```
+
+## Restart Cloudflare Tunnel
+
+```bash
+pkill -f cloudflared || true
+nohup cloudflared tunnel --url http://localhost:8000 --protocol quic > /tmp/cloudflared.log 2>&1 &
+sleep 8
+grep -oE 'https://[a-zA-Z0-9.-]+\.trycloudflare\.com' /tmp/cloudflared.log | head -1
+```
+
+## Check Persistent Storage
+
+```bash
+mount | grep /workspace
+ls -la /workspace/database.db
+date > /workspace/.persist-check
+cat /workspace/.persist-check
+```
+
+---
+
+**Latest Commit:** 58d98e97 (docs: Update Vercel deployment protection disable instructions)
+
+**Status:**
+✅ Code pushed to GitHub
+✅ Vercel updated with Cloudflare tunnel URL
+⏳ RunPod ready for pull
+
