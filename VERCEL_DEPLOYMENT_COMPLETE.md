@@ -12,22 +12,27 @@
 
 ## ⚠️ Deployment Protection Active
 
-Your frontend is protected by Vercel Authentication. To test API endpoints:
+Your frontend is protected by Vercel Authentication. **DISABLE IT:**
 
-### Option 1: Bypass Protection (Quick Test)
-```
-https://colmap-demo-oy3k5eiik-interact-hq.vercel.app/api/projects?x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=YOUR_BYPASS_TOKEN
-```
+### Steps to Disable Protection:
 
-Get bypass token: https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation
+1. Vercel Dashboard → Your Project → **Settings**
+2. Click **Deployment Protection** (left sidebar)
+3. Under **VERCEL AUTHENTICATION** section:
+   - Toggle **OFF** or click "Remove" to disable
+4. Save changes
 
-### Option 2: Disable Protection (Recommended for Development)
+### Alternative: Allowlist Your Domain
 
-Vercel Dashboard → Project → Settings → Deployment Protection → Disable for `/api/*`
+If you want to keep protection but allow public access:
 
-Or set rule:
-- **Path pattern:** `/api/*`
-- **Action:** Allow (no protection)
+1. Under **VERCEL AUTHENTICATION** → "Skip Vercel Authentication for these paths"
+2. Add paths:
+   - `/api/*`
+   - `/*` (to allow full site)
+3. Save
+
+**For development/testing, just disable Vercel Authentication entirely.**
 
 ---
 
