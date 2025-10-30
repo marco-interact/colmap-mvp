@@ -19,7 +19,7 @@ class Database:
     
     def __init__(self, db_path: str = None):
         if db_path is None:
-            db_path = os.getenv("DATABASE_PATH", "/tmp/colmap_app.db")
+            db_path = os.getenv("DATABASE_PATH", "/workspace/database.db")
         self.db_path = db_path
         # Ensure directory exists
         db_dir = Path(db_path).parent
