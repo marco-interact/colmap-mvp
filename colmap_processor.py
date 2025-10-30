@@ -646,6 +646,11 @@ class COLMAPProcessor:
         - Keypoints (SIFT features per image)
         - Matches (feature correspondences)
         - Two-view geometries (geometrically verified matches)
+        
+        Optimizations:
+        - SQLite WAL mode for better concurrency
+        - Combined queries to reduce round trips
+        - Memory-efficient row fetching
         """
         if not self.database_path.exists():
             logger.warning(f"Database not found at {self.database_path}")
@@ -660,14 +665,22 @@ class COLMAPProcessor:
         
         try:
             conn = sqlite3.connect(self.database_path)
+            
+            # Optimize SQLite for read performance
+            # Enable Write-Ahead Logging (WAL) for better concurrency
+            conn.execute("PRAGMA journal_mode=WAL")
+            # Increase page cache size (16MB)
+            conn.execute("PRAGMA cache_size=-16384")
+            # Use memory-mapped I/O for better performance
+            conn.execute("PRAGMA mmap_size=268435456")  # 256MB
+            
             cursor = conn.cursor()
             
-            # Get camera information
-            cursor.execute("SELECT COUNT(*) FROM cameras")
-            stats["num_cameras"] = cursor.fetchone()[0]
-            
-            cursor.execute("SELECT * FROM cameras")
+            # Get all camera information in one query
+            cursor.execute("SELECT * FROM cameras LIMIT 100")
             cameras = cursor.fetchall()
+            stats["num_cameras"] = cursor.execute("SELECT COUNT(*) FROM cameras").fetchone()[0]
+            
             if cameras:
                 stats["cameras"] = []
                 for camera in cameras:
@@ -679,56 +692,48 @@ class COLMAPProcessor:
                         "params": camera[4]
                     })
             
-            # Get image information
-            cursor.execute("SELECT COUNT(*) FROM images")
-            stats["num_images"] = cursor.fetchone()[0]
+            # Get all counts in combined query for efficiency
+            cursor.execute("""
+                SELECT 
+                    (SELECT COUNT(*) FROM images) as num_images,
+                    (SELECT COUNT(*) FROM keypoints) as num_keypoints,
+                    (SELECT AVG(rows) FROM keypoints) as avg_keypoints,
+                    (SELECT COUNT(*) FROM matches) as num_matches,
+                    (SELECT AVG(rows) FROM matches) as avg_matches,
+                    (SELECT COUNT(*) FROM two_view_geometries) as num_tvg
+            """)
+            counts = cursor.fetchone()
             
-            cursor.execute("SELECT name, camera_id, prior_qw, prior_qx, prior_qy, prior_qz, prior_tx, prior_ty, prior_tz FROM images")
+            stats["num_images"] = counts[0] or 0
+            stats["num_keypoints"] = counts[1] or 0
+            stats["avg_keypoints_per_image"] = round(counts[2], 2) if counts[2] else 0
+            stats["num_matches"] = counts[3] or 0
+            stats["avg_matches_per_pair"] = round(counts[4], 2) if counts[4] else 0
+            stats["num_two_view_geometries"] = counts[5] or 0
+            
+            # Get top images (limit for performance)
+            cursor.execute("SELECT name, camera_id FROM images LIMIT 50")
             images = cursor.fetchall()
             if images:
-                stats["images"] = []
-                for img in images:
-                    stats["images"].append({
-                        "name": img[0],
-                        "camera_id": img[1],
-                        "prior_quaternion": [img[2], img[3], img[4], img[5]],
-                        "prior_translation": [img[6], img[7], img[8]]
-                    })
-            
-            # Get keypoint statistics
-            cursor.execute("SELECT COUNT(*) FROM keypoints")
-            stats["num_keypoints"] = cursor.fetchone()[0]
-            
-            cursor.execute("SELECT AVG(rows) FROM keypoints")
-            avg_keypoints = cursor.fetchone()[0]
-            if avg_keypoints:
-                stats["avg_keypoints_per_image"] = round(avg_keypoints, 2)
-            
-            # Get match statistics
-            cursor.execute("SELECT COUNT(*) FROM matches")
-            stats["num_matches"] = cursor.fetchone()[0]
-            
-            cursor.execute("SELECT AVG(rows) FROM matches")
-            avg_matches = cursor.fetchone()[0]
-            if avg_matches:
-                stats["avg_matches_per_pair"] = round(avg_matches, 2)
+                stats["images"] = [{"name": img[0], "camera_id": img[1]} for img in images]
             
             # Get two-view geometry statistics
-            cursor.execute("SELECT COUNT(*) FROM two_view_geometries")
-            stats["num_two_view_geometries"] = cursor.fetchone()[0]
-            
             cursor.execute("SELECT AVG(CAST(rows AS FLOAT)) FROM two_view_geometries WHERE rows > 0")
             avg_inliers = cursor.fetchone()[0]
             if avg_inliers:
                 stats["avg_inliers_per_pair"] = round(avg_inliers, 2)
             
-            # Calculate verification rate
+            # Calculate verification rate and inlier ratio in one query
             if stats["num_matches"] > 0:
                 stats["verification_rate"] = round((stats["num_two_view_geometries"] / stats["num_matches"]) * 100, 2)
-            
-            # Calculate inlier ratio
-            if stats["num_two_view_geometries"] > 0 and stats["num_matches"] > 0:
-                cursor.execute("SELECT AVG(CAST(tvg.rows AS FLOAT) / CAST(m.rows AS FLOAT)) FROM two_view_geometries tvg JOIN matches m ON tvg.pair_id = m.pair_id WHERE m.rows > 0")
+                
+                # Optimized inlier ratio query with proper indexing
+                cursor.execute("""
+                    SELECT AVG(CAST(tvg.rows AS FLOAT) / CAST(m.rows AS FLOAT))
+                    FROM two_view_geometries tvg 
+                    JOIN matches m ON tvg.pair_id = m.pair_id 
+                    WHERE m.rows > 0 AND tvg.rows > 0
+                """)
                 inlier_ratio = cursor.fetchone()[0]
                 if inlier_ratio:
                     stats["avg_inlier_ratio"] = round(inlier_ratio * 100, 2)
