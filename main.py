@@ -122,9 +122,36 @@ def init_database():
         conn.close()
 
 def create_demo_data():
-    """Create demo data - fresh start"""
+    """Create demo data - ALWAYS ensure demo data exists"""
     try:
         conn = get_db_connection()
+        
+        # Check if demo data already exists
+        demo_projects = conn.execute(
+            "SELECT id FROM projects WHERE name = 'Reconstruction Test Project 1'"
+        ).fetchall()
+        
+        if len(demo_projects) > 0:
+            demo_project_id = demo_projects[0][0]
+            # Check if it has the 2 required scans
+            scan_count = conn.execute(
+                "SELECT COUNT(*) FROM scans WHERE project_id = ?", (demo_project_id,)
+            ).fetchone()[0]
+            
+            if scan_count == 2:
+                # Demo data exists and is complete
+                logger.info("✅ Demo data already exists and is complete")
+                scan_ids = [row[0] for row in conn.execute(
+                    "SELECT id FROM scans WHERE project_id = ?", (demo_project_id,)
+                ).fetchall()]
+                return {
+                    "status": "success",
+                    "project_id": demo_project_id,
+                    "scan_ids": scan_ids
+                }
+            else:
+                logger.warning(f"⚠️  Demo project exists but has {scan_count} scans (expected 2), recreating...")
+                # Delete incomplete demo data and recreate
         
         # CLEAN SLATE: Delete all existing data
         conn.execute("DELETE FROM scans")
