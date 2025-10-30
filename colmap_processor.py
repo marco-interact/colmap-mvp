@@ -19,37 +19,67 @@ class COLMAPProcessor:
     """COLMAP 3D Reconstruction Processor"""
     
     def __init__(self, job_path: str):
+        """
+        Initialize COLMAP processor with standard workspace structure
+        Reference: https://colmap.github.io/tutorial.html#data-structure
+        """
         self.job_path = Path(job_path)
-        self.images_path = self.job_path / "images"
-        self.database_path = self.job_path / "database.db"
-        self.sparse_path = self.job_path / "sparse"
-        self.dense_path = self.job_path / "dense"
-        self.exports_path = self.job_path / "exports"
+        
+        # Standard COLMAP workspace structure
+        # Reference: https://colmap.github.io/tutorial.html#data-structure
+        self.images_path = self.job_path / "images"        # Extracted frames
+        self.database_path = self.job_path / "database.db" # SQLite database
+        self.sparse_path = self.job_path / "sparse"        # Sparse models (0/, 1/, etc.)
+        self.dense_path = self.job_path / "dense"          # Dense reconstruction
         
         # Create directories
         self._create_directories()
     
     def _create_directories(self):
-        """Create required directory structure"""
+        """
+        Create COLMAP workspace directory structure
+        Following: https://colmap.github.io/tutorial.html#data-structure
+        """
         self.images_path.mkdir(parents=True, exist_ok=True)
         self.sparse_path.mkdir(parents=True, exist_ok=True)
         self.dense_path.mkdir(parents=True, exist_ok=True)
-        self.exports_path.mkdir(parents=True, exist_ok=True)
+        
+        logger.info(f"Created COLMAP workspace at {self.job_path}")
     
-    def extract_frames(self, video_path: str, max_frames: int = 50, frame_interval: int = 2) -> int:
+    def extract_frames(self, video_path: str, max_frames: int = 50, frame_interval: int = 2, quality: str = "medium") -> int:
         """
         Extract frames from video using ffmpeg
-        Based on: https://colmap.github.io/tutorial.html#data-structure
-        """
-        logger.info(f"Extracting frames from {video_path}")
         
-        # Calculate frame rate based on desired frame count
+        Following COLMAP best practices:
+        Reference: https://colmap.github.io/tutorial.html#data-structure
+        
+        Recommendations from tutorial:
+        - Images identified by relative path (preserved in nested folders)
+        - Preserve folder structure for later processing
+        - Consider down-sampling frame rate for video input
+        - Different viewpoints (not just camera rotation)
+        """
+        logger.info(f"Extracting frames from {video_path} (quality={quality})")
+        
+        # Quality-based scaling
+        scale_map = {
+            "low": "1280:-2",
+            "medium": "1920:-2", 
+            "high": "3840:-2"
+        }
+        scale = scale_map.get(quality, "1920:-2")
+        
+        # Extract frames with uniform naming (COLMAP requirement)
+        # Format: %06d for frame numbering
+        output_pattern = self.images_path / "frame_%06d.jpg"
+        
         cmd = [
             "ffmpeg", "-i", video_path,
-            "-vf", f"fps=1/{frame_interval},scale=1920:-2",
+            "-vf", f"fps=1/{frame_interval},scale={scale}",
             "-frames:v", str(max_frames),
-            "-q:v", "2",  # High quality JPEG
-            str(self.images_path / "frame_%06d.jpg")
+            "-q:v", "2",  # High quality JPEG (1-31, lower = better)
+            "-y",  # Overwrite existing files
+            str(output_pattern)
         ]
         
         try:
@@ -57,7 +87,7 @@ class COLMAPProcessor:
             
             # Count extracted frames
             frame_count = len(list(self.images_path.glob("*.jpg")))
-            logger.info(f"Extracted {frame_count} frames")
+            logger.info(f"Extracted {frame_count} frames to {self.images_path}")
             return frame_count
             
         except subprocess.CalledProcessError as e:
@@ -189,6 +219,9 @@ class COLMAPProcessor:
         """
         Export reconstruction to point cloud format
         Reference: https://colmap.github.io/tutorial.html#importing-and-exporting
+        
+        Exports the best sparse model to PLY format in the job root directory.
+        Following COLMAP convention, output goes to workspace root (job_path).
         """
         # Find best sparse model
         best_model, _ = self._find_best_model()
@@ -196,7 +229,8 @@ class COLMAPProcessor:
         if not best_model:
             raise ValueError("No reconstruction found to export")
         
-        output_file = self.exports_path / f"point_cloud.{output_format.lower()}"
+        # Export to job root (not exports/ subdirectory) per COLMAP convention
+        output_file = self.job_path / f"point_cloud.{output_format.lower()}"
         
         cmd = [
             "colmap", "model_converter",
@@ -215,7 +249,15 @@ class COLMAPProcessor:
             raise
     
     def _find_best_model(self) -> Tuple[Optional[Path], Dict]:
-        """Find the best sparse reconstruction model"""
+        """
+        Find the best sparse reconstruction model
+        
+        COLMAP creates multiple reconstructions (0/, 1/, etc.) when not all 
+        images register into the same model. This function selects the model
+        with the most 3D points as the best reconstruction.
+        
+        Reference: https://colmap.github.io/tutorial.html#sparse-reconstruction
+        """
         sparse_dirs = sorted(self.sparse_path.glob("[0-9]*"))
         
         if not sparse_dirs:
@@ -228,7 +270,9 @@ class COLMAPProcessor:
             points3d_file = sparse_dir / "points3D.bin"
             if points3d_file.exists():
                 # Count points (approximate by file size)
-                point_count = points3d_file.stat().st_size // 48  # ~48 bytes per point
+                # Each point in binary format: id (uint64) + xyz (3x float32) + rgb (uint8x3) + error (float32) + 2x track (int64)
+                # Total: 8 + 12 + 3 + 4 + 16 = ~43 bytes + alignment ≈ 48 bytes
+                point_count = points3d_file.stat().st_size // 48
                 if point_count > best_points:
                     best_points = point_count
                     best_model = sparse_dir
@@ -239,6 +283,7 @@ class COLMAPProcessor:
             "model_id": best_model.name
         }
         
+        logger.info(f"Found {len(sparse_dirs)} models, best is {best_model.name} with {best_points} points")
         return best_model, stats
     
     def _parse_feature_stats(self, output: str) -> Dict:
