@@ -19,6 +19,10 @@ const nextConfig = {
     console.log('Backend URL for rewrites:', backendUrl);
     return [
       {
+        source: '/api/backend/demo-resources/:path*',
+        destination: `${backendUrl}/demo-resources/:path*`,
+      },
+      {
         source: '/api/backend/:path*',
         destination: `${backendUrl}/api/:path*`,
       },
