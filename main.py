@@ -397,6 +397,79 @@ async def get_reconstruction_status(job_id: str):
         "output_file": str(ply_file) if ply_file.exists() else None
     }
 
+@app.post("/api/reconstruction/{job_id}/export")
+async def export_reconstruction(job_id: str, format: str = "PLY"):
+    """
+    Export reconstruction to various formats
+    Reference: https://colmap.github.io/tutorial.html#importing-and-exporting
+    
+    Supported formats: PLY, TXT, BIN, NVM
+    """
+    try:
+        job_path = Path(f"/workspace/{job_id}")
+        
+        if not job_path.exists():
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        # Initialize processor
+        processor = COLMAPProcessor(str(job_path))
+        
+        # Export model
+        output_path = processor.export_model(output_format=format.upper())
+        
+        logger.info(f"Exported reconstruction {job_id} to {format}: {output_path}")
+        
+        return {
+            "status": "success",
+            "format": format,
+            "output_path": output_path,
+            "message": f"Successfully exported to {format} format"
+        }
+        
+    except ValueError as e:
+        logger.error(f"Export error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Export failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/reconstruction/{job_id}/download/{filename}")
+async def download_export(job_id: str, filename: str):
+    """
+    Download exported reconstruction files
+    Supports: point_cloud.ply, model_text/*.txt, model.nvm, etc.
+    """
+    try:
+        job_path = Path(f"/workspace/{job_id}")
+        
+        if not job_path.exists():
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        # Support different export locations
+        possible_paths = [
+            job_path / filename,  # Direct file
+            job_path / "model_text" / filename,  # Text format
+            job_path / "model_binary" / filename,  # Binary format
+        ]
+        
+        file_path = None
+        for path in possible_paths:
+            if path.exists() and path.is_file():
+                file_path = path
+                break
+        
+        if not file_path:
+            raise HTTPException(status_code=404, detail=f"File {filename} not found")
+        
+        logger.info(f"Downloading {file_path} for job {job_id}")
+        return FileResponse(file_path)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Download failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize database and demo data on startup"""

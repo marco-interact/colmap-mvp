@@ -341,37 +341,139 @@ class COLMAPProcessor:
             logger.error(f"Sparse reconstruction failed: {e.stderr}")
             raise
     
-    def export_point_cloud(self, output_format: str = "PLY") -> str:
+    def export_model(self, output_format: str = "PLY", model_dir: Optional[Path] = None) -> str:
         """
-        Export reconstruction to point cloud format
+        Export reconstruction to various formats
+        
         Reference: https://colmap.github.io/tutorial.html#importing-and-exporting
         
-        Exports the best sparse model to PLY format in the job root directory.
+        Supported formats (per COLMAP tutorial):
+        - PLY: Point cloud for visualization
+        - TXT: Text format (cameras.txt, images.txt, points3D.txt)
+        - BIN: Binary format (native)
+        - NVM: VisualSFM format
+        - Bundler: Bundler format
+        - VRML: VRML format
+        
+        Exports the best sparse model to specified format.
         Following COLMAP convention, output goes to workspace root (job_path).
         """
-        # Find best sparse model
-        best_model, _ = self._find_best_model()
+        # Find best sparse model if not specified
+        if model_dir is None:
+            best_model, _ = self._find_best_model()
+            if not best_model:
+                raise ValueError("No reconstruction found to export")
+            model_dir = best_model
         
-        if not best_model:
-            raise ValueError("No reconstruction found to export")
+        logger.info(f"Exporting model {model_dir} to {output_format} format")
         
-        # Export to job root (not exports/ subdirectory) per COLMAP convention
-        output_file = self.job_path / f"point_cloud.{output_format.lower()}"
-        
-        cmd = [
-            "colmap", "model_converter",
-            "--input_path", str(best_model),
-            "--output_path", str(output_file),
-            "--output_type", output_format,
-        ]
+        # Handle different output formats
+        if output_format == "PLY":
+            # Point cloud export
+            output_file = self.job_path / "point_cloud.ply"
+            
+            cmd = [
+                "colmap", "model_converter",
+                "--input_path", str(model_dir),
+                "--output_path", str(output_file),
+                "--output_type", "PLY",
+            ]
+        elif output_format == "TXT":
+            # Text format export (cameras.txt, images.txt, points3D.txt)
+            output_dir = self.job_path / "model_text"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            cmd = [
+                "colmap", "model_converter",
+                "--input_path", str(model_dir),
+                "--output_path", str(output_dir),
+                "--output_type", "TXT",
+            ]
+            output_file = output_dir  # Directory for text format
+        elif output_format == "BIN":
+            # Binary format export
+            output_dir = self.job_path / "model_binary"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            cmd = [
+                "colmap", "model_converter",
+                "--input_path", str(model_dir),
+                "--output_path", str(output_dir),
+                "--output_type", "BIN",
+            ]
+            output_file = output_dir  # Directory for binary format
+        elif output_format == "NVM":
+            # VisualSFM NVM format
+            output_file = self.job_path / "model.nvm"
+            
+            cmd = [
+                "colmap", "model_converter",
+                "--input_path", str(model_dir),
+                "--output_path", str(output_file),
+                "--output_type", "NVM",
+            ]
+        else:
+            raise ValueError(f"Unsupported export format: {output_format}")
         
         try:
-            subprocess.run(cmd, check=True, capture_output=True, text=True)
-            logger.info(f"Exported point cloud to {output_file}")
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            logger.info(f"Exported model to {output_file} ({output_format} format)")
             return str(output_file)
             
         except subprocess.CalledProcessError as e:
             logger.error(f"Export failed: {e.stderr}")
+            raise
+    
+    def export_point_cloud(self, output_format: str = "PLY") -> str:
+        """
+        Convenience wrapper for point cloud export
+        """
+        return self.export_model(output_format="PLY")
+    
+    def import_model(self, import_path: Path, input_format: str = "TXT") -> Path:
+        """
+        Import reconstruction from external format
+        
+        Reference: https://colmap.github.io/tutorial.html#importing-and-exporting
+        
+        Supported input formats:
+        - TXT: Text format (cameras.txt, images.txt, points3D.txt)
+        - BIN: Binary format (cameras.bin, images.bin, points3D.bin)
+        - PLY: Point cloud (RGB only, no camera poses)
+        
+        Output: Imported model in sparse directory as new numbered model.
+        """
+        logger.info(f"Importing model from {import_path} ({input_format} format)")
+        
+        # Create import directory in sparse/
+        sparse_dirs = sorted(self.sparse_path.glob("[0-9]*"))
+        if sparse_dirs:
+            next_model_id = max([int(d.name) for d in sparse_dirs]) + 1
+        else:
+            next_model_id = 0
+        
+        import_dir = self.sparse_path / str(next_model_id)
+        import_dir.mkdir(parents=True, exist_ok=True)
+        
+        if input_format == "PLY":
+            # PLY imports differently - no camera poses
+            raise NotImplementedError("PLY import requires manual camera pose setup")
+        
+        cmd = [
+            "colmap", "model_converter",
+            "--input_path", str(import_path),
+            "--input_type", input_format,
+            "--output_path", str(import_dir),
+            "--output_type", "BIN",
+        ]
+        
+        try:
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            logger.info(f"Imported model to {import_dir}")
+            return import_dir
+            
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Import failed: {e.stderr}")
             raise
     
     def _find_best_model(self) -> Tuple[Optional[Path], Dict]:

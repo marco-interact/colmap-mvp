@@ -142,27 +142,39 @@ def sparse_reconstruction(job_id: str):
     subprocess.run(cmd, check=True)
 ```
 
-### Phase 5: Point Cloud Export
+### Phase 5: Importing and Exporting ✅ COMPLETE
 
-**Reference:** [COLMAP Export](https://colmap.github.io/tutorial.html#importing-and-exporting)
+**Reference:** [COLMAP Import/Export](https://colmap.github.io/tutorial.html#importing-and-exporting)
 
+**Status:** ✅ Fully implemented in `colmap_processor.py`
+
+**Export Formats Supported:**
+- ✅ **PLY:** Point cloud for visualization
+- ✅ **TXT:** Human-readable text format (cameras.txt, images.txt, points3D.txt)
+- ✅ **BIN:** Binary format for archiving
+- ✅ **NVM:** VisualSFM compatibility format
+
+**Import Capabilities:**
+- ✅ **TXT Import:** Re-import text format for continuation
+- ✅ **BIN Import:** Re-import binary format
+- ✅ **Multiple Model Support:** Automatic model numbering
+
+**Implementation:**
 ```python
-def export_point_cloud(job_id: str):
-    """Export sparse reconstruction to PLY"""
-    job_path = f"/workspace/{job_id}"
-    
-    # Find best reconstruction
-    sparse_path = find_best_sparse_model(f"{job_path}/sparse")
-    
-    cmd = [
-        "colmap", "model_converter",
-        "--input_path", sparse_path,
-        "--output_path", f"{job_path}/exports/point_cloud.ply",
-        "--output_type", "PLY"
-    ]
-    
-    subprocess.run(cmd, check=True)
+# Export point cloud
+ply_file = processor.export_model(output_format="PLY")
+
+# Export text format for debugging
+text_dir = processor.export_model(output_format="TXT")
+
+# Import existing model
+imported_model = processor.import_model(
+    import_path=Path("external_model"),
+    input_format="TXT"
+)
 ```
+
+**Documentation:** See `IMPORT_EXPORT_VALIDATION.md`
 
 ### Phase 6: Dense Reconstruction (Optional)
 
@@ -253,10 +265,10 @@ GET /api/reconstruction/{job_id}/stats
 4. ✅ Implement feature extraction endpoint
 5. ✅ Implement matching endpoint
 6. ✅ Implement sparse reconstruction endpoint
-7. ✅ Add point cloud export
-8. ✅ Test with demo video
-9. ✅ Add dense reconstruction (optional)
-10. ✅ Integrate with frontend 3D viewer
+7. ✅ Add point cloud export and import capabilities
+8. ⏭️ Test with demo video
+9. ⏭️ Add dense reconstruction (optional)
+10. ⏭️ Integrate with frontend 3D viewer
 
 ## Resources
 
