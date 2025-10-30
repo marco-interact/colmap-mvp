@@ -470,6 +470,52 @@ async def download_export(job_id: str, filename: str):
         logger.error(f"Download failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/reconstruction/{job_id}/database/inspect")
+async def inspect_database(job_id: str):
+    """
+    Inspect COLMAP database contents
+    Reference: https://colmap.github.io/tutorial.html#database-management
+    
+    Returns comprehensive database statistics
+    """
+    try:
+        job_path = Path(f"/workspace/{job_id}")
+        
+        if not job_path.exists():
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        processor = COLMAPProcessor(str(job_path))
+        result = processor.inspect_database()
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Database inspection failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/reconstruction/{job_id}/database/clean")
+async def clean_database(job_id: str):
+    """
+    Clean COLMAP database by removing unused data
+    Reference: https://colmap.github.io/tutorial.html#database-management
+    
+    Removes orphaned data, images without features, etc.
+    """
+    try:
+        job_path = Path(f"/workspace/{job_id}")
+        
+        if not job_path.exists():
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        processor = COLMAPProcessor(str(job_path))
+        result = processor.clean_database()
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Database cleaning failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize database and demo data on startup"""

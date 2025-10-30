@@ -634,6 +634,268 @@ class COLMAPProcessor:
                     pass
         
         return stats
+    
+    def inspect_database(self) -> Dict:
+        """
+        Inspect COLMAP database contents
+        Reference: https://colmap.github.io/tutorial.html#database-management
+        
+        Returns comprehensive database statistics including:
+        - Cameras (intrinsic parameters)
+        - Images (metadata and registration status)
+        - Keypoints (SIFT features per image)
+        - Matches (feature correspondences)
+        - Two-view geometries (geometrically verified matches)
+        """
+        if not self.database_path.exists():
+            logger.warning(f"Database not found at {self.database_path}")
+            return {"status": "not_found", "message": "Database does not exist yet"}
+        
+        import sqlite3
+        
+        stats = {
+            "status": "success",
+            "database_path": str(self.database_path),
+        }
+        
+        try:
+            conn = sqlite3.connect(self.database_path)
+            cursor = conn.cursor()
+            
+            # Get camera information
+            cursor.execute("SELECT COUNT(*) FROM cameras")
+            stats["num_cameras"] = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT * FROM cameras")
+            cameras = cursor.fetchall()
+            if cameras:
+                stats["cameras"] = []
+                for camera in cameras:
+                    stats["cameras"].append({
+                        "camera_id": camera[0],
+                        "model": camera[1],
+                        "width": camera[2],
+                        "height": camera[3],
+                        "params": camera[4]
+                    })
+            
+            # Get image information
+            cursor.execute("SELECT COUNT(*) FROM images")
+            stats["num_images"] = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT name, camera_id, prior_qw, prior_qx, prior_qy, prior_qz, prior_tx, prior_ty, prior_tz FROM images")
+            images = cursor.fetchall()
+            if images:
+                stats["images"] = []
+                for img in images:
+                    stats["images"].append({
+                        "name": img[0],
+                        "camera_id": img[1],
+                        "prior_quaternion": [img[2], img[3], img[4], img[5]],
+                        "prior_translation": [img[6], img[7], img[8]]
+                    })
+            
+            # Get keypoint statistics
+            cursor.execute("SELECT COUNT(*) FROM keypoints")
+            stats["num_keypoints"] = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT AVG(rows) FROM keypoints")
+            avg_keypoints = cursor.fetchone()[0]
+            if avg_keypoints:
+                stats["avg_keypoints_per_image"] = round(avg_keypoints, 2)
+            
+            # Get match statistics
+            cursor.execute("SELECT COUNT(*) FROM matches")
+            stats["num_matches"] = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT AVG(rows) FROM matches")
+            avg_matches = cursor.fetchone()[0]
+            if avg_matches:
+                stats["avg_matches_per_pair"] = round(avg_matches, 2)
+            
+            # Get two-view geometry statistics
+            cursor.execute("SELECT COUNT(*) FROM two_view_geometries")
+            stats["num_two_view_geometries"] = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT AVG(CAST(rows AS FLOAT)) FROM two_view_geometries WHERE rows > 0")
+            avg_inliers = cursor.fetchone()[0]
+            if avg_inliers:
+                stats["avg_inliers_per_pair"] = round(avg_inliers, 2)
+            
+            # Calculate verification rate
+            if stats["num_matches"] > 0:
+                stats["verification_rate"] = round((stats["num_two_view_geometries"] / stats["num_matches"]) * 100, 2)
+            
+            # Calculate inlier ratio
+            if stats["num_two_view_geometries"] > 0 and stats["num_matches"] > 0:
+                cursor.execute("SELECT AVG(CAST(tvg.rows AS FLOAT) / CAST(m.rows AS FLOAT)) FROM two_view_geometries tvg JOIN matches m ON tvg.pair_id = m.pair_id WHERE m.rows > 0")
+                inlier_ratio = cursor.fetchone()[0]
+                if inlier_ratio:
+                    stats["avg_inlier_ratio"] = round(inlier_ratio * 100, 2)
+            
+            conn.close()
+            
+            logger.info(f"Database inspection complete: {stats['num_cameras']} cameras, {stats['num_images']} images, {stats['num_keypoints']} keypoints")
+            
+        except Exception as e:
+            logger.error(f"Database inspection failed: {e}")
+            stats["status"] = "error"
+            stats["error"] = str(e)
+        
+        return stats
+    
+    def clean_database(self) -> Dict:
+        """
+        Clean COLMAP database by removing unused data
+        Reference: https://colmap.github.io/tutorial.html#database-management
+        
+        Removes:
+        - Images without features
+        - Matches for deleted image pairs
+        - Orphaned keypoints/descriptors
+        
+        Benefits:
+        - Smaller file size
+        - Faster processing
+        - Cleaner data structure
+        """
+        if not self.database_path.exists():
+            logger.warning(f"Database not found at {self.database_path}")
+            return {"status": "not_found", "message": "Database does not exist yet"}
+        
+        try:
+            import sqlite3
+            import tempfile
+            
+            logger.info("Cleaning database...")
+            
+            # Create backup
+            backup_path = self.database_path.with_suffix('.db.backup')
+            shutil.copy2(self.database_path, backup_path)
+            logger.info(f"Created backup: {backup_path}")
+            
+            # Use COLMAP database_cleaner
+            # Reference: https://colmap.github.io/cli.html#database-cleaner
+            cmd = [
+                "colmap", "database_cleaner",
+                "--database_path", str(self.database_path),
+            ]
+            
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=False  # Don't fail if database is already clean
+            )
+            
+            if result.returncode == 0:
+                logger.info("Database cleaned successfully")
+                return {
+                    "status": "success",
+                    "message": "Database cleaned successfully",
+                    "backup_path": str(backup_path)
+                }
+            else:
+                logger.warning(f"Database cleaner returned {result.returncode}: {result.stderr}")
+                # Restore backup
+                shutil.copy2(backup_path, self.database_path)
+                return {
+                    "status": "warning",
+                    "message": "Database may not need cleaning",
+                    "output": result.stdout
+                }
+                
+        except Exception as e:
+            logger.error(f"Database cleaning failed: {e}")
+            return {"status": "error", "error": str(e)}
+    
+    def get_camera_for_image(self, image_name: str) -> Optional[Dict]:
+        """
+        Get camera parameters for a specific image
+        Useful for sharing intrinsic parameters between images
+        Reference: https://colmap.github.io/tutorial.html#database-management
+        
+        Returns camera model (PINHOLE, SIMPLE_PINHOLE, etc.) and parameters
+        """
+        if not self.database_path.exists():
+            return None
+        
+        try:
+            import sqlite3
+            
+            conn = sqlite3.connect(self.database_path)
+            cursor = conn.cursor()
+            
+            # Get image's camera_id
+            cursor.execute("SELECT camera_id FROM images WHERE name = ?", (image_name,))
+            result = cursor.fetchone()
+            
+            if not result:
+                conn.close()
+                return None
+            
+            camera_id = result[0]
+            
+            # Get camera details
+            cursor.execute("SELECT * FROM cameras WHERE camera_id = ?", (camera_id,))
+            camera = cursor.fetchone()
+            
+            conn.close()
+            
+            if camera:
+                return {
+                    "camera_id": camera[0],
+                    "model": camera[1],
+                    "width": camera[2],
+                    "height": camera[3],
+                    "params": camera[4]
+                }
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Failed to get camera for image {image_name}: {e}")
+            return None
+    
+    def set_camera_for_images(self, image_names: list, camera_id: int) -> Dict:
+        """
+        Set the same camera for multiple images
+        Useful for sharing intrinsic parameters between images with same camera
+        Reference: https://colmap.github.io/tutorial.html#database-management
+        
+        Args:
+            image_names: List of image names to update
+            camera_id: Camera ID to assign
+        """
+        if not self.database_path.exists():
+            return {"status": "not_found", "message": "Database does not exist yet"}
+        
+        try:
+            import sqlite3
+            
+            conn = sqlite3.connect(self.database_path)
+            cursor = conn.cursor()
+            
+            updated_count = 0
+            for image_name in image_names:
+                cursor.execute("UPDATE images SET camera_id = ? WHERE name = ?", (camera_id, image_name))
+                if cursor.rowcount > 0:
+                    updated_count += 1
+            
+            conn.commit()
+            conn.close()
+            
+            logger.info(f"Updated camera for {updated_count} images")
+            
+            return {
+                "status": "success",
+                "updated_images": updated_count,
+                "total_images": len(image_names)
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to set camera for images: {e}")
+            return {"status": "error", "error": str(e)}
 
 
 def process_video_to_pointcloud(
